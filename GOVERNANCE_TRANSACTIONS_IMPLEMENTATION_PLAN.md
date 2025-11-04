@@ -16,7 +16,8 @@ This document provides a detailed, step-by-step implementation plan for building
 
 **Implementation:**
 ```typescript
-import { MeshTxBuilder } from '@meshsdk/core';
+import { MeshTxBuilder } from '@meshsdk/core'; // May need to use @meshsdk/transaction if re-export fails
+import { hashDrepAnchor } from '@meshsdk/common'; // For anchor hash computation
 import { blockfrostProvider } from '@/lib/blockfrost';
 
 // Initialize MeshTxBuilder with Blockfrost provider
@@ -43,10 +44,8 @@ export async function computeAnchorHash(anchorUrl: string): Promise<string | nul
   try {
     const response = await fetch(anchorUrl);
     const data = await response.json();
-    // TODO: Check if Mesh SDK provides hashDrepAnchor
-    // If not, implement using CIP-1694 specification
-    // return hashDrepAnchor(data);
-    return null; // Placeholder
+    // Mesh SDK provides hashDrepAnchor from @meshsdk/common
+    return hashDrepAnchor(data);
   } catch (error) {
     console.error('Error computing anchor hash:', error);
     return null;

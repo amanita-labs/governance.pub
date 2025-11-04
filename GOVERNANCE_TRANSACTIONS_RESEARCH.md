@@ -53,13 +53,18 @@ This document outlines the research findings and implementation plan for buildin
 According to [Mesh.js documentation](https://meshjs.dev/apis/txbuilder/governance), `MeshTxBuilder` is the low-level API for building governance transactions. It requires:
 
 ```typescript
+// MeshTxBuilder is available from @meshsdk/core (re-exported from @meshsdk/transaction)
+// Or directly from @meshsdk/transaction
 import { MeshTxBuilder } from '@meshsdk/core';
+// import { hashDrepAnchor } from '@meshsdk/common'; // For anchor hash computation
 
 const txBuilder = new MeshTxBuilder({
   fetcher: provider, // BlockfrostProvider instance
   verbose: true,
 });
 ```
+
+**Note:** `MeshTxBuilder` is exported from `@meshsdk/transaction` but may be re-exported by `@meshsdk/core`. If imports fail, use `@meshsdk/transaction` directly.
 
 ### 2.2 Governance Transaction Types
 
@@ -277,7 +282,10 @@ async function getMeshJsonHash(url: string): Promise<string> {
 }
 ```
 
-**Need to verify:** Does Mesh SDK export `hashDrepAnchor`? Or do we need to implement it?
+**Verified:** `hashDrepAnchor` is exported from `@meshsdk/common` package. We can import it as:
+```typescript
+import { hashDrepAnchor } from '@meshsdk/common';
+```
 
 ### 3.3 Governance Action ID Format
 
