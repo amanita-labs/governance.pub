@@ -31,7 +31,6 @@ export function ThemeProvider({
   });
   const [actualTheme, setActualTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window === 'undefined') return 'light';
-    const root = window.document.documentElement;
     const stored = localStorage.getItem(storageKey) as Theme | null;
     const initialTheme = stored || defaultTheme;
     

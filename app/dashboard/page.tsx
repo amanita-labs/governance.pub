@@ -10,15 +10,13 @@ import { Button } from '@/components/ui/Button';
 import { ArrowRight, TrendingUp, Users, FileText, Vote } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
-// Lazy load heavy chart components
+// Lazy load heavy chart components (client components will hydrate on client)
 const VotingPowerFlowLazy = dynamic(() => import('@/components/VotingPowerFlow').then(mod => ({ default: mod.VotingPowerFlow })), {
   loading: () => <div className="h-64 flex items-center justify-center text-muted-foreground">Loading chart...</div>,
-  ssr: false,
 });
 
 const GovernanceHeatmapLazy = dynamic(() => import('@/components/GovernanceHeatmap').then(mod => ({ default: mod.GovernanceHeatmap })), {
   loading: () => <div className="h-64 flex items-center justify-center text-muted-foreground">Loading heatmap...</div>,
-  ssr: false,
 });
 
 export const revalidate = 60; // Revalidate every 60 seconds
