@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import ActionCard from './ActionCard';
-import { ActionCardSkeleton } from './ui/CardSkeleton';
+import { ActionCardSkeleton } from '../ui/CardSkeleton';
 import { Search, Filter, ArrowUpDown } from 'lucide-react';
 import type { GovernanceAction } from '@/types/governance';
 import { cn } from '@/lib/utils';

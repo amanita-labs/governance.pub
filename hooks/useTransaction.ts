@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ConnectedWallet } from '@/lib/mesh';
+import type { ConnectedWallet } from '@/lib/api/mesh';
 
 export interface TransactionState {
   isBuilding: boolean;

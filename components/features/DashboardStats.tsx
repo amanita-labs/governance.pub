@@ -1,8 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Users, TrendingUp, FileText, Vote, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { formatADA } from '@/lib/governance-stats';
-import type { GovernanceStats } from '@/lib/governance-stats';
-import { Skeleton } from './ui/Skeleton';
+import { formatADA } from '@/lib/governance/governance-stats';
+import type { GovernanceStats } from '@/lib/governance/governance-stats';
+import { Skeleton } from '../ui/Skeleton';
 
 interface StatCardProps {
   title: string;

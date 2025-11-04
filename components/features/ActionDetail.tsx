@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
-import { Badge } from './ui/Badge';
-import { Button } from './ui/Button';
-import { VotingChart } from './VotingChart';
-import { VotingProgress } from './VotingProgress';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { VotingChart } from '../charts/VotingChart';
+import { VotingProgress } from '../charts/VotingProgress';
 import { ProposalMetadata } from './ProposalMetadata';
 import { ProposalTimeline } from './ProposalTimeline';
 import { Clock, Calendar, Hash, ExternalLink, DollarSign, Settings } from 'lucide-react';

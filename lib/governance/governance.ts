@@ -1,5 +1,5 @@
-import { blockfrostFetch } from './blockfrost';
-import { getDRepsDelegators, getDRepsVotes, getProposalsList, getProposalVotingSummary, getCurrentDRepEpochSummary, type KoiosProposal } from './koios';
+import { blockfrostFetch } from '../api/blockfrost';
+import { getDRepsDelegators, getDRepsVotes, getProposalsList, getProposalVotingSummary, getCurrentDRepEpochSummary, type KoiosProposal } from '../api/koios';
 import { normalizeToCIP129, convertToCIP105, isSpecialSystemDRep, isValidDRepID } from './drep-id';
 import { extractTxHashAndIndex, parseProposalId } from './proposal-id';
 import type { DRep, GovernanceAction, VotingResult, DRepVotingHistory, ActionVotingBreakdown, DRepDelegator } from '@/types/governance';

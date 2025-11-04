@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { connectWallet, disconnectWallet, getAvailableWallets, type ConnectedWallet, type WalletName } from '@/lib/mesh';
+import { connectWallet, disconnectWallet, getAvailableWallets, type ConnectedWallet, type WalletName } from '@/lib/api/mesh';
 
 export function useWallet() {
   const [connectedWallet, setConnectedWallet] = useState<ConnectedWallet | null>(null);

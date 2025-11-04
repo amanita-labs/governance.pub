@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import { WalletProvider } from "@/components/WalletProvider";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import Navigation from "@/components/Navigation";
+import { WalletProvider } from "@/components/layout/WalletProvider";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import Navigation from "@/components/layout/Navigation";
 
 const inter = Inter({
   subsets: ["latin"],

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { WalletConnect } from './WalletConnect';
 import { ThemeToggle } from './ThemeToggle';
-import { Button } from './ui/Button';
+import { Button } from '../ui/Button';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

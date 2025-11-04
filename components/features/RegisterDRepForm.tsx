@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Card } from './ui/Card';
-import { Button } from './ui/Button';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 import { TransactionModal } from './TransactionModal';
-import { useWalletContext } from './WalletProvider';
+import { useWalletContext } from '../layout/WalletProvider';
 import { useTransaction } from '@/hooks/useTransaction';
-import { submitDRepRegistrationTransaction } from '@/lib/transactions/registerDRep';
+import { submitDRepRegistrationTransaction } from '@/lib/governance/transactions/registerDRep';
 
 export default function RegisterDRepForm() {
   const { connectedWallet } = useWalletContext();

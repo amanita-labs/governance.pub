@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import DelegateForm from '@/components/DelegateForm';
+import DelegateForm from '@/components/features/DelegateForm';
 import type { DRep } from '@/types/governance';
 
 export default function DelegatePage() {

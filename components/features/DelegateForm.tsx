@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card } from './ui/Card';
-import { Button } from './ui/Button';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 import { TransactionModal } from './TransactionModal';
-import { useWalletContext } from './WalletProvider';
+import { useWalletContext } from '../layout/WalletProvider';
 import { useTransaction } from '@/hooks/useTransaction';
-import { submitDelegationTransaction } from '@/lib/transactions/delegate';
+import { submitDelegationTransaction } from '@/lib/governance/transactions/delegate';
 import { Search } from 'lucide-react';
 import type { DRep } from '@/types/governance';
 

@@ -4,7 +4,7 @@
  * Reference: https://docs.blockfrost.io/#tag/cardano--governance
  */
 
-import { blockfrostFetch } from './blockfrost';
+import { blockfrostFetch } from '../api/blockfrost';
 
 let governanceAvailable: boolean | null = null;
 

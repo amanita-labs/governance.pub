@@ -7,7 +7,7 @@
  * Base URL for Preview network: https://preview.koios.rest/api/v1
  */
 
-import { convertToCIP129, normalizeToCIP129 } from './drep-id';
+import { convertToCIP129, normalizeToCIP129 } from '../governance/drep-id';
 
 const KOIOS_BASE_URL = process.env.NEXT_PUBLIC_KOIOS_URL || 'https://preview.koios.rest/api/v1';
 

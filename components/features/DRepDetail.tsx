@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader } from './ui/Card';
-import { Badge } from './ui/Badge';
-import { Button } from './ui/Button';
-import { VotingPowerChart } from './VotingPowerChart';
+import { Card, CardContent, CardHeader } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { VotingPowerChart } from '../charts/VotingPowerChart';
 import { ExternalLink, TrendingUp, Calendar, Hash, User, Mail, Globe, FileText, Users, Copy, Check } from 'lucide-react';
 import Link from 'next/link';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/Tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import type { DRep, DRepVotingHistory, DRepDelegator } from '@/types/governance';
 
 interface DRepDetailProps {

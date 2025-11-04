@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import DRepCard from './DRepCard';
-import { DRepCardSkeleton } from './ui/CardSkeleton';
-import { Button } from './ui/Button';
+import { DRepCardSkeleton } from '../ui/CardSkeleton';
+import { Button } from '../ui/Button';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { DRep } from '@/types/governance';
 import { cn } from '@/lib/utils';
