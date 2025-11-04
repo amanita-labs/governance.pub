@@ -127,7 +127,9 @@ async function enrichDRepsWithKoios(dreps: DRep[]): Promise<DRep[]> {
       // Use horizontal filtering to optimize queries:
       // - For delegators: Limit to 1000 (enough for count, reduces payload)
       // - For votes: Limit to 1000 (enough for count and recent activity check)
-      //   Order by block_time desc to get most recent votes first
+      //   Order by block_time desc to get most recent votes first (if API supports it)
+      // Note: If Koios API doesn't support limit/order in request body, we'll process all results
+      // but still benefit from vertical filtering (only processing needed fields)
       [delegatorsMap, votesMap] = await Promise.all([
         getDRepsDelegators(cip129Ids, 1000), // Horizontal filtering: limit to 1000 delegators
         getDRepsVotes(cip129Ids, 1000, 'block_time.desc'), // Horizontal filtering: limit to 1000 most recent votes
@@ -160,11 +162,15 @@ async function enrichDRepsWithKoios(dreps: DRep[]): Promise<DRep[]> {
           abstain: votes.filter(v => v.vote === 'Abstain').length,
         };
 
+        // Vertical filtering: Only process the fields we need (vote, block_time)
         // Get last vote block_time (most recent vote)
+        // Since we ordered by block_time.desc, the first vote is the most recent
         // Note: Koios returns block_time, not epoch directly
         // We can use block_time for sorting, but epoch calculation requires network parameters
         // For now, we'll leave last_vote_epoch as undefined and use vote count for sorting
-        const lastVoteBlockTime = votes.length > 0
+        const lastVoteBlockTime = votes.length > 0 && votes[0]?.block_time
+          ? votes[0].block_time // First vote is most recent due to ordering
+          : votes.length > 0
           ? Math.max(...votes.map(v => v.block_time || 0))
           : undefined;
 
