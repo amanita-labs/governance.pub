@@ -65,8 +65,8 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: De
     return (
       <Card>
         <div className="text-center py-12">
-          <p className="text-gray-600 mb-4">Please connect your wallet to delegate voting rights</p>
-          <p className="text-sm text-gray-500">Use the wallet connection button in the navigation bar</p>
+          <p className="text-muted-foreground mb-4">Please connect your wallet to delegate voting rights</p>
+          <p className="text-sm text-muted-foreground">Use the wallet connection button in the navigation bar</p>
         </div>
       </Card>
     );
@@ -79,13 +79,13 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: De
           <h2 className="text-2xl font-bold mb-4">Select DRep</h2>
           
           <div className="mb-4 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
             <input
               type="text"
               placeholder="Search DReps..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-field-green focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent placeholder:text-muted-foreground"
             />
           </div>
 
@@ -103,14 +103,14 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: De
                       className={`w-full text-left p-4 rounded-md border-2 transition-colors ${
                         isSelected
                           ? 'border-field-green bg-field-green/10'
-                          : 'border-gray-200 hover:border-field-green/50'
+                          : 'border-input hover:border-field-green/50'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-semibold">{drepName}</p>
+                          <p className="font-semibold text-foreground">{drepName}</p>
                           {drep.metadata?.description && (
-                            <p className="text-sm text-gray-600 line-clamp-1 mt-1">
+                            <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
                               {drep.metadata.description}
                             </p>
                           )}
@@ -137,7 +137,7 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: De
                 )}
               </>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 {loading ? 'Loading DReps...' : 'No DReps found'}
               </div>
             )}
@@ -150,28 +150,28 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: De
           {selectedDRep ? (
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-500 mb-1">Selected DRep</p>
-                <p className="font-semibold text-lg">
+                <p className="text-sm text-muted-foreground mb-1">Selected DRep</p>
+                <p className="font-semibold text-lg text-foreground">
                   {selectedDRep.metadata?.name || selectedDRep.view || selectedDRep.drep_id.slice(0, 8)}
                 </p>
               </div>
 
               {selectedDRep.metadata?.description && (
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Description</p>
-                  <p className="text-sm text-gray-700">{selectedDRep.metadata.description}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Description</p>
+                  <p className="text-sm text-foreground">{selectedDRep.metadata.description}</p>
                 </div>
               )}
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Your Wallet</p>
-                <p className="text-sm font-mono break-all">
+                <p className="text-sm text-muted-foreground mb-1">Your Wallet</p>
+                <p className="text-sm font-mono break-all text-foreground">
                   {connectedWallet.address.slice(0, 20)}...
                 </p>
               </div>
 
               <div className="pt-4 border-t">
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   By delegating, you will give this DRep the authority to vote on governance actions on your behalf.
                 </p>
                 <Button
@@ -185,7 +185,7 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: De
               </div>
             </div>
           ) : (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-muted-foreground">
               <p>Select a DRep from the list to begin</p>
             </div>
           )}

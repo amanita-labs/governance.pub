@@ -27,12 +27,12 @@ export function WalletConnect() {
               className="fixed inset-0 z-40"
               onClick={() => setShowMenu(false)}
             />
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+            <div className="absolute right-0 mt-2 w-64 bg-card rounded-lg shadow-lg border z-50">
               <div className="p-4 border-b">
-                <p className="text-sm font-medium text-gray-900">Connected Wallet</p>
-                <p className="text-xs text-gray-500 mt-1 break-all">{connectedWallet.address}</p>
+                <p className="text-sm font-medium text-card-foreground">Connected Wallet</p>
+                <p className="text-xs text-muted-foreground mt-1 break-all">{connectedWallet.address}</p>
                 {connectedWallet.stakeAddress && (
-                  <p className="text-xs text-gray-500 mt-1 break-all">
+                  <p className="text-xs text-muted-foreground mt-1 break-all">
                     Stake: {connectedWallet.stakeAddress.slice(0, 10)}...
                   </p>
                 )}
@@ -42,7 +42,7 @@ export function WalletConnect() {
                   disconnect();
                   setShowMenu(false);
                 }}
-                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 flex items-center space-x-2"
+                className="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted flex items-center space-x-2"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Disconnect</span>
@@ -88,9 +88,9 @@ export function WalletConnect() {
             className="fixed inset-0 z-40"
             onClick={() => setShowMenu(false)}
           />
-          <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+          <div className="absolute right-0 mt-2 w-64 bg-card rounded-lg shadow-lg border z-50">
             <div className="p-2">
-              <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">Available Wallets</p>
+              <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase">Available Wallets</p>
               {availableWallets.map((walletName) => (
                 <button
                   key={walletName}
@@ -98,7 +98,7 @@ export function WalletConnect() {
                     connect(walletName);
                     setShowMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 rounded-md capitalize"
+                  className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-muted rounded-md capitalize"
                 >
                   {walletName}
                 </button>

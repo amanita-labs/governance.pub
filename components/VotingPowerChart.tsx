@@ -9,7 +9,7 @@ interface VotingPowerChartProps {
 export function VotingPowerChart({ data }: VotingPowerChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         No data available
       </div>
     );
@@ -23,7 +23,10 @@ export function VotingPowerChart({ data }: VotingPowerChartProps) {
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+          label={(props: any) => {
+            const { name, percent } = props;
+            return `${name}: ${(percent * 100).toFixed(0)}%`;
+          }}
           outerRadius={80}
           fill="#8884d8"
           dataKey="value"

@@ -47,7 +47,7 @@ export function TransactionModal({
             <XCircle className="w-12 h-12 text-red-500" />
             <div className="text-center">
               <p className="font-medium text-red-600 mb-2">Transaction Failed</p>
-              <p className="text-sm text-gray-600">{error}</p>
+              <p className="text-sm text-muted-foreground">{error}</p>
             </div>
             <Button onClick={onClose} variant="outline">
               Close
@@ -60,8 +60,8 @@ export function TransactionModal({
             <CheckCircle className="w-12 h-12 text-green-500" />
             <div className="text-center">
               <p className="font-medium text-green-600 mb-2">Transaction Successful!</p>
-              <p className="text-sm text-gray-600 mb-2">Transaction Hash:</p>
-              <code className="text-xs bg-gray-100 px-2 py-1 rounded break-all">{txHash}</code>
+              <p className="text-sm text-muted-foreground mb-2">Transaction Hash:</p>
+              <code className="text-xs bg-muted px-2 py-1 rounded break-all text-foreground">{txHash}</code>
             </div>
             <div className="flex space-x-2">
               <Button onClick={onClose} variant="primary">
@@ -78,7 +78,7 @@ export function TransactionModal({
 
         {!isLoading && !isComplete && !error && (
           <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">Ready to proceed with the transaction?</p>
+            <p className="text-muted-foreground mb-4">Ready to proceed with the transaction?</p>
             <div className="flex space-x-2 justify-center">
               <Button onClick={onClose} variant="outline">
                 Cancel

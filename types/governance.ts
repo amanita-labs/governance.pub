@@ -3,6 +3,7 @@
 export interface DRep {
   drep_id: string;
   drep_hash?: string;
+  hex?: string;
   view?: string;
   url?: string;
   metadata?: {
@@ -19,9 +20,21 @@ export interface DRep {
   };
   voting_power?: string;
   voting_power_active?: string;
+  amount?: string; // Amount from DRep endpoint
   status?: 'active' | 'inactive' | 'retired';
+  active?: boolean;
+  active_epoch?: number;
+  last_active_epoch?: number;
+  has_script?: boolean;
+  retired?: boolean;
+  expired?: boolean;
   registration_tx_hash?: string;
   registration_epoch?: number;
+  // Enhanced fields (can be populated from voting history and metadata)
+  delegator_count?: number;
+  vote_count?: number;
+  last_vote_epoch?: number;
+  has_profile?: boolean; // Has metadata/profile
 }
 
 export interface GovernanceAction {
@@ -53,7 +66,12 @@ export interface VotingResult {
 }
 
 export interface DRepVotingHistory {
-  action_id?: string;
+  tx_hash?: string;
+  cert_index?: number;
+  proposal_id?: string; // Also called action_id in some contexts
+  action_id?: string; // Alias for proposal_id for backward compatibility
+  proposal_tx_hash?: string;
+  proposal_cert_index?: number;
   vote: 'yes' | 'no' | 'abstain';
   voting_power?: string;
   epoch?: number;
@@ -76,5 +94,10 @@ export interface ActionVotingBreakdown {
     abstain: string;
   };
   total_voting_power: string;
+}
+
+export interface DRepDelegator {
+  address: string;
+  amount: string; // Amount in lovelace
 }
 

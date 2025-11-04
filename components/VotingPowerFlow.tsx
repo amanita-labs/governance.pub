@@ -10,35 +10,47 @@ interface VotingPowerFlowProps {
 
 export function VotingPowerFlow({ dreps }: VotingPowerFlowProps) {
   const chartData = useMemo(() => {
+    if (!dreps || dreps.length === 0) {
+      return [];
+    }
+
     // Sort DReps by voting power and take top 10
+    // Include DReps with 0 power too, but show them at the bottom
     const sorted = [...dreps]
-      .filter((drep) => {
-        const power = BigInt(drep.voting_power_active || drep.voting_power || '0');
-        return power > 0n;
-      })
       .sort((a, b) => {
-        const powerA = BigInt(a.voting_power_active || a.voting_power || '0');
-        const powerB = BigInt(b.voting_power_active || b.voting_power || '0');
+        // Use amount field if available (from DRep endpoint), otherwise fallback
+        const powerA = BigInt(a.amount || a.voting_power_active || a.voting_power || '0');
+        const powerB = BigInt(b.amount || b.voting_power_active || b.voting_power || '0');
         return powerB > powerA ? 1 : powerB < powerA ? -1 : 0;
       })
       .slice(0, 10);
 
     return sorted.map((drep) => {
-      const power = BigInt(drep.voting_power_active || drep.voting_power || '0');
+      // Use amount field if available (from DRep endpoint), otherwise fallback
+      const power = BigInt(drep.amount || drep.voting_power_active || drep.voting_power || '0');
       const ada = Number(power) / 1_000_000;
       
+      // Use name from metadata (priority: metadata.name > metadata.title > view > drep_id)
+      const drepName = drep.metadata?.name || 
+                       drep.metadata?.title || 
+                       drep.view || 
+                       drep.drep_id.slice(0, 8);
+      
       return {
-        name: drep.metadata?.name || drep.view || drep.drep_id.slice(0, 8),
-        power: ada,
-        powerM: ada / 1_000_000,
+        name: drepName.substring(0, 20),
+        power: Math.max(0, ada), // Ensure non-negative
+        powerM: Math.max(0, ada / 1_000_000),
       };
     });
   }, [dreps]);
 
   if (chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        No voting power data available
+      <div className="flex items-center justify-center h-64 text-muted-foreground border border-dashed rounded-lg">
+        <div className="text-center">
+          <p className="text-sm">No DReps available to display</p>
+          <p className="text-xs text-muted-foreground mt-1">Try refreshing the page</p>
+        </div>
       </div>
     );
   }

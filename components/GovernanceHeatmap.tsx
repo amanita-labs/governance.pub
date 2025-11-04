@@ -39,7 +39,7 @@ export function GovernanceHeatmap({ actions }: GovernanceHeatmapProps) {
 
   if (heatmapData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         No data available for heatmap
       </div>
     );
@@ -65,7 +65,7 @@ export function GovernanceHeatmap({ actions }: GovernanceHeatmapProps) {
           </div>
         ))}
       </div>
-      <div className="flex justify-between text-xs text-gray-500 mt-2">
+      <div className="flex justify-between text-xs text-muted-foreground mt-2">
         <span>Less activity</span>
         <span>More activity</span>
       </div>

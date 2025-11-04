@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader } from './ui/Card';
 import { Badge } from './ui/Badge';
-import { Users, TrendingUp, ExternalLink } from 'lucide-react';
+import { Users, TrendingUp, ExternalLink, Vote, Activity } from 'lucide-react';
 import type { DRep } from '@/types/governance';
 import { cn } from '@/lib/utils';
 
@@ -10,72 +10,135 @@ interface DRepCardProps {
 }
 
 function formatVotingPower(power: string | undefined): string {
-  if (!power) return '0 ADA';
+  if (!power) return '0 ₳';
   const powerNum = BigInt(power);
   const ada = Number(powerNum) / 1_000_000;
   if (ada >= 1_000_000) {
-    return `${(ada / 1_000_000).toFixed(2)}M ADA`;
+    return `${(ada / 1_000_000).toFixed(2)}M ₳`;
   }
   if (ada >= 1_000) {
-    return `${(ada / 1_000).toFixed(2)}K ADA`;
+    return `${(ada / 1_000).toFixed(2)}K ₳`;
   }
-  return `${ada.toFixed(2)} ADA`;
+  return `${ada.toFixed(2)} ₳`;
+}
+
+function formatNumber(num: number | undefined): string {
+  if (!num) return '0';
+  if (num >= 1_000_000) {
+    return `${(num / 1_000_000).toFixed(2)}M`;
+  }
+  if (num >= 1_000) {
+    return `${(num / 1_000).toFixed(1)}K`;
+  }
+  return num.toLocaleString();
 }
 
 export default function DRepCard({ drep }: DRepCardProps) {
-  const drepName = drep.metadata?.name || drep.view || drep.drep_id.slice(0, 8);
-  const status = drep.status || 'active';
+  // Use name from metadata (priority: metadata.name > metadata.title > view > drep_id)
+  const drepName = drep.metadata?.name || 
+                   drep.metadata?.title || 
+                   drep.view || 
+                   drep.drep_id.slice(0, 8);
+  const status = drep.status || (drep.active === false ? 'inactive' : drep.retired ? 'retired' : 'active');
+  const hasProfile = !!(drep.metadata?.name || drep.metadata?.description || drep.metadata?.website);
+  // Use amount field if available (from DRep endpoint), otherwise fallback to voting_power
+  const votingPower = formatVotingPower(drep.amount || drep.voting_power_active || drep.voting_power);
+  const delegatorCount = drep.delegator_count;
+  const voteCount = drep.vote_count;
 
   return (
     <Link href={`/dreps/${drep.drep_id}`} className="block h-full">
-      <Card className="h-full cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover">
+      <Card className="h-full cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover border-2 hover:border-field-green/50">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-foreground mb-1.5 truncate">
-                {drepName}
-              </h3>
+              <div className="flex items-center gap-2 mb-1.5">
+                <h3 className="text-lg font-semibold text-foreground truncate">
+                  {drepName}
+                </h3>
+                {hasProfile && (
+                  <Badge variant="info" className="text-xs shrink-0">
+                    Profile
+                  </Badge>
+                )}
+              </div>
               {drep.metadata?.description && (
-                <p className="text-sm text-muted-foreground line-clamp-2">
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                   {drep.metadata.description}
                 </p>
               )}
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant={status === 'active' ? 'success' : status === 'retired' ? 'error' : 'default'}
+                  className="shrink-0"
+                >
+                  {status}
+                </Badge>
+                {drep.last_vote_epoch && (
+                  <span className="text-xs text-muted-foreground">
+                    Last vote: Epoch {drep.last_vote_epoch}
+                  </span>
+                )}
+              </div>
             </div>
-            <Badge 
-              variant={status === 'active' ? 'success' : status === 'retired' ? 'error' : 'default'}
-              className="shrink-0"
-            >
-              {status}
-            </Badge>
           </div>
         </CardHeader>
         
         <CardContent className="pt-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex items-center gap-2.5 p-2 rounded-md bg-muted/50">
-              <div className="p-1.5 rounded-md bg-field-green/10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50 border border-border">
+              <div className="p-1.5 rounded-md bg-field-green/10 shrink-0">
                 <TrendingUp className="w-4 h-4 text-field-green" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Voting Power</p>
+                <p className="text-xs text-muted-foreground">Power</p>
                 <p className="text-sm font-semibold text-foreground truncate">
-                  {formatVotingPower(drep.voting_power_active || drep.voting_power)}
+                  {votingPower}
                 </p>
               </div>
             </div>
-            {drep.metadata?.website && (
-              <div className="flex items-center gap-2.5 p-2 rounded-md bg-muted/50">
-                <div className="p-1.5 rounded-md bg-sky-blue/10">
+            
+            {delegatorCount !== undefined && (
+              <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50 border border-border">
+                <div className="p-1.5 rounded-md bg-sky-blue/10 shrink-0">
                   <Users className="w-4 h-4 text-sky-blue" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Delegators</p>
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {formatNumber(delegatorCount)}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {voteCount !== undefined && (
+              <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50 border border-border">
+                <div className="p-1.5 rounded-md bg-field-dark/10 shrink-0">
+                  <Vote className="w-4 h-4 text-field-dark" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Votes</p>
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {formatNumber(voteCount)}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {drep.metadata?.website && (
+              <div className="col-span-2 sm:col-span-3 flex items-center gap-2 p-2.5 rounded-md bg-muted/50 border border-border">
+                <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
+                  <ExternalLink className="w-4 h-4 text-primary" />
                 </div>
                 <a
                   href={drep.metadata.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1 truncate"
+                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1 truncate flex-1"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Website
+                  <span className="truncate">{drep.metadata.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
                   <ExternalLink className="w-3 h-3 shrink-0" />
                 </a>
               </div>

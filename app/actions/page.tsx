@@ -11,7 +11,7 @@ export default async function ActionsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">Governance Actions</h1>
+      <h1 className="text-4xl font-display font-bold text-foreground mb-8">Governance Actions</h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card>
           <GovernanceHeatmap actions={actions} />

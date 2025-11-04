@@ -16,18 +16,19 @@ export function getAvailableWallets(): WalletName[] {
   if (typeof window === 'undefined') return [];
   
   const available: WalletName[] = [];
+  const cardanoWindow = window as unknown as CardanoWindow;
   
-  if (window.cardano) {
-    if (window.cardano.nami) available.push('nami');
-    if (window.cardano.eternl) available.push('eternl');
-    if (window.cardano.flint) available.push('flint');
-    if (window.cardano.gero) available.push('gero');
-    if (window.cardano.lace) available.push('lace');
-    if (window.cardano.typhon) available.push('typhon');
-    if (window.cardano.nufi) available.push('nufi');
-    if (window.cardano.begin) available.push('begin');
-    if (window.cardano.vespr) available.push('vespr');
-    if (window.cardano.yoroi) available.push('yoroi');
+  if (cardanoWindow.cardano) {
+    if (cardanoWindow.cardano.nami) available.push('nami');
+    if (cardanoWindow.cardano.eternl) available.push('eternl');
+    if (cardanoWindow.cardano.flint) available.push('flint');
+    if (cardanoWindow.cardano.gero) available.push('gero');
+    if (cardanoWindow.cardano.lace) available.push('lace');
+    if (cardanoWindow.cardano.typhon) available.push('typhon');
+    if (cardanoWindow.cardano.nufi) available.push('nufi');
+    if (cardanoWindow.cardano.begin) available.push('begin');
+    if (cardanoWindow.cardano.vespr) available.push('vespr');
+    if (cardanoWindow.cardano.yoroi) available.push('yoroi');
   }
   
   return available;
@@ -38,11 +39,16 @@ export function getAvailableWallets(): WalletName[] {
  */
 export async function connectWallet(walletName: WalletName): Promise<ConnectedWallet | null> {
   try {
-    if (typeof window === 'undefined' || !window.cardano) {
+    if (typeof window === 'undefined') {
+      throw new Error('Cardano wallet not found');
+    }
+    
+    const cardanoWindow = window as unknown as CardanoWindow;
+    if (!cardanoWindow.cardano) {
       throw new Error('Cardano wallet not found');
     }
 
-    const walletAPI = window.cardano[walletName];
+    const walletAPI = cardanoWindow.cardano[walletName];
     if (!walletAPI) {
       throw new Error(`Wallet ${walletName} not found`);
     }
@@ -85,22 +91,21 @@ export async function disconnectWallet(wallet: any): Promise<void> {
   }
 }
 
-// Extend Window interface for TypeScript
-declare global {
-  interface Window {
-    cardano?: {
-      [key: string]: any;
-      nami?: any;
-      eternl?: any;
-      flint?: any;
-      gero?: any;
-      lace?: any;
-      typhon?: any;
-      nufi?: any;
-      begin?: any;
-      vespr?: any;
-      yoroi?: any;
-    };
-  }
-}
+// Type assertion for window.cardano - Mesh SDK may already declare this
+// Using type assertions to avoid conflicts with Mesh SDK's type definitions
+type CardanoWindow = Window & {
+  cardano?: {
+    [key: string]: any;
+    nami?: any;
+    eternl?: any;
+    flint?: any;
+    gero?: any;
+    lace?: any;
+    typhon?: any;
+    nufi?: any;
+    begin?: any;
+    vespr?: any;
+    yoroi?: any;
+  };
+};
 

@@ -43,8 +43,8 @@ export default function RegisterDRepForm() {
     return (
       <Card>
         <div className="text-center py-12">
-          <p className="text-gray-600 mb-4">Please connect your wallet to register as a DRep</p>
-          <p className="text-sm text-gray-500">Use the wallet connection button in the navigation bar</p>
+          <p className="text-muted-foreground mb-4">Please connect your wallet to register as a DRep</p>
+          <p className="text-sm text-muted-foreground">Use the wallet connection button in the navigation bar</p>
         </div>
       </Card>
     );
@@ -57,7 +57,7 @@ export default function RegisterDRepForm() {
         
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Metadata URL (Optional)
             </label>
             <input
@@ -65,15 +65,15 @@ export default function RegisterDRepForm() {
               value={formData.metadataUrl}
               onChange={(e) => setFormData({ ...formData, metadataUrl: e.target.value })}
               placeholder="https://example.com/metadata.json"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-field-green focus:border-transparent"
+              className="w-full px-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent placeholder:text-muted-foreground"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               URL to JSON metadata containing DRep information (name, description, etc.)
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Anchor URL (Optional)
             </label>
             <input
@@ -81,15 +81,15 @@ export default function RegisterDRepForm() {
               value={formData.anchorUrl}
               onChange={(e) => setFormData({ ...formData, anchorUrl: e.target.value })}
               placeholder="https://example.com/anchor"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-field-green focus:border-transparent"
+              className="w-full px-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent placeholder:text-muted-foreground"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               URL to the anchor for your DRep registration
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Anchor Hash (Optional)
             </label>
             <input
@@ -97,9 +97,9 @@ export default function RegisterDRepForm() {
               value={formData.anchorHash}
               onChange={(e) => setFormData({ ...formData, anchorHash: e.target.value })}
               placeholder="Hash of the anchor data"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-field-green focus:border-transparent font-mono"
+              className="w-full px-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent font-mono placeholder:text-muted-foreground"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Hash of the anchor data (if provided, must match the anchor URL)
             </p>
           </div>
@@ -115,8 +115,8 @@ export default function RegisterDRepForm() {
           </div>
 
           <div>
-            <p className="text-sm text-gray-500 mb-2">Your Wallet:</p>
-            <p className="text-sm font-mono break-all bg-gray-100 px-3 py-2 rounded">
+            <p className="text-sm text-muted-foreground mb-2">Your Wallet:</p>
+            <p className="text-sm font-mono break-all bg-muted px-3 py-2 rounded text-foreground">
               {connectedWallet.address}
             </p>
           </div>

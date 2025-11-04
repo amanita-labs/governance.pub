@@ -100,7 +100,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
           <Card>
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">{title}</h1>
+                <h1 className="text-3xl font-bold text-foreground mb-4">{title}</h1>
                 <div className="flex items-center space-x-2 mb-4">
                   <Badge variant="default">{formatActionType(action.type)}</Badge>
                   <Badge variant={getStatusVariant(status)}>{status}</Badge>
@@ -111,14 +111,14 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
             {action.metadata?.description && (
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-2">Description</h2>
-                <p className="text-gray-700 whitespace-pre-wrap">{action.metadata.description}</p>
+                <p className="text-foreground whitespace-pre-wrap">{action.metadata.description}</p>
               </div>
             )}
 
             {action.metadata?.rationale && (
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-2">Rationale</h2>
-                <p className="text-gray-700 whitespace-pre-wrap">{action.metadata.rationale}</p>
+                <p className="text-foreground whitespace-pre-wrap">{action.metadata.rationale}</p>
               </div>
             )}
 
@@ -127,7 +127,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                 <div className="flex items-center space-x-2">
                   <Clock className="w-5 h-5 text-field-green" />
                   <div>
-                    <p className="text-xs text-gray-500">Voting Epoch</p>
+                    <p className="text-xs text-muted-foreground">Voting Epoch</p>
                     <p className="text-lg font-semibold">{action.voting_epoch}</p>
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5 text-sky-blue" />
                   <div>
-                    <p className="text-xs text-gray-500">Enactment Epoch</p>
+                    <p className="text-xs text-muted-foreground">Enactment Epoch</p>
                     <p className="text-lg font-semibold">{action.enactment_epoch}</p>
                   </div>
                 </div>
@@ -147,7 +147,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5 text-red-500" />
                   <div>
-                    <p className="text-xs text-gray-500">Expiry Epoch</p>
+                    <p className="text-xs text-muted-foreground">Expiry Epoch</p>
                     <p className="text-lg font-semibold">{action.expiry_epoch}</p>
                   </div>
                 </div>
@@ -155,9 +155,9 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
 
               {action.deposit && (
                 <div className="flex items-center space-x-2">
-                  <Hash className="w-5 h-5 text-gray-400" />
+                  <Hash className="w-5 h-5 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-gray-500">Deposit</p>
+                    <p className="text-xs text-muted-foreground">Deposit</p>
                     <p className="text-lg font-semibold">{formatVotingPower(action.deposit)}</p>
                   </div>
                 </div>
@@ -166,10 +166,10 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
 
             {action.tx_hash && (
               <div className="mt-4">
-                <p className="text-sm text-gray-500 mb-1">Transaction Hash</p>
+                <p className="text-sm text-muted-foreground mb-1">Transaction Hash</p>
                 <div className="flex items-center space-x-2">
-                  <Hash className="w-4 h-4 text-gray-400" />
-                  <code className="text-sm bg-gray-100 px-2 py-1 rounded break-all">{action.tx_hash}</code>
+                  <Hash className="w-4 h-4 text-muted-foreground" />
+                  <code className="text-sm bg-muted px-2 py-1 rounded break-all text-foreground">{action.tx_hash}</code>
                 </div>
               </div>
             )}
@@ -186,7 +186,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
             <h2 className="text-xl font-bold mb-4">Voting Summary</h2>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-500 mb-1">Total Voting Power</p>
+                <p className="text-sm text-muted-foreground mb-1">Total Voting Power</p>
                 <p className="text-2xl font-bold">{formatVotingPower(votingResults.total_voting_power)}</p>
               </div>
 
@@ -196,7 +196,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                     <span className="text-sm font-medium">Yes</span>
                     <span className="text-sm font-semibold text-green-600">{formatVotingPower(totalYes.toString())}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div
                       className="bg-green-500 h-2 rounded-full"
                       style={{
@@ -211,7 +211,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                     <span className="text-sm font-medium">No</span>
                     <span className="text-sm font-semibold text-red-600">{formatVotingPower(totalNo.toString())}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div
                       className="bg-red-500 h-2 rounded-full"
                       style={{
@@ -226,7 +226,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                     <span className="text-sm font-medium">Abstain</span>
                     <span className="text-sm font-semibold text-yellow-600">{formatVotingPower(totalAbstain.toString())}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div
                       className="bg-yellow-500 h-2 rounded-full"
                       style={{

@@ -19,7 +19,7 @@ export function ActionTimeline({ actions }: ActionTimelineProps) {
 
   if (sortedActions.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         No actions available for timeline
       </div>
     );
@@ -36,19 +36,19 @@ export function ActionTimeline({ actions }: ActionTimelineProps) {
           return (
             <div key={action.action_id} className="flex items-start space-x-4">
               <div className="flex-shrink-0 w-4 h-4 rounded-full bg-field-green mt-2"></div>
-              <div className="flex-1 bg-white rounded-lg shadow p-4">
+              <div className="flex-1 bg-card rounded-lg shadow p-4 border">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-gray-900 line-clamp-1">{title}</h4>
-                  <span className="text-xs text-gray-500">
+                  <h4 className="font-semibold text-foreground line-clamp-1">{title}</h4>
+                  <span className="text-xs text-muted-foreground">
                     Epoch {action.voting_epoch || action.enactment_epoch || 'N/A'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{action.type}</p>
+                <p className="text-sm text-muted-foreground mb-2">{action.type}</p>
                 <span className={`inline-block px-2 py-1 rounded text-xs ${
-                  status === 'enacted' ? 'bg-green-100 text-green-800' :
-                  status === 'voting' ? 'bg-blue-100 text-blue-800' :
-                  status === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
+                  status === 'enacted' ? 'bg-green-500/10 text-green-700 dark:text-green-400' :
+                  status === 'voting' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400' :
+                  status === 'rejected' ? 'bg-red-500/10 text-red-700 dark:text-red-400' :
+                  'bg-muted text-foreground'
                 }`}>
                   {status}
                 </span>

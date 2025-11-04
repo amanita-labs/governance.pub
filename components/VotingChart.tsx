@@ -14,7 +14,7 @@ interface VotingChartProps {
 export function VotingChart({ data }: VotingChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         No voting data available
       </div>
     );
