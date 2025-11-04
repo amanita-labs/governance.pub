@@ -1,28 +1,42 @@
-import { getDReps, getGovernanceActions } from '@/lib/governance';
-import { calculateStats } from '@/lib/governance/governance-stats';
-import DashboardStats from '@/components/features/DashboardStats';
-import { VotingPowerFlow } from '@/components/charts/VotingPowerFlow';
-import { GovernanceHeatmap } from '@/components/charts/GovernanceHeatmap';
-import { ActionTimeline } from '@/components/features/ActionTimeline';
+import { getDRepsPage, getGovernanceActionsPage } from '@/lib/governance';
+import { calculateStats } from '@/lib/governance-stats';
+import DashboardStats from '@/components/DashboardStats';
+import { ActionTimeline } from '@/components/ActionTimeline';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import ActionList from '@/components/features/ActionList';
 import DRepList from '@/components/features/DRepList';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, TrendingUp, Users, FileText, Vote } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy chart components
+const VotingPowerFlowLazy = dynamic(() => import('@/components/VotingPowerFlow').then(mod => ({ default: mod.VotingPowerFlow })), {
+  loading: () => <div className="h-64 flex items-center justify-center text-muted-foreground">Loading chart...</div>,
+  ssr: false,
+});
+
+const GovernanceHeatmapLazy = dynamic(() => import('@/components/GovernanceHeatmap').then(mod => ({ default: mod.GovernanceHeatmap })), {
+  loading: () => <div className="h-64 flex items-center justify-center text-muted-foreground">Loading heatmap...</div>,
+  ssr: false,
+});
 
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function DashboardPage() {
-  const [dreps, actions] = await Promise.all([
-    getDReps(),
-    getGovernanceActions(),
+  // Only fetch what we need: top 20 DReps for charts, top 6 for display, and recent 6 actions
+  // This is much faster than fetching ALL DReps and ALL Actions
+  const [drepsPage, actionsPage, allDRepsForStats, allActionsForStats] = await Promise.all([
+    getDRepsPage(1, 20, false), // Get top 20 DReps for charts (no enrichment for speed)
+    getGovernanceActionsPage(1, 6, false), // Get top 6 actions (no enrichment for speed)
+    getDRepsPage(1, 100, false).then(page => page.dreps), // Get first 100 for stats (quick)
+    getGovernanceActionsPage(1, 100, false).then(page => page.actions), // Get first 100 for stats (quick)
   ]);
 
-  const stats = calculateStats(dreps, actions);
+  const stats = calculateStats(allDRepsForStats, allActionsForStats);
   
-  // Get top 6 DReps by voting power
-  const topDReps = [...dreps]
+  // Get top 6 DReps by voting power from the first page
+  const topDReps = [...drepsPage.dreps]
     .sort((a, b) => {
       const powerA = BigInt(a.voting_power_active || a.voting_power || '0');
       const powerB = BigInt(b.voting_power_active || b.voting_power || '0');
@@ -30,14 +44,8 @@ export default async function DashboardPage() {
     })
     .slice(0, 6);
 
-  // Get recent actions (last 6)
-  const recentActions = [...actions]
-    .sort((a, b) => {
-      const epochA = a.voting_epoch || a.enactment_epoch || 0;
-      const epochB = b.voting_epoch || b.enactment_epoch || 0;
-      return epochB - epochA;
-    })
-    .slice(0, 6);
+  // Get recent actions (already sorted by Koios/Blockfrost)
+  const recentActions = actionsPage.actions.slice(0, 6);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -110,37 +118,37 @@ export default async function DashboardPage() {
 
       {/* Charts and Visualizations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {dreps.length > 0 && (
+        {drepsPage.dreps.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Voting Power Distribution</CardTitle>
             </CardHeader>
             <CardContent>
-              <VotingPowerFlow dreps={dreps.slice(0, 20)} />
+              <VotingPowerFlowLazy dreps={drepsPage.dreps.slice(0, 20)} />
             </CardContent>
           </Card>
         )}
-        {actions.length > 0 && (
+        {allActionsForStats.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Governance Activity Heatmap</CardTitle>
             </CardHeader>
             <CardContent>
-              <GovernanceHeatmap actions={actions} />
+              <GovernanceHeatmapLazy actions={allActionsForStats} />
             </CardContent>
           </Card>
         )}
       </div>
 
       {/* Timeline */}
-      {actions.length > 0 && (
+      {allActionsForStats.length > 0 && (
         <div className="mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Recent Activity Timeline</CardTitle>
             </CardHeader>
             <CardContent>
-              <ActionTimeline actions={actions.slice(0, 10)} />
+              <ActionTimeline actions={allActionsForStats.slice(0, 10)} />
             </CardContent>
           </Card>
         </div>

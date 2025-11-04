@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Card, CardContent, CardHeader } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { memo } from 'react';
+import { Card, CardContent, CardHeader } from './ui/Card';
+import { Badge } from './ui/Badge';
 import { Clock, TrendingUp, CheckCircle, XCircle, DollarSign } from 'lucide-react';
 import type { GovernanceAction } from '@/types/governance';
 
@@ -181,7 +182,7 @@ function formatRelativeTime(blockTime?: number): string | null {
   return `${Math.floor(diff / 2592000)}mo ago`;
 }
 
-export default function ActionCard({ action, showProgress = false }: ActionCardProps) {
+function ActionCard({ action, showProgress = false }: ActionCardProps) {
   const status = action.status || 'submitted';
   const title = getMetadataTitle(action);
   const description = getMetadataDescription(action);
@@ -272,5 +273,7 @@ export default function ActionCard({ action, showProgress = false }: ActionCardP
     </Link>
   );
 }
+
+export default memo(ActionCard);
 
 

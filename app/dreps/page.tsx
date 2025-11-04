@@ -5,31 +5,19 @@ import DRepList from '@/components/features/DRepList';
 import { DRepsSummaryStats } from '@/components/features/DRepsSummaryStats';
 import type { DRep } from '@/types/governance';
 
-// Helper function to fetch all DReps for summary statistics
-async function fetchAllDRepsForStats(): Promise<DRep[]> {
+// Helper function to fetch a sample of DReps for summary statistics
+// Only fetch first 100 DReps for stats - much faster than fetching all
+async function fetchDRepsForStats(): Promise<DRep[]> {
   try {
-    let allDReps: DRep[] = [];
-    let page = 1;
-    let hasMore = true;
+    // Only fetch first 100 DReps for stats calculation
+    // This is much faster than fetching all pages and provides good enough stats
+    const response = await fetch(`/api/dreps?page=1&count=100`);
+    if (!response.ok) return [];
     
-    // Fetch all pages of DReps
-    while (hasMore) {
-      const response = await fetch(`/api/dreps?page=${page}&count=100`);
-      if (!response.ok) break;
-      
-      const data = await response.json();
-      if (data.dreps && data.dreps.length > 0) {
-        allDReps = [...allDReps, ...data.dreps];
-        hasMore = data.hasMore && data.dreps.length === 100;
-        page++;
-      } else {
-        hasMore = false;
-      }
-    }
-    
-    return allDReps;
+    const data = await response.json();
+    return data.dreps || [];
   } catch (error) {
-    console.error('Error fetching all DReps for stats:', error);
+    console.error('Error fetching DReps for stats:', error);
     return [];
   }
 }
@@ -56,24 +44,24 @@ export default function DRepsPage() {
           setDReps(data.dreps);
           setHasMore(data.hasMore);
           
-          // For the voting power chart and stats, load all DReps on first page
+          // For the voting power chart and stats, load a sample of DReps on first page
           if (currentPage === 1) {
-            // Fetch all DReps for accurate summary statistics
+            // Fetch first 100 DReps for summary statistics (much faster than fetching all)
             // This is done in the background so it doesn't block the initial render
             setLoadingAllDReps(true);
             Promise.all([
-              fetchAllDRepsForStats(),
+              fetchDRepsForStats(), // Only fetch first 100 DReps
               fetch('/api/dreps/stats').then(res => res.json()).then(data => data.activeDRepsCount).catch(() => null), // Fetch active DReps count from Koios via API route
             ])
-              .then(([allDReps, activeCount]) => {
-                console.log(`Loaded ${allDReps.length} total DReps for stats`);
-                setAllDReps(allDReps);
+              .then(([drepSample, activeCount]) => {
+                console.log(`Loaded ${drepSample.length} DReps for stats`);
+                setAllDReps(drepSample);
                 setActiveDRepsCount(activeCount);
                 setLoadingAllDReps(false);
               })
               .catch((error) => {
-                console.error('Error fetching all DReps:', error);
-                // If fetching all DReps fails, use the paginated data as fallback
+                console.error('Error fetching DReps for stats:', error);
+                // If fetching fails, use the paginated data as fallback
                 setAllDReps(data.dreps);
                 setLoadingAllDReps(false);
               });

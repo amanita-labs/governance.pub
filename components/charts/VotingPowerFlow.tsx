@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { DRep } from '@/types/governance';
 
@@ -8,7 +8,7 @@ interface VotingPowerFlowProps {
   dreps: DRep[];
 }
 
-export function VotingPowerFlow({ dreps }: VotingPowerFlowProps) {
+function VotingPowerFlow({ dreps }: VotingPowerFlowProps) {
   const chartData = useMemo(() => {
     if (!dreps || dreps.length === 0) {
       return [];
@@ -86,4 +86,7 @@ export function VotingPowerFlow({ dreps }: VotingPowerFlowProps) {
     </div>
   );
 }
+
+const VotingPowerFlowMemo = memo(VotingPowerFlow);
+export { VotingPowerFlowMemo as VotingPowerFlow };
 

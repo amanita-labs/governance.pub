@@ -272,11 +272,12 @@ async function enrichDRepsWithKoios(dreps: DRep[]): Promise<DRep[]> {
 }
 
 /**
- * Fallback: Enrich DReps using Blockfrost (slower but more reliable)
+ * Enrich DReps using Blockfrost (reliable and consistent)
+ * Provides epoch information and voting history stats
  */
 async function enrichDRepsWithBlockfrost(dreps: DRep[]): Promise<DRep[]> {
   // Use the existing Blockfrost enrichment method
-  // This is slower but provides epoch information
+  // Enriches all DReps in parallel for better performance
   return Promise.all(
     dreps.map(drep => enrichDRepWithStats(drep))
   );
@@ -338,11 +339,11 @@ export async function getDRepsPage(page: number = 1, count: number = 20, enrich:
     });
     
     // Enrich DReps with voting history stats if requested
-    // Use Koios for fast bulk queries when enriching
+    // Always use Blockfrost for enrichment (Koios endpoints are unreliable)
     let enrichedDReps: DRep[] = mappedDReps;
     if (enrich && mappedDReps.length > 0) {
-      // Use Koios for bulk enrichment (much faster than individual Blockfrost requests)
-      enrichedDReps = await enrichDRepsWithKoios(mappedDReps);
+      // Use Blockfrost for enrichment (reliable and consistent)
+      enrichedDReps = await enrichDRepsWithBlockfrost(mappedDReps);
       
       // Also fetch metadata for each DRep to get names and descriptions
       // This is done in parallel batches for better performance

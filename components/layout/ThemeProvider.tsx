@@ -23,12 +23,27 @@ export function ThemeProvider({
   defaultTheme = 'system',
   storageKey = 'govtwool-theme',
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [actualTheme, setActualTheme] = useState<'dark' | 'light'>('light');
+  // Initialize theme from localStorage synchronously to avoid flash
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return defaultTheme;
+    const stored = localStorage.getItem(storageKey) as Theme | null;
+    return stored || defaultTheme;
+  });
+  const [actualTheme, setActualTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const root = window.document.documentElement;
+    const stored = localStorage.getItem(storageKey) as Theme | null;
+    const initialTheme = stored || defaultTheme;
+    
+    if (initialTheme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return initialTheme;
+  });
 
+  // Apply theme immediately on mount to prevent flash
   useEffect(() => {
     const root = window.document.documentElement;
-
     root.classList.remove('light', 'dark');
 
     if (theme === 'system') {
@@ -42,14 +57,6 @@ export function ThemeProvider({
       setActualTheme(theme);
     }
   }, [theme]);
-
-  useEffect(() => {
-    // Load theme from localStorage on mount
-    const stored = localStorage.getItem(storageKey) as Theme | null;
-    if (stored) {
-      setTheme(stored);
-    }
-  }, [storageKey]);
 
   const value = {
     theme,

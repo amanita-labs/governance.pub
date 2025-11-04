@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Card, CardContent, CardHeader } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { memo } from 'react';
+import { Card, CardContent, CardHeader } from './ui/Card';
+import { Badge } from './ui/Badge';
 import { Users, TrendingUp, ExternalLink, Vote, Activity, Shield } from 'lucide-react';
 import type { DRep } from '@/types/governance';
 import { isSpecialSystemDRep } from '@/lib/governance/drep-id';
@@ -35,7 +36,7 @@ function formatNumber(num: number | undefined): string {
   return num.toLocaleString();
 }
 
-export default function DRepCard({ drep }: DRepCardProps) {
+function DRepCard({ drep }: DRepCardProps) {
   const isSystemDRep = isSpecialSystemDRep(drep.drep_id);
   const systemDRepInfo = isSystemDRep ? getSystemDRepInfo(drep.drep_id) : null;
   
@@ -176,4 +177,6 @@ export default function DRepCard({ drep }: DRepCardProps) {
     </Link>
   );
 }
+
+export default memo(DRepCard);
 

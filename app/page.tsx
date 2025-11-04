@@ -2,6 +2,16 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Users, FileText, Vote, UserPlus, TrendingUp, BarChart3 } from 'lucide-react';
+import type { Metadata } from 'next';
+
+// Static metadata for better SEO and performance
+export const metadata: Metadata = {
+  title: 'GovTwool - Cardano Governance Made Simple',
+  description: 'A modern platform for participating in Cardano on-chain governance. Browse DReps, track actions, and make your voice heard in the ecosystem.',
+};
+
+// Mark as static page - no dynamic data fetching
+export const dynamic = 'force-static';
 
 export default function Home() {
   const features = [
