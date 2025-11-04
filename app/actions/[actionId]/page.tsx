@@ -1,5 +1,5 @@
 import { getGovernanceAction, getActionVotingResults } from '@/lib/governance';
-import ActionDetail from '@/components/ActionDetail';
+import ActionDetail from '@/components/features/ActionDetail';
 import { notFound } from 'next/navigation';
 
 export const revalidate = 60;

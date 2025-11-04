@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import DRepList from '@/components/DRepList';
-import { DRepsSummaryStats } from '@/components/DRepsSummaryStats';
+import DRepList from '@/components/features/DRepList';
+import { DRepsSummaryStats } from '@/components/features/DRepsSummaryStats';
 import type { DRep } from '@/types/governance';
 
 // Helper function to fetch all DReps for summary statistics

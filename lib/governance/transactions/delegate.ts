@@ -1,42 +1,36 @@
 import { Transaction } from '@meshsdk/core';
-import type { ConnectedWallet } from '@/lib/mesh';
-
-export interface DRepRegistrationData {
-  metadataUrl?: string;
-  anchorUrl?: string;
-  anchorHash?: string;
-}
+import type { ConnectedWallet } from '@/lib/api/mesh';
 
 /**
- * Build a transaction to register as a DRep
+ * Build a transaction to delegate voting rights to a DRep
  */
-export async function buildDRepRegistrationTransaction(
+export async function buildDelegationTransaction(
   wallet: ConnectedWallet,
-  registrationData: DRepRegistrationData
+  drepId: string
 ): Promise<Transaction> {
   const tx = new Transaction({ initiator: wallet.wallet });
   
-  // Register as DRep
+  // Delegate to DRep
   // Note: This is a simplified version - actual implementation depends on
   // Mesh SDK's governance transaction APIs
   // The exact API may vary, but the pattern is:
-  // tx.registerDRep(metadataUrl, anchorUrl, anchorHash)
+  // tx.delegateToDRep(drepId)
   
   // For now, we'll use a placeholder structure
   // In production, you would use Mesh SDK's governance transaction builder
-  // Example: await tx.registerDRep(registrationData.metadataUrl, ...);
+  // Example: await tx.delegateToDRep(drepId);
   
   return tx;
 }
 
 /**
- * Sign and submit a DRep registration transaction
+ * Sign and submit a delegation transaction
  */
-export async function submitDRepRegistrationTransaction(
+export async function submitDelegationTransaction(
   wallet: ConnectedWallet,
-  registrationData: DRepRegistrationData
+  drepId: string
 ): Promise<string> {
-  const tx = await buildDRepRegistrationTransaction(wallet, registrationData);
+  const tx = await buildDelegationTransaction(wallet, drepId);
   
   // Build and sign the transaction
   const unsignedTx = await tx.build();

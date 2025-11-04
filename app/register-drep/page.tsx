@@ -1,6 +1,6 @@
 'use client';
 
-import RegisterDRepForm from '@/components/RegisterDRepForm';
+import RegisterDRepForm from '@/components/features/RegisterDRepForm';
 
 export default function RegisterDRepPage() {
   return (

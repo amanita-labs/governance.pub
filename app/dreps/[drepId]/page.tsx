@@ -1,5 +1,5 @@
 import { getDRep, getDRepVotingHistory, getDRepMetadata, getDRepDelegators } from '@/lib/governance';
-import DRepDetail from '@/components/DRepDetail';
+import DRepDetail from '@/components/features/DRepDetail';
 import { notFound } from 'next/navigation';
 
 export const revalidate = 60;

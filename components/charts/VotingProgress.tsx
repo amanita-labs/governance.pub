@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent } from './ui/Card';
+import { Card, CardContent } from '../ui/Card';
 import type { ActionVotingBreakdown } from '@/types/governance';
 
 interface VotingProgressProps {

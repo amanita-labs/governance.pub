@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Clock, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import type { GovernanceAction } from '@/types/governance';
 import { cn } from '@/lib/utils';

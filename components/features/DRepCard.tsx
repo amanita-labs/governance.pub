@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { Card, CardContent, CardHeader } from './ui/Card';
-import { Badge } from './ui/Badge';
+import { Card, CardContent, CardHeader } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { Users, TrendingUp, ExternalLink, Vote, Activity, Shield } from 'lucide-react';
 import type { DRep } from '@/types/governance';
-import { isSpecialSystemDRep } from '@/lib/drep-id';
+import { isSpecialSystemDRep } from '@/lib/governance/drep-id';
 import { getSystemDRepInfo } from '@/lib/governance';
 import { cn } from '@/lib/utils';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent } from './ui/Card';
+import { Card, CardContent } from '../ui/Card';
 import { Users, TrendingUp, Vote, Activity } from 'lucide-react';
 import type { DRep } from '@/types/governance';
 

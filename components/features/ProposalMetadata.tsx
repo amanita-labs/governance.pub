@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
-import { Badge } from './ui/Badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { ExternalLink, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import type { GovernanceAction } from '@/types/governance';
 import { cn } from '@/lib/utils';
