@@ -44,17 +44,17 @@ If you prefer Infrastructure as Code, you can use the `backend/render.yaml` file
 1. **Sign up**: https://vercel.com
 2. **Import** your GitHub repository
 3. **Configure project**:
-   - **Root Directory**: `frontend`
+   - **Root Directory**: `frontend` (set this in Vercel dashboard → Settings → General → Root Directory)
    - **Framework Preset**: `Next.js` (auto-detected)
-   - Build Command: `npm run build` (default)
-   - Output Directory: `.next` (default)
+   - Build Command: `npm run build` (default, or set in vercel.json)
+   - Output Directory: `.next` (default, or set in vercel.json)
 4. **Set environment variables**:
    - `NEXT_PUBLIC_BACKEND_URL`: Your Render backend URL (e.g., `https://govtwool-backend.onrender.com`)
    - `BLOCKFROST_API_KEY`: (if frontend needs direct access)
    - `BLOCKFROST_NETWORK`: (if frontend needs direct access)
 5. **Deploy** - Vercel will automatically build and deploy your frontend
 
-> **Note**: The `vercel.json` file is already configured with the correct settings for the monorepo structure.
+> **Important**: Set the **Root Directory** to `frontend` in the Vercel dashboard (Settings → General → Root Directory), not in `vercel.json`. The `rootDirectory` property is not supported in `vercel.json` and must be configured in the dashboard.
 
 ## Step 3: Update Frontend API Routes (If Needed)
 
