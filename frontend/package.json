@@ -16,7 +16,6 @@
     "node": ">=20.9.0"
   },
   "dependencies": {
-    "@blockfrost/blockfrost-js": "^6.0.0",
     "@meshsdk/core": "^1.9.0-beta.86",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

@@ -51,7 +51,7 @@ export default function DRepsPage() {
             setLoadingAllDReps(true);
             Promise.all([
               fetchDRepsForStats(), // Only fetch first 100 DReps
-              fetch('/api/dreps/stats').then(res => res.json()).then(data => data.activeDRepsCount).catch(() => null), // Fetch active DReps count from Koios via API route
+              fetch('/api/dreps/stats').then(res => res.json()).then(data => data.active_dreps_count).catch(() => null), // Fetch active DReps count from backend via API route
             ])
               .then(([drepSample, activeCount]) => {
                 console.log(`Loaded ${drepSample.length} DReps for stats`);

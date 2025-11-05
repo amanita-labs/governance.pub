@@ -129,8 +129,9 @@ function formatTreasuryAmount(amount: string): string {
  * Get explorer URL for transaction
  */
 function getExplorerUrl(txHash: string): string {
-  // Use Blockfrost explorer or CardanoScan
-  const network = process.env.NEXT_PUBLIC_BLOCKFROST_NETWORK || 'mainnet';
+  // Use CardanoScan explorer
+  // Default to mainnet, but can be configured via environment variable
+  const network = process.env.NEXT_PUBLIC_NETWORK || 'mainnet';
   if (network === 'mainnet') {
     return `https://cardanoscan.io/transaction/${txHash}`;
   }

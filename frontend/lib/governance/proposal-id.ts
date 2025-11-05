@@ -2,12 +2,12 @@
  * Proposal ID Utilities
  * 
  * Handles conversion between different proposal ID formats:
- * - Koios CIP-129 format: gov_action1... (Bech32 encoded)
- * - Blockfrost format: tx_hash#cert_index or action_id
+ * - CIP-129 format: gov_action1... (Bech32 encoded)
+ * - Transaction hash format: tx_hash#cert_index or action_id
  */
 
 /**
- * Check if a proposal ID is in CIP-129 format (Koios format)
+ * Check if a proposal ID is in CIP-129 format
  * CIP-129 format starts with "gov_action1"
  */
 export function isCIP129ProposalId(proposalId: string): boolean {
@@ -20,7 +20,7 @@ export function isCIP129ProposalId(proposalId: string): boolean {
  * @returns Object with format and components
  */
 export function parseProposalId(proposalId: string): {
-  format: 'cip129' | 'blockfrost' | 'unknown';
+  format: 'cip129' | 'tx_hash' | 'unknown';
   tx_hash?: string;
   cert_index?: number;
   proposal_id?: string;
@@ -33,11 +33,11 @@ export function parseProposalId(proposalId: string): {
     };
   }
 
-  // Check if it's Blockfrost format (tx_hash#cert_index)
+  // Check if it's transaction hash format (tx_hash#cert_index)
   const hashIndexMatch = proposalId.match(/^([a-fA-F0-9]{64})#(\d+)$/);
   if (hashIndexMatch) {
     return {
-      format: 'blockfrost',
+      format: 'tx_hash',
       tx_hash: hashIndexMatch[1],
       cert_index: parseInt(hashIndexMatch[2], 10),
     };
@@ -46,7 +46,7 @@ export function parseProposalId(proposalId: string): {
   // Check if it's just a tx_hash (64 hex characters)
   if (/^[a-fA-F0-9]{64}$/.test(proposalId)) {
     return {
-      format: 'blockfrost',
+      format: 'tx_hash',
       tx_hash: proposalId,
       cert_index: 0, // Default to 0 if not specified
     };
@@ -69,7 +69,7 @@ export function extractTxHashAndIndex(proposalId: string): {
 } | null {
   const parsed = parseProposalId(proposalId);
   
-  if (parsed.format === 'blockfrost' && parsed.tx_hash) {
+  if (parsed.format === 'tx_hash' && parsed.tx_hash) {
     return {
       tx_hash: parsed.tx_hash,
       cert_index: parsed.cert_index || 0,
@@ -85,7 +85,7 @@ export function extractTxHashAndIndex(proposalId: string): {
  * Format a proposal ID from tx_hash and cert_index
  * @param tx_hash Transaction hash
  * @param cert_index Certificate index (defaults to 0)
- * @returns Formatted proposal ID in Blockfrost format
+ * @returns Formatted proposal ID in tx_hash#cert_index format
  */
 export function formatProposalId(tx_hash: string, cert_index: number = 0): string {
   return `${tx_hash}#${cert_index}`;

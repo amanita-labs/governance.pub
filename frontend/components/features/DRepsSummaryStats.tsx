@@ -6,7 +6,7 @@ import type { DRep } from '@/types/governance';
 
 interface DRepsSummaryStatsProps {
   dreps: DRep[];
-  activeDRepsCount?: number | null; // Total active DReps from Koios epoch summary
+  activeDRepsCount?: number | null; // Total active DReps from backend
 }
 
 export function DRepsSummaryStats({ dreps, activeDRepsCount }: DRepsSummaryStatsProps) {
@@ -15,7 +15,7 @@ export function DRepsSummaryStats({ dreps, activeDRepsCount }: DRepsSummaryStats
   // The stats will update once all DReps are loaded
   const stats = {
     total: dreps.length,
-    // Use Koios epoch summary for active DReps count if available, otherwise fallback to local count
+    // Use backend stats for active DReps count if available, otherwise fallback to local count
     active: activeDRepsCount !== null && activeDRepsCount !== undefined 
       ? activeDRepsCount 
       : dreps.filter(d => {

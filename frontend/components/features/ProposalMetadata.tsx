@@ -30,7 +30,7 @@ function extractString(value: any): string | undefined {
  * Handles CIP-100/CIP-108 format
  */
 function getMetadata(action: GovernanceAction) {
-  // Try meta_json first (from Koios)
+  // Try meta_json first (from backend)
   if (action.meta_json) {
     try {
       const parsed = typeof action.meta_json === 'string' 

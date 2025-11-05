@@ -1,7 +1,7 @@
 /**
  * DRep ID Conversion Utilities
  * 
- * Handles conversion between CIP-105 (Blockfrost) and CIP-129 (Koios) DRep ID formats.
+ * Handles conversion between CIP-105 (Legacy) and CIP-129 (New) DRep ID formats.
  * 
  * CIP-105 (Legacy):
  * - Raw credential hex is encoded directly
@@ -13,7 +13,7 @@
  * - Hex length: 58 characters
  * - Bech32 prefix: "drep" for both key-based and script-based
  * 
- * Blockfrost uses CIP-105, Koios uses CIP-129.
+ * The backend handles format conversion automatically.
  * We use CIP-129 throughout the application for consistency.
  */
 
@@ -183,7 +183,7 @@ export function normalizeToCIP129(drepID: string): string {
 }
 
 /**
- * Convert DRep ID to CIP-105 format (for Blockfrost API calls)
+ * Convert DRep ID to CIP-105 format (legacy format)
  */
 export function convertToCIP105(drepID: string): string {
   if (!isValidDRepID(drepID)) {
@@ -201,7 +201,7 @@ export function convertToCIP105(drepID: string): string {
 }
 
 /**
- * Convert DRep ID to CIP-129 format (for Koios API calls)
+ * Convert DRep ID to CIP-129 format (new standard format)
  */
 export function convertToCIP129(drepID: string): string {
   if (!isValidDRepID(drepID)) {

@@ -40,9 +40,9 @@ export interface DRep {
 export interface GovernanceAction {
   tx_hash: string;
   action_id: string;
-  // CIP-129 proposal ID from Koios (e.g., gov_action1...)
+  // CIP-129 proposal ID (e.g., gov_action1...)
   proposal_id?: string;
-  // For Blockfrost metadata endpoint
+  // Transaction hash for metadata lookup
   proposal_tx_hash?: string;
   proposal_index?: number;
   cert_index?: number; // Alias for proposal_index
@@ -64,7 +64,7 @@ export interface GovernanceAction {
   // Metadata fields
   meta_url?: string;
   meta_hash?: string;
-  meta_json?: any; // Parsed metadata JSON from Koios
+  meta_json?: any; // Parsed metadata JSON
   meta_language?: string; // CIP-100 language code
   meta_comment?: string;
   meta_is_valid?: boolean | null;
@@ -75,7 +75,7 @@ export interface GovernanceAction {
   };
   // Parameter proposal (for parameter_change type)
   param_proposal?: any; // Parameter change object
-  // Block time from Koios
+  // Block time
   block_time?: number; // UNIX timestamp
   // Existing metadata structure (for backward compatibility)
   metadata?: {
@@ -132,7 +132,7 @@ export interface DRepDelegator {
 }
 
 /**
- * Detailed voting summary from Koios API
+ * Detailed voting summary from backend API
  * Includes percentages and vote counts for each voter type
  */
 export interface ProposalVotingSummary {

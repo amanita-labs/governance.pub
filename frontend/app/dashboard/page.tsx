@@ -42,7 +42,7 @@ export default async function DashboardPage() {
     })
     .slice(0, 6);
 
-  // Get recent actions (already sorted by Koios/Blockfrost)
+  // Get recent actions (sorted by backend)
   const recentActions = actionsPage.actions.slice(0, 6);
 
   return (

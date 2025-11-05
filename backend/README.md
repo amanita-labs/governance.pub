@@ -58,28 +58,25 @@ npm run dev:all
 
 ## API Endpoints
 
-All endpoints are prefixed with `/api`:
+For detailed API documentation, see [API.md](./API.md).
 
-### DRep Endpoints
+### Quick Reference
 
+**DRep Endpoints:**
 - `GET /api/dreps` - Get paginated DRep list
-  - Query params: `page` (default: 1), `count` (default: 20), `enrich` (optional)
+- `GET /api/dreps/stats` - Get DRep statistics
 - `GET /api/dreps/:id` - Get single DRep details
 - `GET /api/dreps/:id/delegators` - Get DRep delegators
 - `GET /api/dreps/:id/votes` - Get DRep voting history
 - `GET /api/dreps/:id/metadata` - Get DRep metadata
-- `GET /api/dreps/stats` - Get DRep statistics
 
-### Governance Action Endpoints
-
+**Governance Action Endpoints:**
 - `GET /api/actions` - Get paginated governance actions
-  - Query params: `page` (default: 1), `count` (default: 20), `enrich` (optional)
 - `GET /api/actions/:id` - Get single governance action
 - `GET /api/actions/:id/votes` - Get action voting results
 
-### Health Check
-
-- `GET /health` - Health check endpoint
+**Health Check:**
+- `GET /health` - Health check endpoint with cache statistics
 
 ## Provider Routing Strategy
 

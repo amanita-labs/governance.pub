@@ -132,7 +132,7 @@ export default function Home() {
                 <div className="space-y-4 text-muted-foreground leading-relaxed">
                   <p className="text-lg">
                     GovTwool is a user-friendly interface for Cardano's on-chain governance system. 
-                    Built with Next.js 16 and powered by Mesh SDK and Blockfrost API, it provides 
+                    Built with Next.js 16 and powered by Mesh SDK, it provides 
                     an intuitive way to interact with Cardano governance features.
                   </p>
                   <p>

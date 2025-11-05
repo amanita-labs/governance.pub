@@ -7,12 +7,9 @@ export const NETWORKS = {
 
 export type Network = typeof NETWORKS[keyof typeof NETWORKS];
 
-// API endpoints
+// API endpoints (backend handles all data provider access)
 export const API_ENDPOINTS = {
-  KOIOS: 'https://api.koios.xyz/api/v1',
-  BLOCKFROST_MAINNET: 'https://cardano-mainnet.blockfrost.io/api/v0',
-  BLOCKFROST_PREPROD: 'https://cardano-preprod.blockfrost.io/api/v0',
-  BLOCKFROST_PREVIEW: 'https://cardano-preview.blockfrost.io/api/v0',
+  // Backend API endpoint is configured via NEXT_PUBLIC_BACKEND_URL
 } as const;
 
 // Cardano constants
