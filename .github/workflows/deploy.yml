@@ -30,6 +30,25 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
+      - name: 🦀 Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy
+
+      - name: 💾 Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            backend/target/
+          key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -37,9 +56,19 @@ jobs:
           cache: 'npm'
 
       - name: 📥 Install dependencies
+        working-directory: frontend
         run: npm ci
 
+      - name: 🦀 Build Rust backend
+        working-directory: backend
+        env:
+          BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
+          BLOCKFROST_NETWORK: ${{ secrets.BLOCKFROST_NETWORK || 'mainnet' }}
+          KOIOS_BASE_URL: ${{ secrets.KOIOS_BASE_URL || 'https://preview.koios.rest/api/v1' }}
+        run: cargo build --release
+
       - name: 🏗️ Build project
+        working-directory: frontend
         env:
           BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
           BLOCKFROST_NETWORK: ${{ secrets.BLOCKFROST_NETWORK || 'mainnet' }}
@@ -49,10 +78,13 @@ jobs:
       - name: 📦 Build artifacts
         run: |
           mkdir -p deployment
-          cp -r .next deployment/
-          cp -r public deployment/ 2>/dev/null || true
-          cp package.json deployment/
-          cp package-lock.json deployment/
+          cp -r frontend/.next deployment/
+          cp -r frontend/public deployment/ 2>/dev/null || true
+          cp frontend/package.json deployment/
+          cp frontend/package-lock.json deployment/
+          mkdir -p deployment/backend
+          cp backend/target/release/govtwool-backend deployment/backend/ 2>/dev/null || true
+          cp backend/Cargo.toml deployment/backend/ 2>/dev/null || true
 
       - name: 📤 Upload deployment artifacts
         uses: actions/upload-artifact@v4

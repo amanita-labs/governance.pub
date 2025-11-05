@@ -26,6 +26,25 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
+      - name: 🦀 Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy
+
+      - name: 💾 Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            backend/target/
+          key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+
       - name: 📦 Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -41,12 +60,13 @@ jobs:
         uses: actions/cache@v4
         id: cache-node-modules
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
       - name: 📥 Install dependencies
+        working-directory: frontend
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
@@ -54,19 +74,30 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            .next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx') }}
+            frontend/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-${{ hashFiles('frontend/**/*.ts', 'frontend/**/*.tsx', 'frontend/**/*.js', 'frontend/**/*.jsx') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-
 
       - name: 🔍 Lint code
+        working-directory: frontend
         run: npm run lint -- --max-warnings=100 || echo "⚠️ Linting found issues (see output above)"
         continue-on-error: true
 
       - name: 🔧 Type check
+        working-directory: frontend
         run: npx tsc --noEmit
 
+      - name: 🦀 Check Rust code
+        working-directory: backend
+        run: cargo check --all-targets
+
+      - name: 🦀 Build Rust backend
+        working-directory: backend
+        run: cargo build --release
+
       - name: 🏗️ Build project
+        working-directory: frontend
         env:
           # Next.js build requires these env vars, but we'll use dummy values for CI
           # In production, these should be set as GitHub secrets
@@ -79,5 +110,7 @@ jobs:
         if: success()
         with:
           name: build-artifacts
-          path: .next
+          path: |
+            frontend/.next
+            backend/target/release/govtwool-backend
           retention-days: 7

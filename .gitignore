@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 
@@ -9,11 +9,14 @@
 /coverage
 
 # next.js
-/.next/
+frontend/.next/
+frontend/out/
+.next/
 /out/
 
 # production
 /build
+frontend/build/
 
 # misc
 .DS_Store
@@ -34,3 +37,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# rust
+backend/target/
+/target/
+Cargo.lock
+**/*.rs.bk
