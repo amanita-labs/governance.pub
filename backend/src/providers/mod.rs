@@ -6,7 +6,7 @@ pub mod cached_router;
 pub use blockfrost::BlockfrostProvider;
 pub use koios::KoiosProvider;
 pub use router::ProviderRouter;
-pub use cached_router::{CachedProviderRouter, CacheStats};
+pub use cached_router::CachedProviderRouter;
 
 use crate::models::*;
 use async_trait::async_trait;
