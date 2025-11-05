@@ -25,13 +25,20 @@ GovTwool is a playful Cardano governance application that makes participating in
 
 ## Tech Stack
 
+**Frontend:**
 - **Next.js 16.0.0** with Turbopack for fast development
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
 - **Mesh SDK** for wallet connection and transaction building
-- **Blockfrost API** for Cardano blockchain data
 - **Recharts** for data visualization
 - **Framer Motion** for animations
+
+**Backend:**
+- **Rust** with Axum web framework
+- **Tokio** for async runtime
+- **Moka** for high-performance caching
+- **Blockfrost API** and **Koios API** for Cardano blockchain data
+- Provider abstraction layer with smart routing
 
 ## Setup
 
@@ -57,54 +64,102 @@ cd govtwool
 npm install
 ```
 
-3. Create a `.env.local` file in the root directory:
-```env
-BLOCKFROST_API_KEY=your_blockfrost_project_id_here
-BLOCKFROST_NETWORK=mainnet
-```
+3. Create environment files:
 
-   You can copy the example file for reference:
-   ```bash
-   cp .env.local.example .env.local
+   **Frontend** - Create `frontend/.env.local`:
+   ```env
+   BLOCKFROST_API_KEY=your_blockfrost_project_id_here
+   BLOCKFROST_NETWORK=mainnet
    ```
    
-   Then edit `.env.local` and add your Blockfrost Project ID (API key). 
+   **Backend** - Create `backend/.env`:
+   ```env
+   BLOCKFROST_API_KEY=your_blockfrost_project_id_here
+   BLOCKFROST_NETWORK=mainnet
+   KOIOS_BASE_URL=https://preview.koios.rest/api/v1
+   BACKEND_PORT=8080
+   CACHE_ENABLED=true
+   CACHE_MAX_ENTRIES=10000
+   ```
+   
    Get your API key from [Blockfrost.io](https://blockfrost.io/).
 
-4. Run the development server:
-```bash
-npm run dev
-```
+4. Run the development servers:
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+   **Frontend only:**
+   ```bash
+   npm run dev
+   # or
+   cd frontend && npm run dev
+   ```
+
+   **Backend only:**
+   ```bash
+   npm run dev:backend
+   # or
+   cd backend && cargo run
+   ```
+
+   **Both frontend and backend:**
+   ```bash
+   npm run dev:all
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) for frontend
+   - Backend API runs on [http://localhost:8080](http://localhost:8080)
 
 ### Building for Production
 
+**Frontend:**
 ```bash
 npm run build
 npm start
 ```
 
+**Backend:**
+```bash
+npm run build:backend
+cd backend && ./target/release/govtwool-backend
+```
+
+**Both:**
+```bash
+npm run build:all
+```
+
 ## Project Structure
+
+This is a monorepo with separate frontend and backend directories:
 
 ```
 govtwool/
-├── app/                    # Next.js app router pages
-│   ├── actions/           # Governance actions pages
-│   ├── dreps/             # DRep pages
-│   ├── delegate/          # Delegation page
-│   ├── register-drep/     # DRep registration page
-│   └── api/               # API routes
-├── components/            # React components
-│   ├── ui/               # Base UI components
-│   └── ...               # Feature components
-├── lib/                   # Utility libraries
-│   ├── blockfrost.ts     # Blockfrost API client
-│   ├── mesh.ts           # Mesh SDK utilities
-│   └── transactions/     # Transaction builders
-├── hooks/                 # React hooks
-├── types/                 # TypeScript types
-└── ...
+├── frontend/              # Next.js frontend application
+│   ├── app/              # Next.js app router pages
+│   │   ├── actions/      # Governance actions pages
+│   │   ├── dreps/        # DRep pages
+│   │   ├── delegate/     # Delegation page
+│   │   ├── register-drep/# DRep registration page
+│   │   └── api/          # API routes
+│   ├── components/       # React components
+│   │   ├── ui/           # Base UI components
+│   │   └── ...           # Feature components
+│   ├── lib/              # Utility libraries
+│   │   ├── blockfrost.ts # Blockfrost API client
+│   │   ├── mesh.ts       # Mesh SDK utilities
+│   │   └── transactions/ # Transaction builders
+│   ├── hooks/            # React hooks
+│   ├── types/            # TypeScript types
+│   └── package.json      # Frontend dependencies
+├── backend/              # Rust backend service
+│   ├── src/              # Rust source code
+│   │   ├── api/          # API endpoints
+│   │   ├── providers/    # Data provider abstractions
+│   │   ├── models/      # Data models
+│   │   ├── cache/       # Caching layer
+│   │   └── main.rs       # Application entry point
+│   └── Cargo.toml        # Rust dependencies
+├── package.json          # Root workspace configuration
+└── README.md
 ```
 
 ## Usage

@@ -15,6 +15,25 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history for better analysis
 
+      - name: 🦀 Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy
+
+      - name: 💾 Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            backend/target/
+          key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -22,17 +41,31 @@ jobs:
           cache: 'npm'
 
       - name: 📥 Install dependencies
+        working-directory: frontend
         run: npm ci
 
       - name: 🔍 Run linter
+        working-directory: frontend
         run: npm run lint
         continue-on-error: true
 
       - name: 🔧 Type check
+        working-directory: frontend
         run: npx tsc --noEmit
         continue-on-error: true
 
+      - name: 🦀 Check Rust code
+        working-directory: backend
+        run: cargo check --all-targets
+        continue-on-error: true
+
+      - name: 🦀 Clippy lint (Rust)
+        working-directory: backend
+        run: cargo clippy -- -D warnings || echo "⚠️ Clippy found issues"
+        continue-on-error: true
+
       - name: 📏 Check build size
+        working-directory: frontend
         run: |
           npm run build 2>&1 | tee build-output.txt
           # Extract build info if available
@@ -55,4 +88,9 @@ jobs:
           # Check for TODO/FIXME comments
           if git diff origin/${{ github.base_ref }}...HEAD --name-only | grep -E '\.(ts|tsx|js|jsx)$' | xargs grep -i "TODO\|FIXME" 2>/dev/null; then
             echo "📝 Found TODO/FIXME comments. Review if they should be addressed." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check for Rust-specific issues
+          if git diff origin/${{ github.base_ref }}...HEAD --name-only | grep -E '\.rs$' | xargs grep -i "TODO\|FIXME\|unimplemented\|panic!" 2>/dev/null; then
+            echo "🦀 Found TODO/FIXME/unimplemented!/panic! in Rust code. Review if they should be addressed." >> $GITHUB_STEP_SUMMARY
           fi
