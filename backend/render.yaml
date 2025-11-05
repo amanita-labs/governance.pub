@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: govtwool-backend
+    env: rust
+    buildCommand: cargo build --release
+    startCommand: ./target/release/govtwool-backend
+    envVars:
+      - key: BLOCKFROST_API_KEY
+        sync: false
+      - key: BLOCKFROST_NETWORK
+        value: mainnet
+      - key: KOIOS_BASE_URL
+        value: https://preview.koios.rest/api/v1
+      - key: CACHE_ENABLED
+        value: "true"
+      - key: CACHE_MAX_ENTRIES
+        value: "10000"
+

@@ -1,0 +1,10 @@
+target/
+.git/
+.gitignore
+*.md
+.env
+.env.example
+Dockerfile
+render.yaml
+railway.json
+

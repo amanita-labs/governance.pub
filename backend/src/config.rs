@@ -17,7 +17,8 @@ impl Config {
         dotenv::dotenv().ok();
 
         Ok(Config {
-            server_port: env::var("BACKEND_PORT")
+            server_port: env::var("PORT")
+                .or_else(|_| env::var("BACKEND_PORT"))
                 .unwrap_or_else(|_| "8080".to_string())
                 .parse()
                 .unwrap_or(8080),
