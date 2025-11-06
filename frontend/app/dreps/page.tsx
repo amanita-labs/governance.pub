@@ -235,9 +235,15 @@ export default function DRepsPage() {
           const data = await response.json();
           rememberMetadataFrom(data.dreps);
           const drepsWithCachedMetadata = applyMetadataFromCache(data.dreps);
+          const normalizedHasMore =
+            typeof data.hasMore === 'boolean'
+              ? data.hasMore
+              : typeof data.has_more === 'boolean'
+                ? data.has_more
+                : Boolean(data.hasMore ?? data.has_more);
           if (!isCancelled) {
             setDReps(drepsWithCachedMetadata);
-            setHasMore(data.hasMore);
+            setHasMore(normalizedHasMore);
           }
 
           const drepsNeedingMetadata = data.dreps.filter((drep: DRep) => {

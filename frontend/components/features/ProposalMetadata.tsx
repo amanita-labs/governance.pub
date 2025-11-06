@@ -39,27 +39,38 @@ function getMetadata(action: GovernanceAction) {
       
       // Check if this is CIP-100/CIP-108 format with body structure
       if (parsed.body && typeof parsed.body === 'object') {
-        // Extract CIP-100/CIP-108 format metadata
+        const body = parsed.body as Record<string, unknown>;
         return {
-          title: extractString(parsed.body.title),
-          abstract: extractString(parsed.body.abstract),
-          description: extractString(parsed.body.abstract) || extractString(parsed.body.description),
-          motivation: extractString(parsed.body.motivation),
-          rationale: extractString(parsed.body.rationale),
-          references: parsed.body.references,
-          // Keep other top-level fields
-          authors: parsed.authors,
+          title: extractString(body.title),
+          abstract: extractString(body.abstract),
+          description: extractString(body.abstract) || extractString(body.description),
+          motivation: extractString(body.motivation),
+          rationale: extractString(body.rationale),
+          authors: body.authors ?? parsed.authors ?? body.author,
+          references: body.references ?? parsed.references,
           hashAlgorithm: parsed.hashAlgorithm,
         };
-      } else {
-        // Standard format - ensure fields are strings
-        return {
-          ...parsed,
-          title: extractString(parsed.title) || parsed.title,
-          description: extractString(parsed.description) || parsed.description,
-          rationale: extractString(parsed.rationale) || parsed.rationale,
-        };
       }
+
+      const fallbackAuthors =
+        parsed.authors ??
+        parsed.author ??
+        parsed.metadata?.authors ??
+        parsed.body?.authors;
+      const fallbackReferences =
+        parsed.references ??
+        parsed.body?.references ??
+        parsed.metadata?.references;
+
+      // Standard format - ensure fields are strings
+      return {
+        ...parsed,
+        title: extractString(parsed.title) || parsed.title,
+        description: extractString(parsed.description) || parsed.description,
+        rationale: extractString(parsed.rationale) || parsed.rationale,
+        authors: fallbackAuthors,
+        references: fallbackReferences,
+      };
     } catch (e) {
       console.warn('Failed to parse meta_json:', e);
     }
@@ -73,6 +84,8 @@ function getMetadata(action: GovernanceAction) {
       abstract: extractString(action.metadata.abstract) || action.metadata.abstract,
       description: extractString(action.metadata.description) || extractString(action.metadata.abstract) || action.metadata.description,
       rationale: extractString(action.metadata.rationale) || action.metadata.rationale,
+      authors: action.metadata.authors,
+      references: action.metadata.references,
     };
   }
 
@@ -81,6 +94,149 @@ function getMetadata(action: GovernanceAction) {
     title: action.description,
     description: action.description,
   };
+}
+
+type NormalizedReference = {
+  label?: string;
+  uri?: string;
+  type?: string;
+  description?: string;
+};
+
+function normalizeAuthors(authors: unknown): string[] {
+  if (!authors) {
+    return [];
+  }
+
+  if (typeof authors === 'string') {
+    return authors.trim() ? [authors.trim()] : [];
+  }
+
+  if (Array.isArray(authors)) {
+    return authors
+      .map((author) => {
+        if (!author) {
+          return undefined;
+        }
+        if (typeof author === 'string') {
+          return author.trim();
+        }
+        if (typeof author === 'object') {
+          const record = author as Record<string, unknown>;
+          const value =
+            extractString(record.name) ??
+            extractString(record.fullName) ??
+            extractString(record.displayName) ??
+            extractString(record.handle) ??
+            extractString(record.title) ??
+            extractString(record.label) ??
+            extractString(record.author);
+          return value?.trim();
+        }
+        return undefined;
+      })
+      .filter((value): value is string => Boolean(value && value.trim()));
+  }
+
+  if (typeof authors === 'object') {
+    const record = authors as Record<string, unknown>;
+    const value =
+      extractString(record.name) ??
+      extractString(record.fullName) ??
+      extractString(record.displayName) ??
+      extractString(record.handle) ??
+      extractString(record.title) ??
+      extractString(record.label);
+    return value?.trim() ? [value.trim()] : [];
+  }
+
+  return [];
+}
+
+function normalizeReferences(references: unknown): NormalizedReference[] {
+  if (!references) {
+    return [];
+  }
+
+  const toArray = (value: unknown): unknown[] => {
+    if (!value) {
+      return [];
+    }
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (typeof value === 'object') {
+      return Object.entries(value as Record<string, unknown>).map(([key, entry]) => {
+        if (typeof entry === 'string') {
+          return { label: key, uri: entry };
+        }
+        if (typeof entry === 'object' && entry !== null) {
+          const entryRecord = entry as Record<string, unknown>;
+          return {
+            label: extractString(entryRecord.label) ?? key,
+            uri: extractString(entryRecord.uri) ?? extractString(entryRecord.url),
+            type: extractString(entryRecord['@type']) ?? extractString(entryRecord.type),
+            description: extractString(entryRecord.description),
+          };
+        }
+        return { label: key };
+      });
+    }
+    return [value];
+  };
+
+  return toArray(references)
+    .map((ref) => {
+      if (!ref) {
+        return null;
+      }
+      if (typeof ref === 'string') {
+        return { label: ref.trim() };
+      }
+      if (typeof ref === 'object') {
+        const record = ref as Record<string, unknown>;
+        const label =
+          extractString(record.label) ??
+          extractString(record.name) ??
+          extractString(record.title) ??
+          extractString(record.description);
+        const uri =
+          extractString(record.uri) ??
+          extractString(record.url) ??
+          extractString(record.href) ??
+          extractString(record.link);
+        const type = extractString(record['@type']) ?? extractString(record.type);
+        const description = extractString(record.description);
+
+        if (!label && !uri) {
+          return null;
+        }
+
+        return {
+          label: label?.trim(),
+          uri,
+          type: type?.trim(),
+          description: description?.trim(),
+        };
+      }
+      return null;
+    })
+    .filter((ref): ref is NormalizedReference => Boolean(ref));
+}
+
+function resolveReferenceUri(uri?: string): string | undefined {
+  if (!uri) {
+    return undefined;
+  }
+
+  if (uri.startsWith('ipfs://')) {
+    const path = uri.slice('ipfs://'.length);
+    if (path) {
+      return `https://ipfs.io/ipfs/${path}`;
+    }
+  }
+
+  return uri;
 }
 
 /**
@@ -125,6 +281,15 @@ export function ProposalMetadata({ action }: ProposalMetadataProps) {
   addSection('Description', metadata.description);
   addSection('Rationale', metadata.rationale);
 
+  const authors = normalizeAuthors(
+    (metadata as Record<string, unknown>)?.authors ??
+      (metadata as Record<string, unknown>)?.author
+  );
+  const references = normalizeReferences(
+    (metadata as Record<string, unknown>)?.references ??
+      (metadata as Record<string, unknown>)?.links
+  );
+
   if (!hasMetadata) {
     return null;
   }
@@ -168,6 +333,61 @@ export function ProposalMetadata({ action }: ProposalMetadataProps) {
             <Markdown className="text-sm leading-relaxed">{section.content}</Markdown>
           </div>
         ))}
+
+        {authors.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground mb-1">Authors</h4>
+            <ul className="list-disc pl-5 space-y-1">
+              {authors.map((author, index) => (
+                <li key={`${author}-${index}`} className="text-sm text-foreground">
+                  {author}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {references.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground mb-1">References</h4>
+            <ul className="space-y-3">
+              {references.map((reference, index) => {
+                const resolvedUri = resolveReferenceUri(reference.uri);
+                const displayUri = reference.uri || resolvedUri;
+                return (
+                  <li key={`${reference.label ?? reference.uri ?? index}`} className="text-sm text-foreground">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {reference.type && (
+                          <Badge variant="outline" className="text-xs uppercase tracking-wide">
+                            {reference.type}
+                          </Badge>
+                        )}
+                        <span className="font-medium">
+                          {reference.label || reference.uri}
+                        </span>
+                      </div>
+                      {reference.description && (
+                        <p className="text-xs text-muted-foreground">{reference.description}</p>
+                      )}
+                      {resolvedUri && (
+                        <a
+                          href={resolvedUri}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-field-green underline underline-offset-2 hover:text-field-green/80"
+                        >
+                          <span className="truncate max-w-full">{displayUri}</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
         {action.meta_comment && (
           <div>

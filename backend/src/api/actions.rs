@@ -1,10 +1,10 @@
+use crate::models::*;
+use crate::providers::CachedProviderRouter;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
 };
-use crate::models::*;
-use crate::providers::CachedProviderRouter;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -57,4 +57,3 @@ pub async fn get_action_votes(
         }
     }
 }
-

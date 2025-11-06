@@ -37,14 +37,14 @@ impl BlockfrostProvider {
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
-            
+
             if status == 400 {
                 if error_text.contains("Invalid path") || error_text.contains("not found") {
                     tracing::warn!("Blockfrost endpoint not available: {}", path);
                     return Ok(None);
                 }
             }
-            
+
             return Err(anyhow::anyhow!(
                 "Blockfrost API error: {} {}",
                 status,
@@ -66,20 +66,12 @@ impl BlockfrostProvider {
             hex: drep["hex"].as_str().map(|s| s.to_string()),
             view: drep["view"].as_str().map(|s| s.to_string()),
             url: drep["url"].as_str().map(|s| s.to_string()),
-            metadata: drep["metadata"]
-                .as_object()
-                .map(|_| DRepMetadata {
-                    extra: drep["metadata"].clone(),
-                }),
+            metadata: drep["metadata"].as_object().map(|_| DRepMetadata {
+                extra: drep["metadata"].clone(),
+            }),
             anchor: drep["anchor"].as_object().map(|anchor| DRepAnchor {
-                url: anchor["url"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .to_string(),
-                data_hash: anchor["data_hash"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .to_string(),
+                url: anchor["url"].as_str().unwrap_or_default().to_string(),
+                data_hash: anchor["data_hash"].as_str().unwrap_or_default().to_string(),
             }),
             voting_power: drep["voting_power"]
                 .as_str()
@@ -102,14 +94,30 @@ impl BlockfrostProvider {
             has_script: drep["has_script"].as_bool(),
             retired: drep["retired"].as_bool(),
             expired: drep["expired"].as_bool(),
-            registration_tx_hash: drep["registration_tx_hash"]
-                .as_str()
-                .map(|s| s.to_string()),
+            registration_tx_hash: drep["registration_tx_hash"].as_str().map(|s| s.to_string()),
             registration_epoch: drep["registration_epoch"].as_u64().map(|v| v as u32),
             delegator_count: None,
             vote_count: None,
             last_vote_epoch: None,
             has_profile: None,
+            given_name: None,
+            objectives: None,
+            motivations: None,
+            qualifications: None,
+            votes_last_year: None,
+            identity_references: None,
+            link_references: None,
+            image_url: None,
+            image_hash: None,
+            latest_registration_date: None,
+            latest_tx_hash: drep["tx_hash"].as_str().map(|s| s.to_string()),
+            deposit: drep["deposit"]
+                .as_str()
+                .map(|s| s.to_string())
+                .or_else(|| drep["deposit"].as_u64().map(|v| v.to_string())),
+            metadata_error: drep["metadata_error"].as_str().map(|s| s.to_string()),
+            payment_address: None,
+            is_script_based: drep["has_script"].as_bool(),
         };
 
         // Determine status
@@ -135,21 +143,15 @@ impl BlockfrostProvider {
                 .ok_or_else(|| anyhow::anyhow!("Missing action_id"))?
                 .to_string(),
             proposal_id: action["proposal_id"].as_str().map(|s| s.to_string()),
-            proposal_tx_hash: action["proposal_tx_hash"]
-                .as_str()
-                .map(|s| s.to_string()),
+            proposal_tx_hash: action["proposal_tx_hash"].as_str().map(|s| s.to_string()),
             proposal_index: action["proposal_index"].as_u64().map(|v| v as u32),
             cert_index: action["cert_index"].as_u64().map(|v| v as u32),
             deposit: action["deposit"]
                 .as_str()
                 .map(|s| s.to_string())
                 .or_else(|| action["deposit"].as_u64().map(|v| v.to_string())),
-            reward_account: action["reward_account"]
-                .as_str()
-                .map(|s| s.to_string()),
-            return_address: action["return_address"]
-                .as_str()
-                .map(|s| s.to_string()),
+            reward_account: action["reward_account"].as_str().map(|s| s.to_string()),
+            return_address: action["return_address"].as_str().map(|s| s.to_string()),
             r#type: action["type"]
                 .as_str()
                 .ok_or_else(|| anyhow::anyhow!("Missing type"))?
@@ -178,7 +180,8 @@ impl BlockfrostProvider {
                     .unwrap_or_default(),
                 address: w["address"].as_str().map(|s| s.to_string()),
             }),
-            param_proposal: (!action["param_proposal"].is_null()).then(|| action["param_proposal"].clone()),
+            param_proposal: (!action["param_proposal"].is_null())
+                .then(|| action["param_proposal"].clone()),
             block_time: None,
             metadata: (!action["metadata"].is_null()).then(|| action["metadata"].clone()),
         })
@@ -187,11 +190,7 @@ impl BlockfrostProvider {
 
 #[async_trait]
 impl Provider for BlockfrostProvider {
-    async fn get_dreps_page(
-        &self,
-        page: u32,
-        count: u32,
-    ) -> Result<DRepsPage, anyhow::Error> {
+    async fn get_dreps_page(&self, page: u32, count: u32) -> Result<DRepsPage, anyhow::Error> {
         let path = format!("/governance/dreps?page={}&count={}", page, count);
         let json = self.fetch(&path).await?;
 
@@ -244,10 +243,7 @@ impl Provider for BlockfrostProvider {
 
                 for item in arr {
                     all_delegators.push(DRepDelegator {
-                        address: item["address"]
-                            .as_str()
-                            .unwrap_or_default()
-                            .to_string(),
+                        address: item["address"].as_str().unwrap_or_default().to_string(),
                         amount: item["amount"]
                             .as_str()
                             .map(|s| s.to_string())
@@ -295,12 +291,8 @@ impl Provider for BlockfrostProvider {
                         cert_index: item["cert_index"].as_u64().map(|v| v as u32),
                         proposal_id: item["proposal_id"].as_str().map(|s| s.to_string()),
                         action_id: item["proposal_id"].as_str().map(|s| s.to_string()),
-                        proposal_tx_hash: item["proposal_tx_hash"]
-                            .as_str()
-                            .map(|s| s.to_string()),
-                        proposal_cert_index: item["proposal_cert_index"]
-                            .as_u64()
-                            .map(|v| v as u32),
+                        proposal_tx_hash: item["proposal_tx_hash"].as_str().map(|s| s.to_string()),
+                        proposal_cert_index: item["proposal_cert_index"].as_u64().map(|v| v as u32),
                         vote: item["vote"]
                             .as_str()
                             .unwrap_or_default()
@@ -384,10 +376,7 @@ impl Provider for BlockfrostProvider {
 
                 for item in arr {
                     all_votes.push((
-                        item["voter_type"]
-                            .as_str()
-                            .unwrap_or_default()
-                            .to_string(),
+                        item["voter_type"].as_str().unwrap_or_default().to_string(),
                         item["vote"]
                             .as_str()
                             .unwrap_or_default()
@@ -442,54 +431,48 @@ impl Provider for BlockfrostProvider {
             };
 
             match voter_type.as_str() {
-                "drep" => {
-                    match vote_type {
-                        "yes" => {
-                            let current: u128 = breakdown.drep_votes.yes.parse().unwrap_or(0);
-                            breakdown.drep_votes.yes = (current + power).to_string();
-                        }
-                        "no" => {
-                            let current: u128 = breakdown.drep_votes.no.parse().unwrap_or(0);
-                            breakdown.drep_votes.no = (current + power).to_string();
-                        }
-                        _ => {
-                            let current: u128 = breakdown.drep_votes.abstain.parse().unwrap_or(0);
-                            breakdown.drep_votes.abstain = (current + power).to_string();
-                        }
+                "drep" => match vote_type {
+                    "yes" => {
+                        let current: u128 = breakdown.drep_votes.yes.parse().unwrap_or(0);
+                        breakdown.drep_votes.yes = (current + power).to_string();
                     }
-                }
-                "spo" => {
-                    match vote_type {
-                        "yes" => {
-                            let current: u128 = breakdown.spo_votes.yes.parse().unwrap_or(0);
-                            breakdown.spo_votes.yes = (current + power).to_string();
-                        }
-                        "no" => {
-                            let current: u128 = breakdown.spo_votes.no.parse().unwrap_or(0);
-                            breakdown.spo_votes.no = (current + power).to_string();
-                        }
-                        _ => {
-                            let current: u128 = breakdown.spo_votes.abstain.parse().unwrap_or(0);
-                            breakdown.spo_votes.abstain = (current + power).to_string();
-                        }
+                    "no" => {
+                        let current: u128 = breakdown.drep_votes.no.parse().unwrap_or(0);
+                        breakdown.drep_votes.no = (current + power).to_string();
                     }
-                }
-                "cc" => {
-                    match vote_type {
-                        "yes" => {
-                            let current: u128 = breakdown.cc_votes.yes.parse().unwrap_or(0);
-                            breakdown.cc_votes.yes = (current + power).to_string();
-                        }
-                        "no" => {
-                            let current: u128 = breakdown.cc_votes.no.parse().unwrap_or(0);
-                            breakdown.cc_votes.no = (current + power).to_string();
-                        }
-                        _ => {
-                            let current: u128 = breakdown.cc_votes.abstain.parse().unwrap_or(0);
-                            breakdown.cc_votes.abstain = (current + power).to_string();
-                        }
+                    _ => {
+                        let current: u128 = breakdown.drep_votes.abstain.parse().unwrap_or(0);
+                        breakdown.drep_votes.abstain = (current + power).to_string();
                     }
-                }
+                },
+                "spo" => match vote_type {
+                    "yes" => {
+                        let current: u128 = breakdown.spo_votes.yes.parse().unwrap_or(0);
+                        breakdown.spo_votes.yes = (current + power).to_string();
+                    }
+                    "no" => {
+                        let current: u128 = breakdown.spo_votes.no.parse().unwrap_or(0);
+                        breakdown.spo_votes.no = (current + power).to_string();
+                    }
+                    _ => {
+                        let current: u128 = breakdown.spo_votes.abstain.parse().unwrap_or(0);
+                        breakdown.spo_votes.abstain = (current + power).to_string();
+                    }
+                },
+                "cc" => match vote_type {
+                    "yes" => {
+                        let current: u128 = breakdown.cc_votes.yes.parse().unwrap_or(0);
+                        breakdown.cc_votes.yes = (current + power).to_string();
+                    }
+                    "no" => {
+                        let current: u128 = breakdown.cc_votes.no.parse().unwrap_or(0);
+                        breakdown.cc_votes.no = (current + power).to_string();
+                    }
+                    _ => {
+                        let current: u128 = breakdown.cc_votes.abstain.parse().unwrap_or(0);
+                        breakdown.cc_votes.abstain = (current + power).to_string();
+                    }
+                },
                 _ => {}
             }
         }
@@ -524,4 +507,3 @@ impl Provider for BlockfrostProvider {
         Ok(response.status().is_success())
     }
 }
-

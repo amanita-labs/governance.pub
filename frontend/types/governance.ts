@@ -35,6 +35,27 @@ export interface DRep {
   vote_count?: number;
   last_vote_epoch?: number;
   has_profile?: boolean; // Has metadata/profile
+  given_name?: string;
+  objectives?: string;
+  motivations?: string;
+  qualifications?: string;
+  votes_last_year?: number;
+  identity_references?: DRepExternalReference[];
+  link_references?: DRepExternalReference[];
+  image_url?: string;
+  image_hash?: string;
+  latest_registration_date?: string;
+  latest_tx_hash?: string;
+  deposit?: string;
+  metadata_error?: string;
+  payment_address?: string;
+  is_script_based?: boolean;
+}
+
+export interface DRepExternalReference {
+  reference_type?: string;
+  label?: string;
+  uri?: string;
 }
 
 export interface GovernanceAction {

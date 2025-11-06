@@ -1,5 +1,5 @@
-use axum::{extract::State, http::StatusCode, response::Json};
 use crate::providers::CachedProviderRouter;
+use axum::{extract::State, http::StatusCode, response::Json};
 use serde_json::{json, Value};
 
 pub async fn health_check(
@@ -7,7 +7,7 @@ pub async fn health_check(
 ) -> Result<Json<Value>, StatusCode> {
     let is_healthy = router.health_check().await.unwrap_or(false);
     let cache_stats = router.cache_stats().await;
-    
+
     if is_healthy {
         Ok(Json(json!({
             "status": "healthy",
@@ -40,4 +40,3 @@ pub async fn health_check(
         })))
     }
 }
-

@@ -44,20 +44,18 @@ impl CacheManager {
 
         let cache_key = key.to_string();
         match self.cache.get(&cache_key).await {
-            Some(bytes) => {
-                match serde_json::from_slice::<T>(&bytes) {
-                    Ok(value) => {
-                        self.hits.fetch_add(1, Ordering::Relaxed);
-                        debug!("Cache hit: {}", cache_key);
-                        Some(value)
-                    }
-                    Err(e) => {
-                        self.misses.fetch_add(1, Ordering::Relaxed);
-                        tracing::warn!("Failed to deserialize cache entry {}: {}", cache_key, e);
-                        None
-                    }
+            Some(bytes) => match serde_json::from_slice::<T>(&bytes) {
+                Ok(value) => {
+                    self.hits.fetch_add(1, Ordering::Relaxed);
+                    debug!("Cache hit: {}", cache_key);
+                    Some(value)
                 }
-            }
+                Err(e) => {
+                    self.misses.fetch_add(1, Ordering::Relaxed);
+                    tracing::warn!("Failed to deserialize cache entry {}: {}", cache_key, e);
+                    None
+                }
+            },
             None => {
                 self.misses.fetch_add(1, Ordering::Relaxed);
                 debug!("Cache miss: {}", cache_key);
@@ -136,4 +134,3 @@ impl CacheManager {
         }
     }
 }
-

@@ -11,4 +11,3 @@ pub struct PaginatedResponse<T> {
 pub struct ErrorResponse {
     pub error: String,
 }
-

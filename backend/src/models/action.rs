@@ -95,4 +95,3 @@ pub struct VoteCounts {
     pub no: String,
     pub abstain: String,
 }
-
