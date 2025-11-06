@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { ExternalLink, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import type { GovernanceAction } from '@/types/governance';
-import { cn } from '@/lib/utils';
+import { Markdown } from '../ui/Markdown';
 
 interface ProposalMetadataProps {
   action: GovernanceAction;
@@ -100,6 +100,30 @@ export function ProposalMetadata({ action }: ProposalMetadataProps) {
   const metadata = getMetadata(action);
   const hasMetadata = !!(metadata?.title || metadata?.description || metadata?.rationale);
   const validationStatus = validateMetadataHash(metadata, action.meta_hash);
+  const sections: Array<{ label: string; content: string }> = [];
+
+  function addSection(label: string, value?: string) {
+    if (!value || typeof value !== 'string') {
+      return;
+    }
+
+    const normalized = value.trim();
+    if (!normalized) {
+      return;
+    }
+
+    const alreadyAdded = sections.some((section) => section.content.trim() === normalized);
+    if (alreadyAdded) {
+      return;
+    }
+
+    sections.push({ label, content: value });
+  }
+
+  addSection('Abstract', metadata.abstract);
+  addSection('Motivation', metadata.motivation);
+  addSection('Description', metadata.description);
+  addSection('Rationale', metadata.rationale);
 
   if (!hasMetadata) {
     return null;
@@ -138,24 +162,17 @@ export function ProposalMetadata({ action }: ProposalMetadataProps) {
           </div>
         )}
 
-        {metadata.description && typeof metadata.description === 'string' && (
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground mb-1">Description</h4>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{metadata.description}</p>
+        {sections.map((section) => (
+          <div key={section.label}>
+            <h4 className="text-sm font-medium text-muted-foreground mb-1">{section.label}</h4>
+            <Markdown className="text-sm leading-relaxed">{section.content}</Markdown>
           </div>
-        )}
-
-        {metadata.rationale && typeof metadata.rationale === 'string' && (
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground mb-1">Rationale</h4>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{metadata.rationale}</p>
-          </div>
-        )}
+        ))}
 
         {action.meta_comment && (
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-1">Comment</h4>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{action.meta_comment}</p>
+            <Markdown className="text-sm leading-relaxed">{action.meta_comment}</Markdown>
           </div>
         )}
 
