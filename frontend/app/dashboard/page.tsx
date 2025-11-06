@@ -8,17 +8,20 @@ import DRepList from '@/components/features/DRepList';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, TrendingUp, Users, FileText, Vote } from 'lucide-react';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 
 // Lazy load heavy chart components (client components will hydrate on client)
-const VotingPowerFlowLazy = dynamic(() => import('@/components/charts/VotingPowerFlow').then(mod => ({ default: mod.VotingPowerFlow })), {
+const VotingPowerFlowLazy = dynamicImport(() => import('@/components/charts/VotingPowerFlow').then(mod => ({ default: mod.VotingPowerFlow })), {
   loading: () => <div className="h-64 flex items-center justify-center text-muted-foreground">Loading chart...</div>,
 });
 
-const GovernanceHeatmapLazy = dynamic(() => import('@/components/charts/GovernanceHeatmap').then(mod => ({ default: mod.GovernanceHeatmap })), {
+const GovernanceHeatmapLazy = dynamicImport(() => import('@/components/charts/GovernanceHeatmap').then(mod => ({ default: mod.GovernanceHeatmap })), {
   loading: () => <div className="h-64 flex items-center justify-center text-muted-foreground">Loading heatmap...</div>,
 });
 
+// Mark as dynamic to prevent build-time static generation
+// This page requires backend data that may not be available during build
+export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function DashboardPage() {
