@@ -124,11 +124,11 @@ const extractCip119Metadata = (metadata: unknown): Partial<DRepMetadata> | undef
 };
 
 interface PageProps {
-  params: { drepId: string };
+  params: Promise<{ drepId: string }>;
 }
 
 export default async function DRepDetailPage({ params }: PageProps) {
-  const { drepId } = params;
+  const { drepId } = await params;
   const [drep, votingHistory, metadata, delegators] = await Promise.all([
     getDRep(drepId),
     getDRepVotingHistory(drepId),
