@@ -1,5 +1,17 @@
-import { isSpecialSystemDRep } from './drep-id';
 import type { DRep, GovernanceAction, DRepVotingHistory, ActionVotingBreakdown, DRepDelegator } from '@/types/governance';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isNotFoundError = (error: unknown): boolean => {
+  if (error instanceof Error && error.message.includes('404')) {
+    return true;
+  }
+  if (isRecord(error) && typeof error.status === 'number') {
+    return error.status === 404;
+  }
+  return false;
+};
 
 /**
  * Get the base URL for API requests
@@ -102,16 +114,20 @@ export async function getDReps(): Promise<DRep[]> {
         break;
       }
       
-      const data = await response.json();
+      const data: unknown = await response.json();
       
-      if (!data.dreps || !Array.isArray(data.dreps)) {
+      if (!isRecord(data) || !Array.isArray(data.dreps)) {
         hasMore = false;
         break;
       }
       
       if (data.dreps.length > 0) {
-        allDReps = [...allDReps, ...data.dreps];
-        hasMore = data.has_more || data.dreps.length === 100;
+        allDReps = [...allDReps, ...(data.dreps as DRep[])];
+        const hasMoreValue =
+          typeof data.has_more === 'boolean'
+            ? data.has_more
+            : Array.isArray(data.dreps) && data.dreps.length === 100;
+        hasMore = hasMoreValue;
         page++;
       } else {
         hasMore = false;
@@ -147,22 +163,22 @@ export async function getDRepsPage(page: number = 1, count: number = 20, enrich:
       return { dreps: [], hasMore: false };
     }
     
-    const data = await response.json();
+    const data: unknown = await response.json();
     
-    if (!data.dreps || !Array.isArray(data.dreps)) {
+    if (!isRecord(data) || !Array.isArray(data.dreps)) {
       return { dreps: [], hasMore: false };
     }
     
     // Add has_profile flag based on metadata
-    const enrichedDReps = data.dreps.map((drep: DRep) => ({
+    const enrichedDReps = (data.dreps as DRep[]).map((drep) => ({
       ...drep,
       has_profile: !!(drep.metadata?.name || drep.metadata?.description || drep.metadata?.website),
     }));
     
     return {
       dreps: enrichedDReps,
-      hasMore: data.has_more || false,
-      total: data.total,
+      hasMore: typeof data.has_more === 'boolean' ? data.has_more : false,
+      total: typeof data.total === 'number' ? data.total : undefined,
     };
   } catch (error) {
     console.error('Error fetching DReps page:', error);
@@ -189,15 +205,15 @@ export async function getDRep(drepId: string): Promise<DRep | null> {
       throw new Error(`API responded with status ${response.status}`);
     }
     
-    const drep = await response.json();
+    const drep: unknown = await response.json();
     
     if (!drep) {
       return null;
     }
     
-    return drep;
-  } catch (error: any) {
-    if (error?.message?.includes('404') || error?.status === 404) {
+    return drep as DRep;
+  } catch (error: unknown) {
+    if (isNotFoundError(error)) {
       return null;
     }
     console.error('Error fetching DRep:', error);
@@ -209,7 +225,7 @@ export async function getDRep(drepId: string): Promise<DRep | null> {
  * Fetch DRep metadata
  * Uses backend API which handles provider selection and caching
  */
-export async function getDRepMetadata(drepId: string): Promise<any | null> {
+export async function getDRepMetadata(drepId: string): Promise<Record<string, unknown> | null> {
   try {
     const baseUrl = getBaseUrl();
     const response = await fetch(`${baseUrl}/api/dreps/${encodeURIComponent(drepId)}/metadata`, {
@@ -224,10 +240,10 @@ export async function getDRepMetadata(drepId: string): Promise<any | null> {
       return null;
     }
     
-    const metadata = await response.json();
-    return metadata;
-  } catch (error: any) {
-    if (error?.message?.includes('404') || error?.status === 404) {
+    const metadata: unknown = await response.json();
+    return isRecord(metadata) ? metadata : null;
+  } catch (error: unknown) {
+    if (isNotFoundError(error)) {
       return null;
     }
     console.error('Error fetching DRep metadata:', error);
@@ -250,10 +266,10 @@ export async function getDRepDelegators(drepId: string): Promise<DRepDelegator[]
       throw new Error(`API responded with status ${response.status}`);
     }
     
-    const delegators = await response.json();
-    return Array.isArray(delegators) ? delegators : [];
-  } catch (error: any) {
-    if (error?.message?.includes('404') || error?.status === 404) {
+    const delegators: unknown = await response.json();
+    return Array.isArray(delegators) ? (delegators as DRepDelegator[]) : [];
+  } catch (error: unknown) {
+    if (isNotFoundError(error)) {
       return [];
     }
     console.error('Error fetching DRep delegators:', error);
@@ -276,10 +292,10 @@ export async function getDRepVotingHistory(drepId: string): Promise<DRepVotingHi
       throw new Error(`API responded with status ${response.status}`);
     }
     
-    const votes = await response.json();
-    return Array.isArray(votes) ? votes : [];
-  } catch (error: any) {
-    if (error?.message?.includes('404') || error?.status === 404) {
+    const votes: unknown = await response.json();
+    return Array.isArray(votes) ? (votes as DRepVotingHistory[]) : [];
+  } catch (error: unknown) {
+    if (isNotFoundError(error)) {
       return [];
     }
     console.error('Error fetching DRep voting history:', error);
@@ -308,16 +324,20 @@ export async function getGovernanceActions(): Promise<GovernanceAction[]> {
         break;
       }
       
-      const data = await response.json();
+      const data: unknown = await response.json();
       
-      if (!data.actions || !Array.isArray(data.actions)) {
+      if (!isRecord(data) || !Array.isArray(data.actions)) {
         hasMore = false;
         break;
       }
       
       if (data.actions.length > 0) {
-        allActions = [...allActions, ...data.actions];
-        hasMore = data.has_more || data.actions.length === 100;
+        allActions = [...allActions, ...(data.actions as GovernanceAction[])];
+        const hasMoreValue =
+          typeof data.has_more === 'boolean'
+            ? data.has_more
+            : Array.isArray(data.actions) && data.actions.length === 100;
+        hasMore = hasMoreValue;
         page++;
       } else {
         hasMore = false;
@@ -350,15 +370,15 @@ export async function getGovernanceAction(actionId: string): Promise<GovernanceA
       throw new Error(`API responded with status ${response.status}`);
     }
     
-    const action = await response.json();
+    const action: unknown = await response.json();
     
     if (!action) {
       return null;
     }
     
-    return action;
-  } catch (error: any) {
-    if (error?.message?.includes('404') || error?.status === 404) {
+    return action as GovernanceAction;
+  } catch (error: unknown) {
+    if (isNotFoundError(error)) {
       return null;
     }
     console.error('Error fetching governance action:', error);
@@ -392,16 +412,16 @@ export async function getGovernanceActionsPage(
       return { actions: [], hasMore: false };
     }
     
-    const data = await response.json();
+    const data: unknown = await response.json();
     
-    if (!data.actions || !Array.isArray(data.actions)) {
+    if (!isRecord(data) || !Array.isArray(data.actions)) {
       return { actions: [], hasMore: false };
     }
     
     return {
-      actions: data.actions,
-      hasMore: data.has_more || false,
-      total: data.total,
+      actions: data.actions as GovernanceAction[],
+      hasMore: typeof data.has_more === 'boolean' ? data.has_more : false,
+      total: typeof data.total === 'number' ? data.total : undefined,
     };
   } catch (error) {
     console.error('Error fetching governance actions page:', error);
@@ -424,17 +444,42 @@ export async function getActionVotingResults(actionId: string): Promise<ActionVo
       throw new Error(`API responded with status ${response.status}`);
     }
     
-    const breakdown = await response.json();
-    
-    // Ensure all fields are present
+    const breakdown: unknown = await response.json();
+    if (!isRecord(breakdown)) {
+      return {
+        drep_votes: { yes: '0', no: '0', abstain: '0' },
+        spo_votes: { yes: '0', no: '0', abstain: '0' },
+        cc_votes: { yes: '0', no: '0', abstain: '0' },
+        total_voting_power: '0',
+      };
+    }
+
     return {
-      drep_votes: breakdown.drep_votes || { yes: '0', no: '0', abstain: '0' },
-      spo_votes: breakdown.spo_votes || { yes: '0', no: '0', abstain: '0' },
-      cc_votes: breakdown.cc_votes || { yes: '0', no: '0', abstain: '0' },
-      total_voting_power: breakdown.total_voting_power || '0',
+      drep_votes: isRecord(breakdown.drep_votes)
+        ? {
+            yes: String(breakdown.drep_votes.yes ?? '0'),
+            no: String(breakdown.drep_votes.no ?? '0'),
+            abstain: String(breakdown.drep_votes.abstain ?? '0'),
+          }
+        : { yes: '0', no: '0', abstain: '0' },
+      spo_votes: isRecord(breakdown.spo_votes)
+        ? {
+            yes: String(breakdown.spo_votes.yes ?? '0'),
+            no: String(breakdown.spo_votes.no ?? '0'),
+            abstain: String(breakdown.spo_votes.abstain ?? '0'),
+          }
+        : { yes: '0', no: '0', abstain: '0' },
+      cc_votes: isRecord(breakdown.cc_votes)
+        ? {
+            yes: String(breakdown.cc_votes.yes ?? '0'),
+            no: String(breakdown.cc_votes.no ?? '0'),
+            abstain: String(breakdown.cc_votes.abstain ?? '0'),
+          }
+        : { yes: '0', no: '0', abstain: '0' },
+      total_voting_power: String(breakdown.total_voting_power ?? '0'),
     };
-  } catch (error: any) {
-    if (error?.message?.includes('404') || error?.status === 404) {
+  } catch (error: unknown) {
+    if (isNotFoundError(error)) {
       return {
         drep_votes: { yes: '0', no: '0', abstain: '0' },
         spo_votes: { yes: '0', no: '0', abstain: '0' },

@@ -21,9 +21,14 @@ impl KoiosProvider {
         Self { client, base_url }
     }
 
-    async fn fetch(&self, endpoint: &str, method: &str, body: Option<Value>) -> Result<Option<Value>, anyhow::Error> {
+    async fn fetch(
+        &self,
+        endpoint: &str,
+        method: &str,
+        body: Option<Value>,
+    ) -> Result<Option<Value>, anyhow::Error> {
         let url = format!("{}{}", self.base_url, endpoint);
-        
+
         let mut request = match method {
             "POST" => self.client.post(&url),
             _ => self.client.get(&url),
@@ -46,7 +51,12 @@ impl KoiosProvider {
             } else {
                 let status = response.status();
                 let error_text = response.text().await.unwrap_or_default();
-                tracing::error!("Koios API error: {} {} for {}", status, error_text, endpoint);
+                tracing::error!(
+                    "Koios API error: {} {} for {}",
+                    status,
+                    error_text,
+                    endpoint
+                );
                 return Ok(None);
             }
         }
@@ -87,6 +97,21 @@ impl KoiosProvider {
             vote_count: None,
             last_vote_epoch: None,
             has_profile: None,
+            given_name: None,
+            objectives: None,
+            motivations: None,
+            qualifications: None,
+            votes_last_year: None,
+            identity_references: None,
+            link_references: None,
+            image_url: None,
+            image_hash: None,
+            latest_registration_date: None,
+            latest_tx_hash: None,
+            deposit: None,
+            metadata_error: None,
+            payment_address: None,
+            is_script_based: drep["has_script"].as_bool(),
         })
     }
 
@@ -95,7 +120,7 @@ impl KoiosProvider {
             .as_str()
             .unwrap_or("InfoAction")
             .to_string();
-        
+
         let type_map: HashMap<&str, &str> = [
             ("ParameterChange", "parameter_change"),
             ("HardForkInitiation", "hard_fork_initiation"),
@@ -110,14 +135,19 @@ impl KoiosProvider {
         .cloned()
         .collect();
 
-        let action_type = type_map.get(proposal_type.as_str()).unwrap_or(&"info").to_string();
+        let action_type = type_map
+            .get(proposal_type.as_str())
+            .unwrap_or(&"info")
+            .to_string();
 
         let mut status = "submitted".to_string();
         if proposal["enacted_epoch"].as_u64().is_some() {
             status = "enacted".to_string();
         } else if proposal["ratified_epoch"].as_u64().is_some() {
             status = "ratified".to_string();
-        } else if proposal["dropped_epoch"].as_u64().is_some() || proposal["expired_epoch"].as_u64().is_some() {
+        } else if proposal["dropped_epoch"].as_u64().is_some()
+            || proposal["expired_epoch"].as_u64().is_some()
+        {
             status = "expired".to_string();
         } else if proposal["proposed_epoch"].as_u64().is_some() {
             status = "voting".to_string();
@@ -133,9 +163,7 @@ impl KoiosProvider {
                 .unwrap_or_default()
                 .to_string(),
             proposal_id: proposal["proposal_id"].as_str().map(|s| s.to_string()),
-            proposal_tx_hash: proposal["proposal_tx_hash"]
-                .as_str()
-                .map(|s| s.to_string()),
+            proposal_tx_hash: proposal["proposal_tx_hash"].as_str().map(|s| s.to_string()),
             proposal_index: proposal["proposal_index"].as_u64().map(|v| v as u32),
             cert_index: proposal["proposal_index"].as_u64().map(|v| v as u32),
             deposit: proposal["deposit"].as_u64().map(|v| v.to_string()),
@@ -176,7 +204,8 @@ impl KoiosProvider {
                     .unwrap_or_default(),
                 address: w["address"].as_str().map(|s| s.to_string()),
             }),
-            param_proposal: (!proposal["param_proposal"].is_null()).then(|| proposal["param_proposal"].clone()),
+            param_proposal: (!proposal["param_proposal"].is_null())
+                .then(|| proposal["param_proposal"].clone()),
             block_time: proposal["block_time"].as_u64(),
             metadata: (!proposal["meta_json"].is_null()).then(|| proposal["meta_json"].clone()),
         })
@@ -185,11 +214,7 @@ impl KoiosProvider {
 
 #[async_trait]
 impl Provider for KoiosProvider {
-    async fn get_dreps_page(
-        &self,
-        page: u32,
-        count: u32,
-    ) -> Result<DRepsPage, anyhow::Error> {
+    async fn get_dreps_page(&self, page: u32, count: u32) -> Result<DRepsPage, anyhow::Error> {
         // Koios doesn't support pagination directly, so we fetch all and paginate in memory
         let endpoint = format!("/drep_list?limit={}", (page * count));
         let json = self.fetch(&endpoint, "GET", None).await?;
@@ -238,7 +263,7 @@ impl Provider for KoiosProvider {
 
     async fn get_drep_delegators(&self, id: &str) -> Result<Vec<DRepDelegator>, anyhow::Error> {
         let cip129_id = normalize_to_cip129(id)?;
-        
+
         let body = serde_json::json!([{
             "_drep_id": cip129_id
         }]);
@@ -266,7 +291,7 @@ impl Provider for KoiosProvider {
         id: &str,
     ) -> Result<Vec<DRepVotingHistory>, anyhow::Error> {
         let cip129_id = normalize_to_cip129(id)?;
-        
+
         let body = serde_json::json!([{
             "_drep_id": cip129_id
         }]);
@@ -283,10 +308,7 @@ impl Provider for KoiosProvider {
                         action_id: item["proposal_id"].as_str().map(|s| s.to_string()),
                         proposal_tx_hash: item["proposal_tx_hash"].as_str().map(|s| s.to_string()),
                         proposal_cert_index: item["proposal_index"].as_u64().map(|v| v as u32),
-                        vote: item["vote"]
-                            .as_str()
-                            .unwrap_or_default()
-                            .to_lowercase(),
+                        vote: item["vote"].as_str().unwrap_or_default().to_lowercase(),
                         voting_power: None,
                         epoch: None,
                     })
@@ -360,8 +382,14 @@ impl Provider for KoiosProvider {
 
         if let Some(Value::Array(arr)) = json {
             if let Some(summary) = arr.first() {
-                let drep_yes = summary["drep_yes_vote_power"].as_str().unwrap_or("0").to_string();
-                let drep_no = summary["drep_no_vote_power"].as_str().unwrap_or("0").to_string();
+                let drep_yes = summary["drep_yes_vote_power"]
+                    .as_str()
+                    .unwrap_or("0")
+                    .to_string();
+                let drep_no = summary["drep_no_vote_power"]
+                    .as_str()
+                    .unwrap_or("0")
+                    .to_string();
                 let drep_abstain = (summary["drep_active_abstain_vote_power"]
                     .as_str()
                     .unwrap_or("0")
@@ -374,8 +402,14 @@ impl Provider for KoiosProvider {
                         .unwrap_or(0))
                 .to_string();
 
-                let pool_yes = summary["pool_yes_vote_power"].as_str().unwrap_or("0").to_string();
-                let pool_no = summary["pool_no_vote_power"].as_str().unwrap_or("0").to_string();
+                let pool_yes = summary["pool_yes_vote_power"]
+                    .as_str()
+                    .unwrap_or("0")
+                    .to_string();
+                let pool_no = summary["pool_no_vote_power"]
+                    .as_str()
+                    .unwrap_or("0")
+                    .to_string();
                 let pool_abstain = (summary["pool_active_abstain_vote_power"]
                     .as_str()
                     .unwrap_or("0")
@@ -463,4 +497,3 @@ impl Provider for KoiosProvider {
         Ok(json.is_some())
     }
 }
-

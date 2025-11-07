@@ -1,19 +1,42 @@
 // Cardano Governance Types
 
+export type JsonPrimitive = string | number | boolean | null;
+
+export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+
+export interface JsonObject {
+  [key: string]: JsonValue | undefined;
+}
+
+export interface DRepMetadata extends JsonObject {
+  name?: string;
+  title?: string;
+  email?: string;
+  description?: string;
+  website?: string;
+  logo?: string;
+  image?: string;
+  picture?: string;
+  twitter?: string;
+  github?: string;
+  paymentAddress?: string;
+  doNotList?: boolean;
+  objectives?: JsonValue;
+  motivations?: JsonValue;
+  qualifications?: JsonValue;
+  bytes?: string;
+  body?: JsonObject;
+  extra?: JsonObject;
+  json_metadata?: JsonObject;
+}
+
 export interface DRep {
   drep_id: string;
   drep_hash?: string;
   hex?: string;
   view?: string;
   url?: string;
-  metadata?: {
-    name?: string;
-    email?: string;
-    description?: string;
-    website?: string;
-    logo?: string;
-    [key: string]: any;
-  };
+  metadata?: DRepMetadata;
   anchor?: {
     url: string;
     data_hash: string;
@@ -35,6 +58,36 @@ export interface DRep {
   vote_count?: number;
   last_vote_epoch?: number;
   has_profile?: boolean; // Has metadata/profile
+  given_name?: string;
+  objectives?: string;
+  motivations?: string;
+  qualifications?: string;
+  votes_last_year?: number;
+  identity_references?: DRepExternalReference[];
+  link_references?: DRepExternalReference[];
+  image_url?: string;
+  image_hash?: string;
+  latest_registration_date?: string;
+  latest_tx_hash?: string;
+  deposit?: string;
+  metadata_error?: string;
+  payment_address?: string;
+  is_script_based?: boolean;
+}
+
+export interface DRepExternalReference {
+  reference_type?: string;
+  label?: string;
+  uri?: string;
+}
+
+export interface GovernanceActionMetadata extends JsonObject {
+  title?: JsonValue;
+  description?: JsonValue;
+  abstract?: JsonValue;
+  rationale?: JsonValue;
+  authors?: JsonValue;
+  references?: JsonValue;
 }
 
 export interface GovernanceAction {
@@ -64,7 +117,7 @@ export interface GovernanceAction {
   // Metadata fields
   meta_url?: string;
   meta_hash?: string;
-  meta_json?: any; // Parsed metadata JSON
+  meta_json?: string | JsonObject; // Parsed metadata JSON
   meta_language?: string; // CIP-100 language code
   meta_comment?: string;
   meta_is_valid?: boolean | null;
@@ -74,16 +127,11 @@ export interface GovernanceAction {
     address?: string; // Stake address
   };
   // Parameter proposal (for parameter_change type)
-  param_proposal?: any; // Parameter change object
+  param_proposal?: JsonObject; // Parameter change object
   // Block time
   block_time?: number; // UNIX timestamp
   // Existing metadata structure (for backward compatibility)
-  metadata?: {
-    title?: string;
-    description?: string;
-    rationale?: string;
-    [key: string]: any;
-  };
+  metadata?: GovernanceActionMetadata;
 }
 
 export interface VotingResult {

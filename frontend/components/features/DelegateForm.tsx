@@ -19,7 +19,7 @@ interface DelegateFormProps {
 
 export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: DelegateFormProps) {
   const { connectedWallet } = useWalletContext();
-  const { state, reset, setBuilding, setSigning, setSubmitting, setTxHash, setError } = useTransaction();
+  const { state, reset, setBuilding, setTxHash, setError } = useTransaction();
   const [selectedDRep, setSelectedDRep] = useState<DRep | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -55,9 +55,9 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: De
       const txHash = await submitDelegationTransaction(connectedWallet, selectedDRep.drep_id);
       setBuilding(false);
       setTxHash(txHash);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setBuilding(false);
-      setError(error.message || 'Failed to submit transaction');
+      setError(error instanceof Error ? error.message : 'Failed to submit transaction');
     }
   };
 

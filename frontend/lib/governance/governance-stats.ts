@@ -40,7 +40,7 @@ export function calculateStats(dreps: DRep[], actions: GovernanceAction[]): Gove
   };
 }
 
-export function formatADA(lovelace: string | BigInt): string {
+export function formatADA(lovelace: string | bigint): string {
   const lovelaceNum = typeof lovelace === 'string' ? BigInt(lovelace) : lovelace;
   const ada = Number(lovelaceNum) / 1_000_000;
   

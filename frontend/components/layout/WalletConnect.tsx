@@ -10,7 +10,6 @@ export function WalletConnect() {
   
   const toggleMenu = (next?: boolean) => {
     const newState = typeof next === 'boolean' ? next : !showMenu;
-    // eslint-disable-next-line no-console
     console.log('[wallet-ui] toggle wallet menu ->', newState);
     setShowMenu(newState);
   };
@@ -59,7 +58,6 @@ export function WalletConnect() {
               </div>
               <button
                 onClick={() => {
-                  // eslint-disable-next-line no-console
                   console.log('[wallet-ui] disconnect clicked');
                   disconnect();
                   toggleMenu(false);
@@ -137,7 +135,6 @@ export function WalletConnect() {
                 <button
                   key={walletName}
                   onClick={() => {
-                    // eslint-disable-next-line no-console
                     console.log('[wallet-ui] connect clicked for', walletName);
                     connect(walletName);
                     toggleMenu(false);

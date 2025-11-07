@@ -4,6 +4,15 @@
 
 import { CARDANO_CONSTANTS, DATE_FORMATS } from '@/lib/constants';
 
+type DateFormatKey = Exclude<keyof typeof DATE_FORMATS, 'RELATIVE_THRESHOLDS'>;
+
+const DATE_FORMAT_OPTIONS: Record<DateFormatKey, Intl.DateTimeFormatOptions> = {
+  SHORT: { year: 'numeric', month: 'short', day: 'numeric' },
+  LONG: { year: 'numeric', month: 'long', day: 'numeric' },
+  DATETIME: { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+  TIME: { hour: '2-digit', minute: '2-digit' },
+};
+
 /**
  * Format ADA amount from lovelace
  */
@@ -69,16 +78,12 @@ export function formatRelativeTime(timestamp?: number): string | null {
 /**
  * Format date string
  */
-export function formatDate(date: Date | string | number, format: keyof typeof DATE_FORMATS = 'SHORT'): string {
+export function formatDate(date: Date | string | number, format: DateFormatKey = 'SHORT'): string {
   const dateObj = typeof date === 'string' || typeof date === 'number' 
     ? new Date(date) 
     : date;
   
-  // Simple date formatting - can be enhanced with date-fns if needed
-  return dateObj.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const options = DATE_FORMAT_OPTIONS[format] ?? DATE_FORMAT_OPTIONS.SHORT;
+  return new Intl.DateTimeFormat('en-US', options).format(dateObj);
 }
 

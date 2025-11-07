@@ -3,14 +3,15 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
 import { VotingChart } from '../charts/VotingChart';
 import { VotingProgress } from '../charts/VotingProgress';
 import { ProposalMetadata } from './ProposalMetadata';
 import { ProposalTimeline } from './ProposalTimeline';
 import { Clock, Calendar, Hash, ExternalLink, DollarSign, Settings } from 'lucide-react';
 import type { GovernanceAction, ActionVotingBreakdown } from '@/types/governance';
-import { cn } from '@/lib/utils';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
 interface ActionDetailProps {
   action: GovernanceAction;
@@ -54,13 +55,17 @@ function getStatusVariant(status: string | undefined): 'success' | 'warning' | '
 /**
  * Extract string from value (handles both string and object formats)
  */
-function extractString(value: any): string | undefined {
+function extractString(value: unknown): string | undefined {
   if (typeof value === 'string') {
     return value;
   }
-  if (typeof value === 'object' && value !== null) {
-    // Try to extract string from object structures
-    return value.content || value.text || value.value || value.description || String(value);
+  if (isRecord(value)) {
+    const candidates: Array<unknown> = [value.content, value.text, value.value, value.description, value.label];
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string') {
+        return candidate;
+      }
+    }
   }
   return undefined;
 }
@@ -73,23 +78,24 @@ function getMetadataTitle(action: GovernanceAction): string {
   // Try meta_json first (handle CIP-100/CIP-108 format)
   if (action.meta_json) {
     try {
-      const parsed = typeof action.meta_json === 'string' 
-        ? JSON.parse(action.meta_json) 
-        : action.meta_json;
-      
-      // Check for CIP-100/CIP-108 format with body structure
-      if (parsed.body && typeof parsed.body === 'object') {
-        const title = extractString(parsed.body.title);
-        if (title) return title;
-        // Fallback to abstract if title not available
-        const abstract = extractString(parsed.body.abstract);
-        if (abstract) return abstract;
-      } else {
-        // Standard format
+      const parsed: unknown =
+        typeof action.meta_json === 'string'
+          ? JSON.parse(action.meta_json)
+          : action.meta_json;
+
+      if (isRecord(parsed)) {
+        const body = isRecord(parsed.body) ? parsed.body : undefined;
+        if (body) {
+          const title = extractString(body.title);
+          if (title) return title;
+          const abstract = extractString(body.abstract);
+          if (abstract) return abstract;
+        }
+
         const title = extractString(parsed.title);
         if (title) return title;
       }
-    } catch (e) {
+    } catch {
       // Ignore parse errors
     }
   }
@@ -419,7 +425,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                         className="bg-green-500 dark:bg-green-600 h-2 rounded-full transition-all"
                         style={{
                           width: `${votingResults.total_voting_power !== '0' ? (Number(totalYes) / Number(votingResults.total_voting_power)) * 100 : 0}%`,
-                        } as React.CSSProperties}
+                        }}
                         aria-label={`Yes votes: ${formatVotingPower(totalYes.toString())}`}
                         role="progressbar"
                         aria-valuenow={votingResults.total_voting_power !== '0' ? (Number(totalYes) / Number(votingResults.total_voting_power)) * 100 : 0}
@@ -439,7 +445,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                         className="bg-red-500 dark:bg-red-600 h-2 rounded-full transition-all"
                         style={{
                           width: `${votingResults.total_voting_power !== '0' ? (Number(totalNo) / Number(votingResults.total_voting_power)) * 100 : 0}%`,
-                        } as React.CSSProperties}
+                        }}
                         aria-label={`No votes: ${formatVotingPower(totalNo.toString())}`}
                         role="progressbar"
                         aria-valuenow={votingResults.total_voting_power !== '0' ? (Number(totalNo) / Number(votingResults.total_voting_power)) * 100 : 0}
@@ -459,7 +465,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                         className="bg-yellow-500 dark:bg-yellow-600 h-2 rounded-full transition-all"
                         style={{
                           width: `${votingResults.total_voting_power !== '0' ? (Number(totalAbstain) / Number(votingResults.total_voting_power)) * 100 : 0}%`,
-                        } as React.CSSProperties}
+                        }}
                         aria-label={`Abstain votes: ${formatVotingPower(totalAbstain.toString())}`}
                         role="progressbar"
                         aria-valuenow={votingResults.total_voting_power !== '0' ? (Number(totalAbstain) / Number(votingResults.total_voting_power)) * 100 : 0}

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { Users, TrendingUp, FileText, Vote, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Users, TrendingUp, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { formatADA } from '@/lib/governance/governance-stats';
 import type { GovernanceStats } from '@/lib/governance/governance-stats';
 import { Skeleton } from '../ui/Skeleton';

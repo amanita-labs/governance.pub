@@ -10,6 +10,8 @@ pub struct Config {
     pub cors_origins: Vec<String>,
     pub cache_enabled: bool,
     pub cache_max_entries: usize,
+    pub govtools_base_url: String,
+    pub govtools_enabled: bool,
 }
 
 impl Config {
@@ -41,6 +43,12 @@ impl Config {
                 .unwrap_or_else(|_| "10000".to_string())
                 .parse()
                 .unwrap_or(10000),
+            govtools_base_url: env::var("GOVTOOLS_BASE_URL")
+                .unwrap_or_else(|_| "https://be.gov.tools".to_string()),
+            govtools_enabled: env::var("GOVTOOLS_ENABLED")
+                .unwrap_or_else(|_| "true".to_string())
+                .parse()
+                .unwrap_or(true),
         })
     }
 
@@ -52,4 +60,3 @@ impl Config {
         }
     }
 }
-

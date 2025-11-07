@@ -48,6 +48,36 @@ pub struct DRep {
     pub last_vote_epoch: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub has_profile: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub given_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub objectives: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub motivations: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub qualifications: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub votes_last_year: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity_references: Option<Vec<DRepExternalReference>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub link_references: Option<Vec<DRepExternalReference>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub latest_registration_date: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub latest_tx_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deposit: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_error: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub payment_address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_script_based: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -108,3 +138,14 @@ pub struct DRepStats {
     pub active_dreps_count: Option<u32>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct DRepExternalReference {
+    #[serde(rename = "@type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reference_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+}

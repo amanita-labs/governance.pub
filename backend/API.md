@@ -535,6 +535,21 @@ interface DRep {
   vote_count?: number;                // Number of votes cast
   last_vote_epoch?: number;           // Last epoch when DRep voted
   has_profile?: boolean;             // Whether DRep has profile metadata
+  given_name?: string;                // Profile name (GovTools enrichment)
+  objectives?: string;                // Profile objectives (GovTools enrichment)
+  motivations?: string;               // Profile motivations (GovTools enrichment)
+  qualifications?: string;            // Profile qualifications (GovTools enrichment)
+  votes_last_year?: number;           // Vote count over the last 12 months
+  identity_references?: DRepExternalReference[]; // Identity links (X, website, etc.)
+  link_references?: DRepExternalReference[];     // Additional resources/links
+  image_url?: string;                 // Profile image URL
+  image_hash?: string;                // Hash of the profile image
+  latest_registration_date?: string;  // ISO registration timestamp (if available)
+  latest_tx_hash?: string;            // Latest registration transaction hash
+  deposit?: string;                   // Registration deposit in lovelace
+  metadata_error?: string;            // Metadata validation errors (if any)
+  payment_address?: string;           // Linked payment address (if available)
+  is_script_based?: boolean;          // Indicates script-based DRep
 }
 
 interface DRepMetadata {
@@ -545,6 +560,12 @@ interface DRepMetadata {
 interface DRepAnchor {
   url: string;                        // Anchor URL
   data_hash: string;                  // Anchor data hash
+}
+
+interface DRepExternalReference {
+  reference_type?: string;            // 'Identity' | 'Link'
+  label?: string;                     // Friendly label (if provided)
+  uri?: string;                       // External URI
 }
 ```
 

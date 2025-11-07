@@ -8,6 +8,9 @@ export async function buildDelegationTransaction(
   wallet: ConnectedWallet,
   drepId: string
 ): Promise<Transaction> {
+  // Placeholder usage until delegation builder is implemented
+  void drepId;
+
   const tx = new Transaction({ initiator: wallet.wallet });
   
   // Delegate to DRep

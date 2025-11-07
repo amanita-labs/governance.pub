@@ -57,7 +57,7 @@ export function decodeDRepIDToHex(bechID: string): string {
     const bytes = bech32lib.fromWords(decoded.words);
     const hex = Buffer.from(bytes).toString('hex');
     return hex;
-  } catch (error) {
+  } catch {
     throw new Error(`Invalid DRep ID format: ${bechID}`);
   }
 }

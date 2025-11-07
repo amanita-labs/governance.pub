@@ -1,6 +1,7 @@
 'use client';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import type { PieLabelRenderProps } from 'recharts';
 
 interface VotingPowerChartProps {
   data: { name: string; value: number; color: string }[];
@@ -23,9 +24,11 @@ export function VotingPowerChart({ data }: VotingPowerChartProps) {
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={(props: any) => {
+          label={(props: PieLabelRenderProps) => {
             const { name, percent } = props;
-            return `${name}: ${(percent * 100).toFixed(0)}%`;
+            const percentage = typeof percent === 'number' ? percent * 100 : 0;
+            const labelName = typeof name === 'string' ? name : String(name ?? '');
+            return `${labelName}: ${percentage.toFixed(0)}%`;
           }}
           outerRadius={80}
           fill="#8884d8"

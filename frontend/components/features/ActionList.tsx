@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import ActionCard from './ActionCard';
 import { ActionCardSkeleton } from '../ui/CardSkeleton';
-import { Search, Filter, ArrowUpDown } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { GovernanceAction } from '@/types/governance';
 import { cn } from '@/lib/utils';
 
@@ -12,18 +12,25 @@ interface ActionListProps {
   loading?: boolean;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 type SortOption = 'newest' | 'oldest' | 'type' | 'status' | 'has_metadata';
 
 /**
  * Extract string from value (handles both string and object formats)
  */
-function extractString(value: any): string {
+function extractString(value: unknown): string {
   if (typeof value === 'string') {
     return value;
   }
-  if (typeof value === 'object' && value !== null) {
-    // Try to extract string from object structures
-    return value.content || value.text || value.value || String(value);
+  if (isRecord(value)) {
+    const candidates: Array<unknown> = [value.content, value.text, value.value, value.description, value.label];
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string') {
+        return candidate;
+      }
+    }
   }
   return '';
 }
@@ -38,12 +45,16 @@ function getMetadataText(action: GovernanceAction): string {
   // Try meta_json first
   if (action.meta_json) {
     try {
-      const parsed = typeof action.meta_json === 'string' 
-        ? JSON.parse(action.meta_json) 
-        : action.meta_json;
-      title = extractString(parsed.title);
-      description = extractString(parsed.description);
-    } catch (e) {
+      const parsed: unknown =
+        typeof action.meta_json === 'string'
+          ? JSON.parse(action.meta_json)
+          : action.meta_json;
+
+      if (isRecord(parsed)) {
+        title = extractString(parsed.title);
+        description = extractString(parsed.description);
+      }
+    } catch {
       // Ignore parse errors
     }
   }
@@ -95,30 +106,38 @@ export default function ActionList({ actions, loading = false }: ActionListProps
     // Sort actions
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'newest':
-          // Sort by block_time (newest first) or proposed_epoch
-          const aTime = a.block_time || (a.proposed_epoch || 0) * 1000000; // Approximate
-          const bTime = b.block_time || (b.proposed_epoch || 0) * 1000000;
+        case 'newest': {
+          const aTime = a.block_time || (a.proposed_epoch || 0) * 1_000_000;
+          const bTime = b.block_time || (b.proposed_epoch || 0) * 1_000_000;
           return bTime - aTime;
-        
-        case 'oldest':
-          const aTimeOld = a.block_time || (a.proposed_epoch || 0) * 1000000;
-          const bTimeOld = b.block_time || (b.proposed_epoch || 0) * 1000000;
+        }
+
+        case 'oldest': {
+          const aTimeOld = a.block_time || (a.proposed_epoch || 0) * 1_000_000;
+          const bTimeOld = b.block_time || (b.proposed_epoch || 0) * 1_000_000;
           return aTimeOld - bTimeOld;
-        
-        case 'type':
+        }
+
+        case 'type': {
           return a.type.localeCompare(b.type);
-        
-        case 'status':
+        }
+
+        case 'status': {
           return (a.status || '').localeCompare(b.status || '');
-        
-        case 'has_metadata':
+        }
+
+        case 'has_metadata': {
           const aHasMeta = !!(a.meta_json || a.metadata);
           const bHasMeta = !!(b.meta_json || b.metadata);
-          return bHasMeta ? 1 : aHasMeta ? -1 : 0;
-        
-        default:
+          if (aHasMeta === bHasMeta) {
+            return 0;
+          }
+          return aHasMeta ? -1 : 1;
+        }
+
+        default: {
           return 0;
+        }
       }
     });
 

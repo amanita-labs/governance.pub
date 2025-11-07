@@ -1,10 +1,10 @@
+use crate::models::*;
+use crate::providers::CachedProviderRouter;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
 };
-use crate::models::*;
-use crate::providers::CachedProviderRouter;
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -103,4 +103,3 @@ pub async fn get_drep_stats(
         }
     }
 }
-

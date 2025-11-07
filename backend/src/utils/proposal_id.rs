@@ -30,11 +30,12 @@ pub fn parse_proposal_id(proposal_id: &str) -> ProposalIdParse {
             proposal_id: Some(proposal_id.to_string()),
         };
     }
-    
+
     // Check if it's Blockfrost format (tx_hash#cert_index)
     if let Some(hash_index) = proposal_id.split('#').collect::<Vec<_>>().get(0..2) {
         if hash_index.len() == 2 {
-            if let (Some(hash), Ok(index)) = (hash_index[0].get(..64), hash_index[1].parse::<u32>()) {
+            if let (Some(hash), Ok(index)) = (hash_index[0].get(..64), hash_index[1].parse::<u32>())
+            {
                 if hash.chars().all(|c| c.is_ascii_hexdigit()) {
                     return ProposalIdParse {
                         format: ProposalIdFormat::Blockfrost,
@@ -46,7 +47,7 @@ pub fn parse_proposal_id(proposal_id: &str) -> ProposalIdParse {
             }
         }
     }
-    
+
     // Check if it's just a tx_hash (64 hex characters)
     if proposal_id.len() == 64 && proposal_id.chars().all(|c| c.is_ascii_hexdigit()) {
         return ProposalIdParse {
@@ -56,7 +57,7 @@ pub fn parse_proposal_id(proposal_id: &str) -> ProposalIdParse {
             proposal_id: None,
         };
     }
-    
+
     ProposalIdParse {
         format: ProposalIdFormat::Unknown,
         tx_hash: None,
@@ -84,4 +85,3 @@ pub fn extract_tx_hash_and_index(proposal_id: &str) -> Option<(String, u32)> {
 pub fn format_proposal_id(tx_hash: &str, cert_index: u32) -> String {
     format!("{}#{}", tx_hash, cert_index)
 }
-

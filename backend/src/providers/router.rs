@@ -1,5 +1,5 @@
-use crate::providers::{BlockfrostProvider, KoiosProvider, Provider};
 use crate::models::*;
+use crate::providers::{BlockfrostProvider, KoiosProvider, Provider};
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -26,11 +26,7 @@ impl ProviderRouter {
     // - Voting results: Use Koios (specialized), fallback to Blockfrost
     // - Active DReps count: Use Koios epoch summary
 
-    pub async fn get_dreps_page(
-        &self,
-        page: u32,
-        count: u32,
-    ) -> Result<DRepsPage, anyhow::Error> {
+    pub async fn get_dreps_page(&self, page: u32, count: u32) -> Result<DRepsPage, anyhow::Error> {
         // Try Koios first (faster bulk queries)
         match self.koios.get_dreps_page(page, count).await {
             Ok(result) if !result.dreps.is_empty() => {
@@ -62,7 +58,10 @@ impl ProviderRouter {
                 // Empty result, try Blockfrost
             }
             Err(e) => {
-                tracing::debug!("Koios failed for DRep delegators: {}, falling back to Blockfrost", e);
+                tracing::debug!(
+                    "Koios failed for DRep delegators: {}, falling back to Blockfrost",
+                    e
+                );
             }
         }
 
@@ -84,7 +83,10 @@ impl ProviderRouter {
                 // Empty result, try Blockfrost
             }
             Err(e) => {
-                tracing::debug!("Koios failed for DRep voting history: {}, falling back to Blockfrost", e);
+                tracing::debug!(
+                    "Koios failed for DRep voting history: {}, falling back to Blockfrost",
+                    e
+                );
             }
         }
 
@@ -104,12 +106,16 @@ impl ProviderRouter {
                 return Ok(result);
             }
             _ => {
-                tracing::debug!("Koios failed, falling back to Blockfrost for governance actions page");
+                tracing::debug!(
+                    "Koios failed, falling back to Blockfrost for governance actions page"
+                );
             }
         }
 
         // Fallback to Blockfrost
-        self.blockfrost.get_governance_actions_page(page, count).await
+        self.blockfrost
+            .get_governance_actions_page(page, count)
+            .await
     }
 
     pub async fn get_governance_action(
@@ -123,10 +129,15 @@ impl ProviderRouter {
                 return Ok(Some(action));
             }
             Ok(None) => {
-                tracing::debug!("Koios returned None, falling back to Blockfrost for governance action");
+                tracing::debug!(
+                    "Koios returned None, falling back to Blockfrost for governance action"
+                );
             }
             Err(e) => {
-                tracing::debug!("Koios failed for governance action: {}, falling back to Blockfrost", e);
+                tracing::debug!(
+                    "Koios failed for governance action: {}, falling back to Blockfrost",
+                    e
+                );
             }
         }
 
@@ -145,7 +156,9 @@ impl ProviderRouter {
                 return Ok(result);
             }
             _ => {
-                tracing::debug!("Koios failed, falling back to Blockfrost for action voting results");
+                tracing::debug!(
+                    "Koios failed, falling back to Blockfrost for action voting results"
+                );
             }
         }
 
@@ -153,7 +166,10 @@ impl ProviderRouter {
         self.blockfrost.get_action_voting_results(id).await
     }
 
-    pub async fn get_drep_metadata(&self, id: &str) -> Result<Option<serde_json::Value>, anyhow::Error> {
+    pub async fn get_drep_metadata(
+        &self,
+        id: &str,
+    ) -> Result<Option<serde_json::Value>, anyhow::Error> {
         // Use Blockfrost (has metadata endpoint)
         self.blockfrost.get_drep_metadata(id).await
     }
@@ -169,4 +185,3 @@ impl ProviderRouter {
         Ok(blockfrost_ok && koios_ok)
     }
 }
-

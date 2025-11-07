@@ -4,49 +4,57 @@ export type WalletName = 'nami' | 'eternl' | 'flint' | 'gero' | 'lace' | 'typhon
 
 export interface ConnectedWallet {
   name: WalletName;
-  wallet: any;
+  wallet: BrowserWallet;
   address: string;
   stakeAddress?: string;
 }
+
+type CardanoProviderMap = Partial<Record<WalletName, unknown>> & Record<string, unknown>;
+
+type CardanoWindow = Window & {
+  cardano?: CardanoProviderMap;
+};
+
+type DisconnectableWallet = BrowserWallet | {
+  disconnect?: () => Promise<unknown>;
+} | null | undefined;
 
 /**
  * Get available wallets
  */
 export function getAvailableWallets(): WalletName[] {
   if (typeof window === 'undefined') return [];
-  
+
   const available: WalletName[] = [];
   const cardanoWindow = window as unknown as CardanoWindow;
+
   try {
-    // Debug: Inspect window.cardano presence and keys
-    const hasCardano = Boolean((cardanoWindow as any).cardano);
-    // eslint-disable-next-line no-console
+    const providerMap = cardanoWindow.cardano;
+    const hasCardano = typeof providerMap === 'object' && providerMap !== null;
     console.log('[wallet] cardano provider present:', hasCardano);
     if (hasCardano) {
-      const keys = Object.keys((cardanoWindow as any).cardano || {});
-      // eslint-disable-next-line no-console
-      console.log('[wallet] discovered providers:', keys);
+      console.log('[wallet] discovered providers:', Object.keys(providerMap));
     }
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.log('[wallet] error inspecting window.cardano', e);
+  } catch (error) {
+    console.log('[wallet] error inspecting window.cardano', error);
   }
-  
-  if (cardanoWindow.cardano) {
-    if (cardanoWindow.cardano.nami) available.push('nami');
-    if (cardanoWindow.cardano.eternl) available.push('eternl');
-    if (cardanoWindow.cardano.flint) available.push('flint');
-    if (cardanoWindow.cardano.gero) available.push('gero');
-    if (cardanoWindow.cardano.lace) available.push('lace');
-    if (cardanoWindow.cardano.typhon) available.push('typhon');
-    if (cardanoWindow.cardano.nufi) available.push('nufi');
-    if (cardanoWindow.cardano.begin) available.push('begin');
-    if (cardanoWindow.cardano.vespr) available.push('vespr');
-    if (cardanoWindow.cardano.yoroi) available.push('yoroi');
+
+  const providerMap = cardanoWindow.cardano;
+  if (providerMap) {
+    if (providerMap.nami) available.push('nami');
+    if (providerMap.eternl) available.push('eternl');
+    if (providerMap.flint) available.push('flint');
+    if (providerMap.gero) available.push('gero');
+    if (providerMap.lace) available.push('lace');
+    if (providerMap.typhon) available.push('typhon');
+    if (providerMap.nufi) available.push('nufi');
+    if (providerMap.begin) available.push('begin');
+    if (providerMap.vespr) available.push('vespr');
+    if (providerMap.yoroi) available.push('yoroi');
   }
-  // eslint-disable-next-line no-console
+
   console.log('[wallet] available wallets:', available);
-  
+
   return available;
 }
 
@@ -55,45 +63,52 @@ export function getAvailableWallets(): WalletName[] {
  */
 export async function connectWallet(walletName: WalletName): Promise<ConnectedWallet | null> {
   try {
-    // eslint-disable-next-line no-console
     console.log('[wallet] connectWallet start:', walletName);
     if (typeof window === 'undefined') {
       throw new Error('Cardano wallet not found');
     }
-    
+
     const cardanoWindow = window as unknown as CardanoWindow;
-    if (!cardanoWindow.cardano) {
+    const providerMap = cardanoWindow.cardano;
+    if (!providerMap) {
       throw new Error('Cardano wallet not found');
     }
 
-    const walletAPI = cardanoWindow.cardano[walletName];
-    if (!walletAPI) {
+    if (!providerMap[walletName]) {
       throw new Error(`Wallet ${walletName} not found`);
     }
 
     const wallet = await BrowserWallet.enable(walletName, [{ cip: 95 }]);
-    // eslint-disable-next-line no-console
     console.log('[wallet] enabled provider:', walletName);
-    const addresses = await wallet.getUsedAddresses();
-    // eslint-disable-next-line no-console
-    console.log('[wallet] used addresses length:', addresses?.length);
-    const address = addresses[0];
-    
-    // Try to get stake address
+
+    const usedAddresses = await wallet.getUsedAddresses();
+    console.log('[wallet] used addresses length:', usedAddresses.length);
+
+    let address = usedAddresses[0];
+    if (!address) {
+      const unusedAddresses = await wallet.getUnusedAddresses();
+      address = unusedAddresses[0];
+    }
+
+    if (!address) {
+      throw new Error('Wallet did not provide any address');
+    }
+
     let stakeAddress: string | undefined;
     try {
       const rewardAddresses = await wallet.getRewardAddresses();
       stakeAddress = rewardAddresses[0];
-      // eslint-disable-next-line no-console
-      console.log('[wallet] reward addresses length:', rewardAddresses?.length);
-    } catch (e) {
-      // Not all wallets support stake addresses
-      // eslint-disable-next-line no-console
-      console.warn('[wallet] getRewardAddresses failed (non-fatal):', e);
+      console.log('[wallet] reward addresses length:', rewardAddresses.length);
+    } catch (error) {
+      console.warn('[wallet] getRewardAddresses failed (non-fatal):', error);
     }
 
-    // eslint-disable-next-line no-console
-    console.log('[wallet] connectWallet success:', { walletName, hasAddress: Boolean(address), hasStake: Boolean(stakeAddress) });
+    console.log('[wallet] connectWallet success:', {
+      walletName,
+      hasAddress: Boolean(address),
+      hasStake: Boolean(stakeAddress),
+    });
+
     return {
       name: walletName,
       wallet,
@@ -109,35 +124,18 @@ export async function connectWallet(walletName: WalletName): Promise<ConnectedWa
 /**
  * Disconnect wallet
  */
-export async function disconnectWallet(wallet: any): Promise<void> {
+export async function disconnectWallet(wallet: DisconnectableWallet): Promise<void> {
   try {
-    // eslint-disable-next-line no-console
     console.log('[wallet] disconnectWallet start');
-    if (wallet && typeof wallet.disconnect === 'function') {
-      await wallet.disconnect();
+    if (wallet) {
+      const disconnectMethod = (wallet as { disconnect?: () => Promise<unknown> }).disconnect;
+      if (typeof disconnectMethod === 'function') {
+        await disconnectMethod.call(wallet);
+      }
     }
-    // eslint-disable-next-line no-console
     console.log('[wallet] disconnectWallet complete');
   } catch (error) {
     console.error('[wallet] Error disconnecting wallet:', error);
   }
 }
-
-// Type assertion for window.cardano - Mesh SDK may already declare this
-// Using type assertions to avoid conflicts with Mesh SDK's type definitions
-type CardanoWindow = Window & {
-  cardano?: {
-    [key: string]: any;
-    nami?: any;
-    eternl?: any;
-    flint?: any;
-    gero?: any;
-    lace?: any;
-    typhon?: any;
-    nufi?: any;
-    begin?: any;
-    vespr?: any;
-    yoroi?: any;
-  };
-};
 

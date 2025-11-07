@@ -8,6 +8,18 @@ import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { DRep } from '@/types/governance';
 import { cn } from '@/lib/utils';
 
+type StatusFilter = 'all' | 'active' | 'inactive' | 'retired';
+type QuickFilter = 'all' | 'has_profile' | 'recently_active' | 'popular';
+type SortFilter = 'power' | 'name' | 'delegators' | 'votes' | 'recent';
+
+const statusOptions: StatusFilter[] = ['all', 'active', 'inactive', 'retired'];
+const quickFilterOptions: QuickFilter[] = ['all', 'has_profile', 'recently_active', 'popular'];
+const sortOptions: SortFilter[] = ['power', 'name', 'delegators', 'votes', 'recent'];
+
+const isStatusFilter = (value: string): value is StatusFilter => statusOptions.includes(value as StatusFilter);
+const isQuickFilter = (value: string): value is QuickFilter => quickFilterOptions.includes(value as QuickFilter);
+const isSortFilter = (value: string): value is SortFilter => sortOptions.includes(value as SortFilter);
+
 interface DRepListProps {
   dreps: DRep[];
   currentPage?: number;
@@ -24,9 +36,9 @@ export default function DRepList({
   loading = false 
 }: DRepListProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'retired'>('all');
-  const [quickFilter, setQuickFilter] = useState<'all' | 'has_profile' | 'recently_active' | 'popular'>('all');
-  const [sortBy, setSortBy] = useState<'power' | 'name' | 'delegators' | 'votes' | 'recent'>('power');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
+  const [sortBy, setSortBy] = useState<SortFilter>('power');
 
   const filteredAndSorted = useMemo(() => {
     let filtered = dreps.filter((drep) => {
@@ -125,7 +137,12 @@ export default function DRepList({
         <div className="flex gap-2 flex-wrap">
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (isStatusFilter(value)) {
+                setStatusFilter(value);
+              }
+            }}
             className={cn(
               "px-3 py-2 border border-input rounded-md text-sm",
               "bg-background text-foreground",
@@ -140,7 +157,12 @@ export default function DRepList({
           
           <select
             value={quickFilter}
-            onChange={(e) => setQuickFilter(e.target.value as any)}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (isQuickFilter(value)) {
+                setQuickFilter(value);
+              }
+            }}
             className={cn(
               "px-3 py-2 border border-input rounded-md text-sm",
               "bg-background text-foreground",
@@ -155,7 +177,12 @@ export default function DRepList({
           
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (isSortFilter(value)) {
+                setSortBy(value);
+              }
+            }}
             className={cn(
               "px-3 py-2 border border-input rounded-md text-sm",
               "bg-background text-foreground",

@@ -4,7 +4,7 @@ Rust backend service that abstracts Cardano data provider complexity (Blockfrost
 
 ## Features
 
-- **Provider Abstraction**: Unified interface for Blockfrost and Koios APIs
+- **Provider Abstraction**: Unified interface for Blockfrost, Koios, and GovTools APIs
 - **Smart Routing**: Automatically selects the best provider for each operation type
 - **Automatic Fallback**: Gracefully falls back to alternative providers on failure
 - **Type Safety**: Strong typing with Rust's type system
@@ -33,6 +33,8 @@ cp .env.example .env
    - `BLOCKFROST_API_KEY`: Your Blockfrost project ID
    - `BLOCKFROST_NETWORK`: `mainnet` or `preview`
    - `KOIOS_BASE_URL`: Koios API base URL (default: https://preview.koios.rest/api/v1)
+   - `GOVTOOLS_BASE_URL`: GovTools API base URL (default: https://be.gov.tools)
+   - `GOVTOOLS_ENABLED`: Toggle GovTools enrichment (`true`/`false`, default: `true`)
    - `BACKEND_PORT`: Server port (default: 8080)
    - `CORS_ORIGINS`: Allowed CORS origins (comma-separated)
 

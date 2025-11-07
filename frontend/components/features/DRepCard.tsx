@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { Users, TrendingUp, ExternalLink, Vote, Activity, Shield } from 'lucide-react';
+import { Users, TrendingUp, ExternalLink, Vote, Shield } from 'lucide-react';
 import type { DRep } from '@/types/governance';
 import { isSpecialSystemDRep } from '@/lib/governance/drep-id';
 import { getSystemDRepInfo } from '@/lib/governance';
@@ -54,6 +54,22 @@ function DRepCard({ drep }: DRepCardProps) {
   const votingPower = formatVotingPower(drep.amount || drep.voting_power_active || drep.voting_power);
   const delegatorCount = drep.delegator_count;
   const voteCount = drep.vote_count;
+
+  const handleWebsiteClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (drep.metadata?.website) {
+        try {
+          if (typeof window !== 'undefined') {
+            window.open(drep.metadata.website, '_blank', 'noopener,noreferrer');
+          }
+        } catch (error) {
+          console.error('Failed to open DRep website', error);
+        }
+      }
+    },
+    [drep.metadata?.website]
+  );
 
   return (
     <Link href={`/dreps/${drep.drep_id}`} className="block h-full">
@@ -159,16 +175,14 @@ function DRepCard({ drep }: DRepCardProps) {
                 <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
                   <ExternalLink className="w-4 h-4 text-primary" />
                 </div>
-                <a
-                  href={drep.metadata.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1 truncate flex-1"
-                  onClick={(e) => e.stopPropagation()}
+                <button
+                  type="button"
+                  onClick={handleWebsiteClick}
+                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1 truncate flex-1 text-left"
                 >
                   <span className="truncate">{drep.metadata.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
                   <ExternalLink className="w-3 h-3 shrink-0" />
-                </a>
+                </button>
               </div>
             )}
           </div>

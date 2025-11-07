@@ -1,31 +1,11 @@
 'use client';
 
-import { Card, CardContent } from '../ui/Card';
 import type { ActionVotingBreakdown } from '@/types/governance';
 
 interface VotingProgressProps {
   votingResults: ActionVotingBreakdown;
   showLabels?: boolean;
   compact?: boolean;
-}
-
-/**
- * Calculate participation percentage for a voter type
- */
-function calculateParticipation(
-  yes: string,
-  no: string,
-  abstain: string,
-  total: string
-): number {
-  const totalVoted = BigInt(yes) + BigInt(no) + BigInt(abstain);
-  const totalPower = BigInt(total);
-  
-  if (totalPower === BigInt(0)) {
-    return 0;
-  }
-  
-  return Number((totalVoted * BigInt(100)) / totalPower);
 }
 
 /**

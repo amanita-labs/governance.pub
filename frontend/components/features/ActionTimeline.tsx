@@ -3,8 +3,29 @@
 import { useMemo } from 'react';
 import type { GovernanceAction } from '@/types/governance';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 interface ActionTimelineProps {
   actions: GovernanceAction[];
+}
+
+/**
+ * Extract string from value (handles both string and object formats)
+ */
+function extractString(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (isRecord(value)) {
+    const candidates: Array<unknown> = [value.content, value.text, value.value, value.description, value.label];
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string') {
+        return candidate;
+      }
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -14,49 +35,33 @@ function getMetadataTitle(action: GovernanceAction): string {
   // Try meta_json first
   if (action.meta_json) {
     try {
-      const parsed = typeof action.meta_json === 'string' 
-        ? JSON.parse(action.meta_json) 
-        : action.meta_json;
-      // Handle if title is an object (e.g., {tag: "h1", content: "Title"})
-      if (parsed.title) {
-        if (typeof parsed.title === 'string') {
-          return parsed.title;
-        }
-        if (typeof parsed.title === 'object' && parsed.title !== null) {
-          // Try to extract string from object structures
-          return parsed.title.content || parsed.title.text || parsed.title.value || String(parsed.title);
+      const parsed: unknown =
+        typeof action.meta_json === 'string'
+          ? JSON.parse(action.meta_json)
+          : action.meta_json;
+      if (isRecord(parsed)) {
+        const title = extractString(parsed.title);
+        if (title) {
+          return title;
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore parse errors
     }
   }
   
   // Try metadata field
   if (action.metadata) {
-    const title = action.metadata.title;
-    if (typeof title === 'string') {
+    const title = extractString(action.metadata.title);
+    if (title) {
       return title;
-    }
-    if (typeof title === 'object' && title !== null) {
-      // Handle object title structures
-      return (title as any).content || (title as any).text || (title as any).value || String(title);
     }
   }
   
   // Fallback to description or action ID (ensure it's a string)
-  if (action.description) {
-    if (typeof action.description === 'string') {
-      return action.description;
-    }
-    // Handle if description is an object
-    if (typeof action.description === 'object' && action.description !== null) {
-      return (action.description as any).content || 
-             (action.description as any).text || 
-             (action.description as any).value || 
-             (action.description as any).description ||
-             String(action.description);
-    }
+  const description = extractString(action.description);
+  if (description) {
+    return description;
   }
   
   return `Action ${action.action_id.slice(0, 8)}`;
