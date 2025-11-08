@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { Users, FileText, Vote, UserPlus, TrendingUp, BarChart3 } from 'lucide-react';
+import { Users, FileText, Vote, UserPlus } from 'lucide-react';
 import type { Metadata } from 'next';
 
 // Static metadata for better SEO and performance
 export const metadata: Metadata = {
-  title: 'GovTwool - Cardano Governance Made Simple',
-  description: 'A modern platform for participating in Cardano on-chain governance. Browse DReps, track actions, and make your voice heard in the ecosystem.',
+  title: 'GovTwool - Cardano Governance Made Wooly',
+  description: 'A platform for participating in Cardano on-chain governance.',
 };
 
 // Mark as static page - no dynamic data fetching
@@ -15,13 +15,6 @@ export const dynamic = 'force-static';
 
 export default function Home() {
   const features = [
-    {
-      icon: <BarChart3 className="w-6 h-6" />,
-      title: 'Dashboard',
-      description: 'Get an overview of governance activity, key metrics, and recent updates',
-      link: '/dashboard',
-      variant: 'primary' as const,
-    },
     {
       icon: <Users className="w-6 h-6" />,
       title: 'Browse DReps',
@@ -66,19 +59,9 @@ export default function Home() {
               </h1>
             </div>
             <p className="text-2xl md:text-3xl font-semibold text-foreground">
-              Cardano Governance Made Simple
-            </p>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              A modern platform for participating in Cardano on-chain governance. 
-              Browse DReps, track actions, and make your voice heard in the ecosystem.
+              Cardano Governance Made Wooly
             </p>
             <div className="flex justify-center gap-4 flex-wrap pt-4">
-              <Link href="/dashboard">
-                <Button size="lg" variant="primary" className="gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  View Dashboard
-                </Button>
-              </Link>
               <Link href="/dreps">
                 <Button size="lg" variant="outline" className="gap-2">
                   <Users className="w-5 h-5" />
@@ -94,10 +77,10 @@ export default function Home() {
       <section className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-            Everything You Need for Governance
+            Some stuff you may want
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Access all Cardano governance tools in one place
+            Access tools and stuff in one wooly place
           </p>
         </div>
 
@@ -131,13 +114,10 @@ export default function Home() {
                 </h2>
                 <div className="space-y-4 text-muted-foreground leading-relaxed">
                   <p className="text-lg">
-                    GovTwool is a user-friendly interface for Cardano's on-chain governance system. 
-                    Built with Next.js 16 and powered by Mesh SDK, it provides 
-                    an intuitive way to interact with Cardano governance features.
+                    GovTwool is a interface for Cardano's on-chain governance. 
                   </p>
                   <p>
-                    Whether you're looking to delegate your voting rights, register as a DRep, 
-                    or simply explore the governance landscape, GovTwool makes it easy and accessible.
+                  Built for Cardano Summit LayerUp Hackathon by team insects 🪰.
                   </p>
                 </div>
               </div>

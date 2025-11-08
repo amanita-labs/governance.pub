@@ -7,7 +7,8 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx"
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "test:metadata": "tsx scripts/test-drep-metadata.ts"
   },
   "keywords": [],
   "author": "",
@@ -49,6 +50,7 @@
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "eslint": "^9.39.1",
-    "eslint-config-next": "^16.0.1"
+    "eslint-config-next": "^16.0.1",
+    "tsx": "^4.20.0"
   }
 }

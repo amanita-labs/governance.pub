@@ -26,23 +26,59 @@ impl CachedProviderRouter {
         }
     }
 
-    pub async fn get_dreps_page(&self, page: u32, count: u32) -> Result<DRepsPage, anyhow::Error> {
-        let cache_key = CacheKey::DRepsPage { page, count };
+    pub async fn get_dreps_page(&self, query: &DRepsQuery) -> Result<DRepsPage, anyhow::Error> {
+        let normalized = query.clone().with_defaults();
+        let cache_key = CacheKey::DRepsPage {
+            page: normalized.normalized_page(),
+            count: normalized.count,
+            filters: normalized.cache_descriptor(),
+        };
 
         // Check cache first
         if let Some(cached) = self.cache.get::<DRepsPage>(&cache_key).await {
-            debug!("Cache hit for DReps page {}:{}", page, count);
+            debug!(
+                "Cache hit for DReps page {}:{}",
+                normalized.normalized_page(),
+                normalized.count
+            );
             return Ok(cached);
         }
 
         // Cache miss - fetch from provider
         debug!(
             "Cache miss for DReps page {}:{}, fetching from provider",
-            page, count
+            normalized.normalized_page(),
+            normalized.count
         );
-        let mut result = self.router.get_dreps_page(page, count).await?;
+        let mut used_fallback = false;
+        let mut result = if let Some(provider) = &self.govtools {
+            match provider.list_dreps(&normalized).await {
+                Ok(page_result) => {
+                    if page_result.dreps.is_empty() && !normalized.has_filters() {
+                        used_fallback = true;
+                        self.router.get_dreps_page(&normalized).await?
+                    } else {
+                        page_result
+                    }
+                }
+                Err(error) => {
+                    tracing::debug!(
+                        "GovTools list failed for page {}:{} with filters {:?}: {}",
+                        normalized.normalized_page(),
+                        normalized.count,
+                        normalized.cache_descriptor(),
+                        error
+                    );
+                    used_fallback = true;
+                    self.router.get_dreps_page(&normalized).await?
+                }
+            }
+        } else {
+            used_fallback = true;
+            self.router.get_dreps_page(&normalized).await?
+        };
 
-        if self.govtools.is_some() && !result.dreps.is_empty() {
+        if used_fallback && self.govtools.is_some() && !result.dreps.is_empty() {
             let futures = result.dreps.into_iter().map(|drep| self.enrich_drep(drep));
             let enriched = join_all(futures).await;
             result.dreps = enriched;

@@ -20,8 +20,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "GovTwool - Cardano Governance",
-  description: "A playful Cardano governance application",
+  title: "GovTwool - Wooly Governance",
+  description: "A wooly Cardano governance app",
   icons: {
     icon: '/icon.svg',
   },

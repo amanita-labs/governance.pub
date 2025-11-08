@@ -12,18 +12,46 @@ use serde_json::Value;
 pub struct DRepsQueryParams {
     pub page: Option<u32>,
     pub count: Option<u32>,
+    #[serde(default, alias = "pageSize")]
+    pub page_size: Option<u32>,
+    #[serde(default, alias = "status[]")]
+    pub status: Vec<String>,
+    #[serde(default)]
+    pub search: Option<String>,
+    #[serde(default)]
+    pub sort: Option<String>,
+    #[serde(default)]
+    pub direction: Option<String>,
+    #[serde(default)]
     #[allow(dead_code)]
     pub enrich: Option<bool>,
+}
+
+impl DRepsQueryParams {
+    fn into_query(self) -> DRepsQuery {
+        let page = self.page.unwrap_or(1);
+        let count = self.page_size.or(self.count).unwrap_or(20);
+
+        DRepsQuery {
+            page,
+            count,
+            statuses: self.status,
+            search: self.search,
+            sort: self.sort,
+            direction: self.direction,
+            enrich: self.enrich.unwrap_or(false),
+        }
+        .with_defaults()
+    }
 }
 
 pub async fn get_dreps(
     State(router): State<CachedProviderRouter>,
     Query(params): Query<DRepsQueryParams>,
 ) -> Result<Json<DRepsPage>, StatusCode> {
-    let page = params.page.unwrap_or(1);
-    let count = params.count.unwrap_or(20);
+    let query = params.into_query();
 
-    match router.get_dreps_page(page, count).await {
+    match router.get_dreps_page(&query).await {
         Ok(result) => Ok(Json(result)),
         Err(e) => {
             tracing::error!("Error fetching DReps: {}", e);

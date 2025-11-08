@@ -1,12 +1,18 @@
 import Link from 'next/link';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Users, TrendingUp, ExternalLink, Vote, Shield } from 'lucide-react';
-import type { DRep } from '@/types/governance';
+import type { DRep, DRepExternalReference, DRepMetadata } from '@/types/governance';
 import { isSpecialSystemDRep } from '@/lib/governance/drep-id';
 import { getSystemDRepInfo } from '@/lib/governance';
 import { cn } from '@/lib/utils';
+import {
+  sanitizeMetadataValue,
+  getMetadataName,
+  getMetadataDescription,
+  getMetadataWebsite,
+} from '@/lib/governance/drepMetadata';
 
 interface DRepCardProps {
   drep: DRep;
@@ -36,21 +42,74 @@ function formatNumber(num: number | undefined): string {
   return num.toLocaleString();
 }
 
+const selectWebsite = (metadataWebsite: string | undefined, links?: DRepExternalReference[]) => {
+  if (metadataWebsite && metadataWebsite.trim().length > 0) {
+    return metadataWebsite;
+  }
+
+  if (!links?.length) {
+    return undefined;
+  }
+
+  const preferred = links.find((ref) => {
+    const label = ref.label?.toLowerCase() ?? '';
+    return label.includes('website') || label.includes('site');
+  });
+
+  const fallback = links.find((ref) => ref.uri && ref.uri.startsWith('http'));
+  return preferred?.uri ?? fallback?.uri;
+};
+
 function DRepCard({ drep }: DRepCardProps) {
   const isSystemDRep = isSpecialSystemDRep(drep.drep_id);
   const systemDRepInfo = isSystemDRep ? getSystemDRepInfo(drep.drep_id) : null;
-  
-  // Use name from metadata (priority: metadata.name > metadata.title > view > drep_id)
-  // For system DReps, use their friendly name
-  const drepName = systemDRepInfo?.name ||
-                   drep.metadata?.name || 
-                   drep.metadata?.title || 
-                   drep.view || 
-                   drep.drep_id.slice(0, 8);
-  const showDrepId = !!(drep.metadata?.name || drep.metadata?.title || drep.view) && !isSystemDRep;
+
+  const normalizedMetadata = useMemo(() => {
+    if (!drep.metadata) {
+      return null;
+    }
+    const sanitized = sanitizeMetadataValue(drep.metadata);
+    return sanitized ?? (drep.metadata as DRepMetadata);
+  }, [drep.metadata]);
+
+  const website = useMemo(
+    () => selectWebsite(getMetadataWebsite(normalizedMetadata), drep.link_references),
+    [drep.link_references, normalizedMetadata]
+  );
+
+  const metadataDescription =
+    getMetadataDescription(normalizedMetadata) || drep.objectives || drep.motivations || drep.qualifications;
+
+  const metadataName =
+    getMetadataName(normalizedMetadata) || drep.given_name || drep.view;
+
+  const derivedDescription = systemDRepInfo?.description || metadataDescription;
+
+  const drepName =
+    systemDRepInfo?.name ||
+    metadataName ||
+    drep.given_name ||
+    drep.drep_id.slice(0, 8);
+
+  const showDrepId =
+    !isSystemDRep &&
+    Boolean(metadataName || drep.given_name || drep.view);
+
   const status = drep.status || (drep.active === false ? 'inactive' : drep.retired ? 'retired' : 'active');
-  const hasProfile = !!(drep.metadata?.name || drep.metadata?.description || drep.metadata?.website);
-  // Use amount field if available (from DRep endpoint), otherwise fallback to voting_power
+
+  const hasProfile =
+    drep.has_profile ??
+    Boolean(
+      metadataName ||
+        metadataDescription ||
+        getMetadataWebsite(normalizedMetadata) ||
+        drep.given_name ||
+        drep.objectives ||
+        drep.motivations ||
+        drep.qualifications ||
+        website
+    );
+
   const votingPower = formatVotingPower(drep.amount || drep.voting_power_active || drep.voting_power);
   const delegatorCount = drep.delegator_count;
   const voteCount = drep.vote_count;
@@ -58,130 +117,130 @@ function DRepCard({ drep }: DRepCardProps) {
   const handleWebsiteClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
-      if (drep.metadata?.website) {
+      if (website) {
         try {
           if (typeof window !== 'undefined') {
-            window.open(drep.metadata.website, '_blank', 'noopener,noreferrer');
+            window.open(website, '_blank', 'noopener,noreferrer');
           }
         } catch (error) {
           console.error('Failed to open DRep website', error);
         }
       }
     },
-    [drep.metadata?.website]
+    [website]
   );
 
   return (
     <Link href={`/dreps/${drep.drep_id}`} className="block h-full">
-      <Card className={cn(
-        "h-full cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover border-2",
-        isSystemDRep 
-          ? "border-purple-500/30 hover:border-purple-500/50 bg-gradient-to-br from-purple-500/5 to-purple-600/5" 
-          : "hover:border-field-green/50"
-      )}>
+      <Card
+        className={cn(
+          'h-full cursor-pointer border-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover',
+          isSystemDRep
+            ? 'border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-purple-600/5 hover:border-purple-500/50'
+            : 'hover:border-field-green/50'
+        )}
+      >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
+            <div className="min-w-0 flex-1">
+              <div className="mb-1.5 flex items-center gap-2">
                 {isSystemDRep && systemDRepInfo?.icon && (
-                  <span className="text-xl shrink-0">{systemDRepInfo.icon}</span>
+                  <span className="shrink-0 text-xl" aria-hidden="true">
+                    {systemDRepInfo.icon}
+                  </span>
                 )}
-                <h3 className="text-lg font-semibold text-foreground truncate">
-                  {drepName}
-                </h3>
+                <h3 className="truncate text-lg font-semibold text-foreground">{drepName}</h3>
                 {isSystemDRep && (
-                  <Badge variant="info" className="text-xs shrink-0 bg-purple-500/20 text-purple-300 border-purple-500/30">
-                    <Shield className="w-3 h-3 mr-1" />
+                  <Badge
+                    variant="info"
+                    className="shrink-0 bg-purple-500/20 text-xs text-purple-300"
+                  >
+                    <Shield className="mr-1 h-3 w-3" />
                     System
                   </Badge>
                 )}
                 {hasProfile && !isSystemDRep && (
-                  <Badge variant="info" className="text-xs shrink-0">
+                  <Badge variant="info" className="shrink-0 text-xs">
                     Profile
                   </Badge>
                 )}
               </div>
               {showDrepId && (
-                <p className="text-xs text-muted-foreground mb-1 font-mono">
-                  {drep.drep_id.slice(0, 8)}...
-                </p>
+                <p className="mb-1 font-mono text-xs text-muted-foreground">{drep.drep_id.slice(0, 8)}...</p>
               )}
-              {(systemDRepInfo?.description || drep.metadata?.description) && (
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                  {systemDRepInfo?.description || drep.metadata?.description}
-                </p>
+              {derivedDescription && (
+                <p className="mb-2 line-clamp-2 text-sm text-muted-foreground">{derivedDescription}</p>
               )}
               <div className="flex items-center gap-2">
-                <Badge 
+                <Badge
                   variant={status === 'active' ? 'success' : status === 'retired' ? 'error' : 'default'}
-                  className="shrink-0"
+                  className="shrink-0 capitalize"
                 >
                   {status}
                 </Badge>
                 {drep.last_vote_epoch && (
+                  <span className="text-xs text-muted-foreground">Last vote: Epoch {drep.last_vote_epoch}</span>
+                )}
+                {drep.votes_last_year !== undefined && (
                   <span className="text-xs text-muted-foreground">
-                    Last vote: Epoch {drep.last_vote_epoch}
+                    Votes (12M): {drep.votes_last_year.toLocaleString()}
                   </span>
                 )}
               </div>
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="pt-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50 border border-border">
-              <div className="p-1.5 rounded-md bg-field-green/10 shrink-0">
-                <TrendingUp className="w-4 h-4 text-field-green" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 p-2.5">
+              <div className="shrink-0 rounded-md bg-field-green/10 p-1.5">
+                <TrendingUp className="h-4 w-4 text-field-green" />
               </div>
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Power</p>
-                <p className="text-sm font-semibold text-foreground truncate">
-                  {votingPower}
-                </p>
+                <p className="truncate text-sm font-semibold text-foreground">{votingPower}</p>
               </div>
             </div>
-            
+
             {delegatorCount !== undefined && (
-              <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50 border border-border">
-                <div className="p-1.5 rounded-md bg-sky-blue/10 shrink-0">
-                  <Users className="w-4 h-4 text-sky-blue" />
+              <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 p-2.5">
+                <div className="shrink-0 rounded-md bg-sky-blue/10 p-1.5">
+                  <Users className="h-4 w-4 text-sky-blue" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Delegators</p>
-                  <p className="text-sm font-semibold text-foreground truncate">
+                  <p className="truncate text-sm font-semibold text-foreground">
                     {formatNumber(delegatorCount)}
                   </p>
                 </div>
               </div>
             )}
-            
+
             {voteCount !== undefined && (
-              <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50 border border-border">
-                <div className="p-1.5 rounded-md bg-field-dark/10 shrink-0">
-                  <Vote className="w-4 h-4 text-field-dark" />
+              <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 p-2.5">
+                <div className="shrink-0 rounded-md bg-field-dark/10 p-1.5">
+                  <Vote className="h-4 w-4 text-field-dark" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Votes</p>
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {formatNumber(voteCount)}
-                  </p>
+                  <p className="truncate text-sm font-semibold text-foreground">{formatNumber(voteCount)}</p>
                 </div>
               </div>
             )}
-            
-            {drep.metadata?.website && (
-              <div className="col-span-2 sm:col-span-3 flex items-center gap-2 p-2.5 rounded-md bg-muted/50 border border-border">
-                <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
-                  <ExternalLink className="w-4 h-4 text-primary" />
+
+            {website && (
+              <div className="col-span-2 flex items-center gap-2 rounded-md border border-border bg-muted/50 p-2.5 sm:col-span-3">
+                <div className="shrink-0 rounded-md bg-primary/10 p-1.5">
+                  <ExternalLink className="h-4 w-4 text-primary" />
                 </div>
                 <button
                   type="button"
                   onClick={handleWebsiteClick}
-                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1 truncate flex-1 text-left"
+                  className="flex flex-1 items-center gap-1 truncate text-left text-sm font-medium text-primary hover:underline"
                 >
-                  <span className="truncate">{drep.metadata.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
-                  <ExternalLink className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                  <ExternalLink className="h-3 w-3 shrink-0" />
                 </button>
               </div>
             )}

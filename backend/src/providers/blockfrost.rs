@@ -190,7 +190,9 @@ impl BlockfrostProvider {
 
 #[async_trait]
 impl Provider for BlockfrostProvider {
-    async fn get_dreps_page(&self, page: u32, count: u32) -> Result<DRepsPage, anyhow::Error> {
+    async fn get_dreps_page(&self, query: &DRepsQuery) -> Result<DRepsPage, anyhow::Error> {
+        let page = query.normalized_page();
+        let count = query.count;
         let path = format!("/governance/dreps?page={}&count={}", page, count);
         let json = self.fetch(&path).await?;
 

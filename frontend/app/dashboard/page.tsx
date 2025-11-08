@@ -4,11 +4,12 @@ import DashboardStats from '@/components/features/DashboardStats';
 import { ActionTimeline } from '@/components/features/ActionTimeline';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import ActionList from '@/components/features/ActionList';
-import DRepList from '@/components/features/DRepList';
+import DRepCard from '@/components/features/DRepCard';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, TrendingUp, Users, FileText, Vote } from 'lucide-react';
 import dynamicImport from 'next/dynamic';
+import { notFound } from 'next/navigation';
 
 // Lazy load heavy chart components (client components will hydrate on client)
 const VotingPowerFlowLazy = dynamicImport(() => import('@/components/charts/VotingPowerFlow').then(mod => ({ default: mod.VotingPowerFlow })), {
@@ -25,6 +26,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function DashboardPage() {
+  const isDashboardEnabled = process.env.NEXT_PUBLIC_ENABLE_DASHBOARD === 'true';
+  if (!isDashboardEnabled) {
+    notFound();
+  }
+
   // Only fetch what we need: top 20 DReps for charts, top 6 for display, and recent 6 actions
   // This is much faster than fetching ALL DReps and ALL Actions
   const [drepsPage, actionsPage, allDRepsForStats, allActionsForStats] = await Promise.all([
@@ -169,7 +175,11 @@ export default async function DashboardPage() {
               </Button>
             </Link>
           </div>
-          <DRepList dreps={topDReps} />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {topDReps.slice(0, 6).map((drep) => (
+              <DRepCard key={drep.drep_id} drep={drep} />
+            ))}
+          </div>
         </div>
       )}
 

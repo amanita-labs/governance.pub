@@ -15,10 +15,11 @@ export default function Navigation() {
 
   const navLinks = [
     { href: '/', label: 'Home', icon: '🏠' },
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
     { href: '/dreps', label: 'DReps', icon: '👥' },
     { href: '/actions', label: 'Actions', icon: '📋' },
     { href: '/governance', label: 'Governance', icon: '⚖️' },
+    { href: '/delegate', label: 'Delegate', icon: '🗳️' },
+    { href: '/register-drep', label: 'My DRep', icon: '➕' },
   ];
 
   return (

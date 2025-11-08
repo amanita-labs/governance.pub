@@ -5,10 +5,16 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { ExternalLink, TrendingUp, Calendar, Hash, User, Mail, Globe, FileText, Users, Copy, Check } from 'lucide-react';
+import { ExternalLink, TrendingUp, Calendar, Hash, Mail, Globe, FileText, Users, Copy, Check } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import type { DRep, DRepVotingHistory, DRepDelegator, JsonValue } from '@/types/governance';
+import { SheepIcon } from '@/components/ui/SheepIcon';
+import {
+  getMetadataDescription,
+  getMetadataName,
+  getMetadataWebsite,
+} from '@/lib/governance/drepMetadata';
 
 interface DRepDetailProps {
   drep: DRep;
@@ -60,14 +66,15 @@ export default function DRepDetail({ drep, votingHistory, delegators = [] }: DRe
   const [copiedId, setCopiedId] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
 
-  const metadataName = getStringValue(drep.metadata?.name);
+  const metadataName = getMetadataName(drep.metadata) ?? getStringValue(drep.metadata?.name);
   const metadataTitle = getStringValue(drep.metadata?.title);
-  const metadataDescription = toDisplayString(drep.metadata?.description);
+  const metadataDescription =
+    getMetadataDescription(drep.metadata) ?? toDisplayString(drep.metadata?.description);
   const metadataObjectives = toDisplayString(drep.metadata?.objectives);
   const metadataMotivations = toDisplayString(drep.metadata?.motivations);
   const metadataQualifications = toDisplayString(drep.metadata?.qualifications);
   const metadataEmail = getStringValue(drep.metadata?.email);
-  const metadataWebsite = getStringValue(drep.metadata?.website);
+  const metadataWebsite = getMetadataWebsite(drep.metadata) ?? getStringValue(drep.metadata?.website);
   const metadataTwitter = getStringValue(drep.metadata?.twitter);
   const metadataGithub = getStringValue(drep.metadata?.github);
 
@@ -80,7 +87,7 @@ export default function DRepDetail({ drep, votingHistory, delegators = [] }: DRe
 
   // Use name from metadata endpoint (rich metadata), fallback to view, then drep_id
   // Priority: metadata.name > metadata.title > view > drep_id
-  const drepName = metadataName || metadataTitle || drep.view || drep.drep_id.slice(0, 8);
+  const drepName = metadataName || metadataTitle || drep.given_name || drep.view || drep.drep_id.slice(0, 8);
   const status = drep.status || 'active';
 
   const handleCopyDRepId = async () => {
@@ -134,8 +141,8 @@ export default function DRepDetail({ drep, votingHistory, delegators = [] }: DRe
                       />
                     </div>
                   ) : (
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-field-green/20 to-sky-blue/20 border-2 border-field-green/30 flex items-center justify-center">
-                      <User className="w-12 h-12 text-field-green/50" />
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-field-green/30 bg-gradient-to-br from-field-green/20 to-sky-blue/20">
+                      <SheepIcon size={56} className="motion-safe:animate-pulse" />
                     </div>
                   )}
                 </div>
@@ -153,6 +160,10 @@ export default function DRepDetail({ drep, votingHistory, delegators = [] }: DRe
                         Verified Profile
                       </Badge>
                     )}
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                    <span aria-hidden="true">🩷</span>
+                    <span>This DRep proudly grazes with the Cardano governance flock.</span>
                   </div>
                 </div>
               </div>
