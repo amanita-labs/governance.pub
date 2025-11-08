@@ -19,9 +19,11 @@ Deploy the Rust backend separately on a platform that supports Rust, then proxy 
    - Start Command: `./target/release/govtwool-backend`
 5. **Set environment variables** in Railway:
    - `BLOCKFROST_API_KEY`
-   - `BLOCKFROST_NETWORK`
-   - `KOIOS_BASE_URL`
-   - `BACKEND_PORT` (Railway will set `PORT` automatically)
+   - `BLOCKFROST_NETWORK` (optional)
+   - `KOIOS_BASE_URL` (optional, defaults to preview)
+   - `GOVTOOLS_BASE_URL` and `GOVTOOLS_ENABLED` (optional enrichment)
+   - `CACHE_ENABLED` / `CACHE_MAX_ENTRIES` (optional caching controls)
+   - `BACKEND_PORT` (Railway sets `PORT`; keep for local parity)
 6. **Get your Railway URL** (e.g., `https://govtwool-backend.railway.app`)
 7. **Update `vercel.json`** with your Railway URL in the rewrites section
 
@@ -33,7 +35,7 @@ Deploy the Rust backend separately on a platform that supports Rust, then proxy 
    - Build Command: `cd backend && cargo build --release`
    - Start Command: `cd backend && ./target/release/govtwool-backend`
    - Environment: `Docker` or `Rust`
-4. **Set environment variables** as above
+4. **Set environment variables** as above (include GovTools, cache controls, and optional `CORS_ORIGINS`)
 5. **Update `vercel.json`** with your Render URL
 
 ### Option 3: Deploy Backend on Fly.io
@@ -69,5 +71,8 @@ After deploying your backend, update `vercel.json` with your backend URL:
 }
 ```
 
-Then set the `NEXT_PUBLIC_BACKEND_URL` environment variable in Vercel dashboard.
+Then set the `NEXT_PUBLIC_BACKEND_URL` environment variable in the Vercel dashboard. Optionally add:
+
+- `BACKEND_URL` for a server-only override (if you proxy through Vercel rewrites but want API routes to hit an internal URL)
+- `NEXT_PUBLIC_NETWORK` to control Cardano network hints in the UI (`mainnet` or `preview`)
 

@@ -2,13 +2,20 @@
 
 ## Required Environment Variables
 
-### 1. `NEXT_PUBLIC_BACKEND_URL` (Required)
-- **Purpose**: URL of your Rust backend service (deployed on Render)
-- **Example**: `https://govtwool-backend.onrender.com`
-- **Used in**: API route handlers (`frontend/app/api/**/route.ts`)
-- **Note**: Must have `NEXT_PUBLIC_` prefix to be accessible in Next.js API routes
+### 1. `NEXT_PUBLIC_BACKEND_URL` (Required in hosted environments)
+- **Purpose**: Public URL of your Rust backend service (Render, Railway, Fly.io, etc.)
+- **Example**: `https://your-backend-host.com`
+- **Used in**: API route handlers (`frontend/app/api/**/route.ts`) and client components
+- **Default**: Falls back to `http://localhost:8080` during local development if unset
+- **Note**: Must have the `NEXT_PUBLIC_` prefix to be available in browser bundles
 
 ## Optional Environment Variables
+
+### 1. `BACKEND_URL` (Server-only override)
+
+- **Purpose**: Override backend URL for Next.js server contexts without exposing it to the browser
+- **Used in**: API route handlers (`frontend/app/api/**/route.ts`) when `NEXT_PUBLIC_BACKEND_URL` is not set
+- **When to use**: Provide a value if you need a private URL for server-side requests that differs from the public client URL
 
 ### 2. `NEXT_PUBLIC_NETWORK` (Optional)
 
@@ -48,6 +55,7 @@ NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
 
 ```env
 NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
+BACKEND_URL=https://internal-backend.onrender.com
 NEXT_PUBLIC_NETWORK=mainnet
 ```
 
@@ -55,5 +63,6 @@ NEXT_PUBLIC_NETWORK=mainnet
 
 - **Server-side vs Client-side**: Variables with `NEXT_PUBLIC_` prefix are exposed to the browser. Variables without the prefix are only available in server-side code (API routes, server components).
 - **Security**: Never put sensitive API keys in `NEXT_PUBLIC_` variables as they'll be exposed in the browser bundle.
-- **Backend**: The frontend uses the backend API exclusively. All data provider access (Blockfrost, Koios) is handled by the backend, so the frontend only needs the backend URL.
+- **Backend**: The frontend uses the backend API exclusively. All data provider access (Blockfrost, Koios, GovTools) is handled by the backend, so the frontend only needs the backend URL.
 - **No Direct API Calls**: The frontend no longer makes direct calls to Blockfrost or Koios. All data is fetched through the backend API.
+- **Local Development**: If neither `NEXT_PUBLIC_BACKEND_URL` nor `BACKEND_URL` is provided, requests default to `http://localhost:8080`.
