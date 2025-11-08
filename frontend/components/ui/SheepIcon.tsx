@@ -5,9 +5,10 @@ import * as React from 'react';
 interface SheepIconProps extends React.SVGProps<SVGSVGElement> {
   size?: number;
   title?: string;
+  priority?: boolean;
 }
 
-export function SheepIcon({ size = 40, title, className, ...rest }: SheepIconProps) {
+export function SheepIcon({ size = 40, title, className, priority: _priority, ...rest }: SheepIconProps) {
   return (
     <svg
       width={size}

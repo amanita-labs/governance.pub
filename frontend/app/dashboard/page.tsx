@@ -4,7 +4,7 @@ import DashboardStats from '@/components/features/DashboardStats';
 import { ActionTimeline } from '@/components/features/ActionTimeline';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import ActionList from '@/components/features/ActionList';
-import DRepList from '@/components/features/DRepList';
+import DRepCard from '@/components/features/DRepCard';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, TrendingUp, Users, FileText, Vote } from 'lucide-react';
@@ -175,7 +175,11 @@ export default async function DashboardPage() {
               </Button>
             </Link>
           </div>
-          <DRepList dreps={topDReps} />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {topDReps.slice(0, 6).map((drep) => (
+              <DRepCard key={drep.drep_id} drep={drep} />
+            ))}
+          </div>
         </div>
       )}
 
