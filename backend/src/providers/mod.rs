@@ -15,7 +15,7 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait Provider: Send + Sync {
-    async fn get_dreps_page(&self, page: u32, count: u32) -> Result<DRepsPage, anyhow::Error>;
+    async fn get_dreps_page(&self, query: &DRepsQuery) -> Result<DRepsPage, anyhow::Error>;
 
     async fn get_drep(&self, id: &str) -> Result<Option<DRep>, anyhow::Error>;
 

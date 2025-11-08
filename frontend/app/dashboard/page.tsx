@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, TrendingUp, Users, FileText, Vote } from 'lucide-react';
 import dynamicImport from 'next/dynamic';
+import { notFound } from 'next/navigation';
 
 // Lazy load heavy chart components (client components will hydrate on client)
 const VotingPowerFlowLazy = dynamicImport(() => import('@/components/charts/VotingPowerFlow').then(mod => ({ default: mod.VotingPowerFlow })), {
@@ -25,6 +26,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function DashboardPage() {
+  const isDashboardEnabled = process.env.NEXT_PUBLIC_ENABLE_DASHBOARD === 'true';
+  if (!isDashboardEnabled) {
+    notFound();
+  }
+
   // Only fetch what we need: top 20 DReps for charts, top 6 for display, and recent 6 actions
   // This is much faster than fetching ALL DReps and ALL Actions
   const [drepsPage, actionsPage, allDRepsForStats, allActionsForStats] = await Promise.all([

@@ -204,8 +204,15 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                     <Badge variant="default">{formatActionType(action.type)}</Badge>
                     <Badge variant={getStatusVariant(status)}>{status}</Badge>
                     {(action.meta_json || action.metadata) && (
-                      <Badge variant="outline">Has Metadata</Badge>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <span aria-hidden="true">🐑</span>
+                        <span>Has metadata</span>
+                      </Badge>
                     )}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span aria-hidden="true">🌿</span>
+                    <span>This proposal is happily grazing under flock supervision.</span>
                   </div>
                 </div>
               </div>

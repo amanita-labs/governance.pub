@@ -214,9 +214,12 @@ impl KoiosProvider {
 
 #[async_trait]
 impl Provider for KoiosProvider {
-    async fn get_dreps_page(&self, page: u32, count: u32) -> Result<DRepsPage, anyhow::Error> {
+    async fn get_dreps_page(&self, query: &DRepsQuery) -> Result<DRepsPage, anyhow::Error> {
         // Koios doesn't support pagination directly, so we fetch all and paginate in memory
-        let endpoint = format!("/drep_list?limit={}", (page * count));
+        let page = query.normalized_page();
+        let count = query.count;
+        let limit = page.saturating_mul(count).max(count);
+        let endpoint = format!("/drep_list?limit={}", limit);
         let json = self.fetch(&endpoint, "GET", None).await?;
 
         let mut all_dreps = if let Some(Value::Array(arr)) = json {
@@ -234,7 +237,6 @@ impl Provider for KoiosProvider {
         } else {
             vec![]
         };
-
         let has_more = end < all_dreps.len() + dreps.len();
 
         Ok(DRepsPage {

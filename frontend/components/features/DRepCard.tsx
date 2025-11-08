@@ -100,6 +100,12 @@ function DRepCard({ drep }: DRepCardProps) {
                     Profile
                   </Badge>
                 )}
+                {!isSystemDRep && (
+                  <Badge variant="outline" className="text-xs shrink-0 flex items-center gap-1">
+                    <span aria-hidden="true">🐑</span>
+                    <span>Flock favourite</span>
+                  </Badge>
+                )}
               </div>
               {showDrepId && (
                 <p className="text-xs text-muted-foreground mb-1 font-mono">

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import DRepList from '@/components/features/DRepList';
 import { DRepsSummaryStats } from '@/components/features/DRepsSummaryStats';
+import { SheepFlock } from '@/components/animations/SheepFlock';
+import { SheepIcon } from '@/components/ui/SheepIcon';
 import type { DRep, DRepMetadata, JsonValue } from '@/types/governance';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -445,17 +447,31 @@ export default function DRepsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-display font-bold text-foreground mb-2">DReps Directory</h1>
-        <p className="text-muted-foreground">
-          Explore and connect with Delegated Representatives (DReps) in the Cardano ecosystem
-        </p>
+      <div className="relative mb-10 overflow-hidden rounded-3xl border border-border/60 bg-muted/30 p-6 shadow-sm">
+        <div className="absolute inset-y-6 right-6 hidden md:flex md:flex-col md:items-end md:justify-center">
+          <SheepFlock count={3} className="pointer-events-none opacity-80" />
+        </div>
+        <div className="relative z-10 max-w-2xl space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <SheepIcon size={52} className="motion-safe:animate-bounce" priority />
+            <h1 className="text-4xl font-display font-bold text-foreground">DReps Directory</h1>
+          </div>
+          <p className="text-lg text-muted-foreground">
+            Explore and connect with Delegated Representatives (DReps) in the Cardano ecosystem.
+          </p>
+          <div className="flex items-center gap-2 text-sm text-foreground/80">
+            <span aria-hidden="true">🐑</span>
+            <span>
+              Shuffle through the flock, discover your favourite shepherds, and find the perfect match for your vote.
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Summary Stats */}
       {loadingAllDReps && allDReps.length === 0 ? (
         <div className="mb-8 text-center text-muted-foreground">
-          Loading statistics...
+          Gathering woolly statistics for the herd...
         </div>
       ) : (
         <DRepsSummaryStats 

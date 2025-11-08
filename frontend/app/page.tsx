@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { Users, FileText, Vote, UserPlus, TrendingUp, BarChart3 } from 'lucide-react';
+import { Users, FileText, Vote, UserPlus } from 'lucide-react';
 import type { Metadata } from 'next';
 
 // Static metadata for better SEO and performance
@@ -15,13 +15,6 @@ export const dynamic = 'force-static';
 
 export default function Home() {
   const features = [
-    {
-      icon: <BarChart3 className="w-6 h-6" />,
-      title: 'Dashboard',
-      description: 'Get an overview of governance activity, key metrics, and recent updates',
-      link: '/dashboard',
-      variant: 'primary' as const,
-    },
     {
       icon: <Users className="w-6 h-6" />,
       title: 'Browse DReps',
@@ -69,12 +62,6 @@ export default function Home() {
               Cardano Governance Made Wooly
             </p>
             <div className="flex justify-center gap-4 flex-wrap pt-4">
-              <Link href="/dashboard">
-                <Button size="lg" variant="primary" className="gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  View Dashboard
-                </Button>
-              </Link>
               <Link href="/dreps">
                 <Button size="lg" variant="outline" className="gap-2">
                   <Users className="w-5 h-5" />

@@ -282,7 +282,10 @@ function ActionCard({ action }: ActionCardProps) {
               <span>{status}</span>
             </Badge>
             {action.meta_json || action.metadata ? (
-              <Badge variant="outline" className="text-xs">Has Metadata</Badge>
+              <Badge variant="outline" className="text-xs flex items-center gap-1">
+                <span aria-hidden="true">🐑</span>
+                <span>Has metadata</span>
+              </Badge>
             ) : null}
           </div>
         </div>

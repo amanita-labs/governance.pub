@@ -26,9 +26,9 @@ impl ProviderRouter {
     // - Voting results: Use Koios (specialized), fallback to Blockfrost
     // - Active DReps count: Use Koios epoch summary
 
-    pub async fn get_dreps_page(&self, page: u32, count: u32) -> Result<DRepsPage, anyhow::Error> {
+    pub async fn get_dreps_page(&self, query: &DRepsQuery) -> Result<DRepsPage, anyhow::Error> {
         // Try Koios first (faster bulk queries)
-        match self.koios.get_dreps_page(page, count).await {
+        match self.koios.get_dreps_page(query).await {
             Ok(result) if !result.dreps.is_empty() => {
                 tracing::debug!("Using Koios for DReps page");
                 return Ok(result);
@@ -39,7 +39,7 @@ impl ProviderRouter {
         }
 
         // Fallback to Blockfrost
-        self.blockfrost.get_dreps_page(page, count).await
+        self.blockfrost.get_dreps_page(query).await
     }
 
     pub async fn get_drep(&self, id: &str) -> Result<Option<DRep>, anyhow::Error> {

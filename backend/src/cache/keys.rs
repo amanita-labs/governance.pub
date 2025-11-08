@@ -2,23 +2,53 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CacheKey {
-    DRepsPage { page: u32, count: u32 },
-    DRep { id: String },
-    DRepDelegators { id: String },
-    DRepVotingHistory { id: String },
-    DRepMetadata { id: String },
+    DRepsPage {
+        page: u32,
+        count: u32,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        filters: Option<String>,
+    },
+    DRep {
+        id: String,
+    },
+    DRepDelegators {
+        id: String,
+    },
+    DRepVotingHistory {
+        id: String,
+    },
+    DRepMetadata {
+        id: String,
+    },
     DRepStats,
-    ActionsPage { page: u32, count: u32 },
-    Action { id: String },
-    ActionVotes { id: String },
-    StakeDelegation { stake_address: String },
+    ActionsPage {
+        page: u32,
+        count: u32,
+    },
+    Action {
+        id: String,
+    },
+    ActionVotes {
+        id: String,
+    },
+    StakeDelegation {
+        stake_address: String,
+    },
 }
 
 impl CacheKey {
     pub fn to_string(&self) -> String {
         match self {
-            CacheKey::DRepsPage { page, count } => {
-                format!("dreps_page:page={}:count={}", page, count)
+            CacheKey::DRepsPage {
+                page,
+                count,
+                filters,
+            } => {
+                let mut base = format!("dreps_page:page={}:count={}", page, count);
+                if let Some(filters) = filters {
+                    base.push_str(&format!(":filters={}", filters));
+                }
+                base
             }
             CacheKey::DRep { id } => format!("drep:{}", id),
             CacheKey::DRepDelegators { id } => format!("drep_delegators:{}", id),

@@ -8,17 +8,17 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_U
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const page = searchParams.get('page') || '1';
-    const count = searchParams.get('count') || '20';
-    const enrich = searchParams.get('enrich') || '';
-    
-    const queryParams = new URLSearchParams({
-      page,
-      count,
-      ...(enrich && { enrich }),
-    });
-    
-    const response = await fetch(`${BACKEND_URL}/api/dreps?${queryParams}`, {
+    const queryParams = new URLSearchParams(searchParams);
+
+    if (!queryParams.has('page')) {
+      queryParams.set('page', '1');
+    }
+
+    if (!queryParams.has('count') && !queryParams.has('pageSize')) {
+      queryParams.set('count', '20');
+    }
+
+    const response = await fetch(`${BACKEND_URL}/api/dreps?${queryParams.toString()}`, {
       next: { revalidate: 60 },
     });
     
