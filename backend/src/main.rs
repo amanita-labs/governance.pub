@@ -69,6 +69,10 @@ async fn main() -> Result<(), anyhow::Error> {
             "/api/actions/:id/votes",
             get(api::actions::get_action_votes),
         )
+        .route(
+            "/api/stake/:stake_address/delegation",
+            get(api::stake::get_stake_delegation),
+        )
         .layer(
             ServiceBuilder::new()
                 .layer(TraceLayer::new_for_http())

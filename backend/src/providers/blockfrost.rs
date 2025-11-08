@@ -495,6 +495,33 @@ impl Provider for BlockfrostProvider {
         Ok(None)
     }
 
+    async fn get_stake_delegation(
+        &self,
+        stake_address: &str,
+    ) -> Result<Option<StakeDelegation>, anyhow::Error> {
+        let path = format!("/accounts/{}", stake_address);
+        let json = self.fetch(&path).await?;
+
+        if let Some(account) = json {
+            return Ok(Some(StakeDelegation {
+                stake_address: stake_address.to_string(),
+                delegated_pool: account["pool_id"].as_str().map(|s| s.to_string()),
+                delegated_drep: account["drep_id"].as_str().map(|s| s.to_string()),
+                total_balance: account["controlled_amount"]
+                    .as_str()
+                    .map(|s| s.to_string()),
+                utxo_balance: account["withdrawable_amount"]
+                    .as_str()
+                    .map(|s| s.to_string()),
+                rewards_available: account["withdrawable_amount"]
+                    .as_str()
+                    .map(|s| s.to_string()),
+            }));
+        }
+
+        Ok(None)
+    }
+
     async fn health_check(&self) -> Result<bool, anyhow::Error> {
         let path = "/health";
         let response = self

@@ -491,6 +491,45 @@ impl Provider for KoiosProvider {
         Ok(None)
     }
 
+    async fn get_stake_delegation(
+        &self,
+        stake_address: &str,
+    ) -> Result<Option<StakeDelegation>, anyhow::Error> {
+        let body = serde_json::json!({
+            "_stake_addresses": [stake_address]
+        });
+
+        let json = self.fetch("/account_info", "POST", Some(body)).await?;
+
+        if let Some(Value::Array(arr)) = json {
+            if let Some(account) = arr.first() {
+                return Ok(Some(StakeDelegation {
+                    stake_address: stake_address.to_string(),
+                    delegated_pool: account["delegated_pool"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    delegated_drep: account["delegated_drep"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    total_balance: account["total_balance"]
+                        .as_str()
+                        .map(|s| s.to_string())
+                        .or_else(|| account["total_balance"].as_u64().map(|v| v.to_string())),
+                    utxo_balance: account["utxo"]
+                        .as_str()
+                        .map(|s| s.to_string())
+                        .or_else(|| account["utxo"].as_u64().map(|v| v.to_string())),
+                    rewards_available: account["rewards_available"]
+                        .as_str()
+                        .map(|s| s.to_string())
+                        .or_else(|| account["rewards_available"].as_u64().map(|v| v.to_string())),
+                }));
+            }
+        }
+
+        Ok(None)
+    }
+
     async fn health_check(&self) -> Result<bool, anyhow::Error> {
         let endpoint = "/tip";
         let json = self.fetch(&endpoint, "GET", None).await?;

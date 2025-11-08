@@ -179,6 +179,33 @@ impl ProviderRouter {
         self.koios.get_total_active_dreps().await
     }
 
+    pub async fn get_stake_delegation(
+        &self,
+        stake_address: &str,
+    ) -> Result<Option<StakeDelegation>, anyhow::Error> {
+        // Try Koios first (specialized endpoint)
+        match self.koios.get_stake_delegation(stake_address).await {
+            Ok(Some(delegation)) => {
+                tracing::debug!("Using Koios for stake delegation");
+                return Ok(Some(delegation));
+            }
+            Ok(None) => {
+                tracing::debug!(
+                    "Koios returned None, falling back to Blockfrost for stake delegation"
+                );
+            }
+            Err(e) => {
+                tracing::debug!(
+                    "Koios failed for stake delegation: {}, falling back to Blockfrost",
+                    e
+                );
+            }
+        }
+
+        // Fallback to Blockfrost
+        self.blockfrost.get_stake_delegation(stake_address).await
+    }
+
     pub async fn health_check(&self) -> Result<bool, anyhow::Error> {
         let blockfrost_ok = self.blockfrost.health_check().await.unwrap_or(false);
         let koios_ok = self.koios.health_check().await.unwrap_or(false);

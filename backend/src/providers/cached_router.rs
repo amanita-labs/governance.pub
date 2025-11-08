@@ -238,6 +238,35 @@ impl CachedProviderRouter {
         }
     }
 
+    pub async fn get_stake_delegation(
+        &self,
+        stake_address: &str,
+    ) -> Result<Option<StakeDelegation>, anyhow::Error> {
+        let cache_key = CacheKey::StakeDelegation {
+            stake_address: stake_address.to_string(),
+        };
+
+        // Check cache first
+        if let Some(cached) = self.cache.get::<StakeDelegation>(&cache_key).await {
+            debug!("Cache hit for stake delegation {}", stake_address);
+            return Ok(Some(cached));
+        }
+
+        // Cache miss - fetch from provider
+        debug!(
+            "Cache miss for stake delegation {}, fetching from provider",
+            stake_address
+        );
+        match self.router.get_stake_delegation(stake_address).await? {
+            Some(delegation) => {
+                // Store in cache
+                self.cache.set(&cache_key, &delegation).await;
+                Ok(Some(delegation))
+            }
+            None => Ok(None),
+        }
+    }
+
     pub async fn health_check(&self) -> Result<bool, anyhow::Error> {
         self.router.health_check().await
     }

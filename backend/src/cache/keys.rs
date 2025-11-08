@@ -11,6 +11,7 @@ pub enum CacheKey {
     ActionsPage { page: u32, count: u32 },
     Action { id: String },
     ActionVotes { id: String },
+    StakeDelegation { stake_address: String },
 }
 
 impl CacheKey {
@@ -29,6 +30,7 @@ impl CacheKey {
             }
             CacheKey::Action { id } => format!("action:{}", id),
             CacheKey::ActionVotes { id } => format!("action_votes:{}", id),
+            CacheKey::StakeDelegation { stake_address } => format!("stake_delegation:{}", stake_address),
         }
     }
 
@@ -54,6 +56,8 @@ impl CacheKey {
             CacheKey::DRepMetadata { .. } => 600,
             // Action votes: 180 seconds
             CacheKey::ActionVotes { .. } => 180,
+            // Stake delegation: 60 seconds
+            CacheKey::StakeDelegation { .. } => 60,
         }
     }
 }

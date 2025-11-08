@@ -47,5 +47,10 @@ pub trait Provider: Send + Sync {
 
     async fn get_total_active_dreps(&self) -> Result<Option<u32>, anyhow::Error>;
 
+    async fn get_stake_delegation(
+        &self,
+        stake_address: &str,
+    ) -> Result<Option<StakeDelegation>, anyhow::Error>;
+
     async fn health_check(&self) -> Result<bool, anyhow::Error>;
 }
