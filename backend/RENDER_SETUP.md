@@ -30,6 +30,23 @@ If you need to use Docker on Render (not recommended), ensure:
 3. Root Directory should still be `backend`
 4. Render will use the `Dockerfile` automatically
 
+## Environment Variables
+
+Configure the following in the Render dashboard (Settings → Environment):
+
+- **Required**
+  - `BLOCKFROST_API_KEY`
+- **Recommended**
+  - `BLOCKFROST_NETWORK` (`mainnet` or `preview`)
+  - `KOIOS_BASE_URL` (defaults to `https://preview.koios.rest/api/v1`)
+  - `GOVTOOLS_BASE_URL` (defaults to `https://be.gov.tools`)
+  - `GOVTOOLS_ENABLED` (`true`/`false`, defaults to `true`)
+  - `CACHE_ENABLED` (`true`/`false`, defaults to `true`)
+  - `CACHE_MAX_ENTRIES` (default `10000`)
+  - `CORS_ORIGINS` (comma-separated allowlist; defaults to wildcard)
+
+See `backend/README.md` for a full description of each option and their defaults.
+
 ## Troubleshooting
 
 ### Error: "Cargo.lock not found"

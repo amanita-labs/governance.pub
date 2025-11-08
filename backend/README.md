@@ -9,6 +9,7 @@ Rust backend service that abstracts Cardano data provider complexity (Blockfrost
 - **Automatic Fallback**: Gracefully falls back to alternative providers on failure
 - **Type Safety**: Strong typing with Rust's type system
 - **High Performance**: Async runtime with Tokio
+- **Stake Insights**: Unified stake delegation endpoint with pool, DRep, and balance data
 
 ## Setup
 
@@ -24,19 +25,31 @@ Rust backend service that abstracts Cardano data provider complexity (Blockfrost
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-2. Create `.env` file in the `backend/` directory:
-```bash
-cp .env.example .env
+2. Create a `.env` file in `backend/` with the required configuration:
+```env
+BLOCKFROST_API_KEY=your_blockfrost_project_id_here
+BLOCKFROST_NETWORK=preview
+KOIOS_BASE_URL=https://preview.koios.rest/api/v1
+GOVTOOLS_BASE_URL=https://be.gov.tools
+GOVTOOLS_ENABLED=true
+CACHE_ENABLED=true
+CACHE_MAX_ENTRIES=10000
+BACKEND_PORT=8080
+# Optional: CORS_ORIGINS=https://app.yourdomain.com,https://staging.yourdomain.com
 ```
 
-3. Edit `.env` and configure:
-   - `BLOCKFROST_API_KEY`: Your Blockfrost project ID
-   - `BLOCKFROST_NETWORK`: `mainnet` or `preview`
-   - `KOIOS_BASE_URL`: Koios API base URL (default: https://preview.koios.rest/api/v1)
-   - `GOVTOOLS_BASE_URL`: GovTools API base URL (default: https://be.gov.tools)
-   - `GOVTOOLS_ENABLED`: Toggle GovTools enrichment (`true`/`false`, default: `true`)
-   - `BACKEND_PORT`: Server port (default: 8080)
-   - `CORS_ORIGINS`: Allowed CORS origins (comma-separated)
+3. Adjust values as needed:
+   - `BLOCKFROST_API_KEY`: Required Blockfrost project ID
+   - `BLOCKFROST_NETWORK`: `mainnet` or `preview` (defaults to `mainnet` if unset)
+   - `KOIOS_BASE_URL`: Koios API base URL (defaults to https://preview.koios.rest/api/v1)
+   - `GOVTOOLS_BASE_URL`: GovTools enrichment API (defaults to https://be.gov.tools)
+   - `GOVTOOLS_ENABLED`: Toggle GovTools enrichment (`true`/`false`, default `true`)
+   - `CACHE_ENABLED`: Toggle in-memory caching (`true`/`false`, default `true`)
+   - `CACHE_MAX_ENTRIES`: Cache size limit (default `10000`)
+   - `BACKEND_PORT`: Server port for local runs (defaults to `8080`; Render sets `PORT`)
+   - `CORS_ORIGINS`: Comma-separated list of allowed origins (optional; wildcard by default)
+
+> **Note:** The current CORS configuration allows all origins when no override is provided. Fine-grained origin control will honour `CORS_ORIGINS` as the gateway hardening work progresses.
 
 ## Development
 
@@ -47,16 +60,7 @@ cd backend
 cargo run
 ```
 
-Or from the project root:
-```bash
-npm run dev:backend
-```
-
-### Run both frontend and backend:
-
-```bash
-npm run dev:all
-```
+Keep the backend running in its own terminal and start the frontend separately from `frontend/` with `npm run dev`.
 
 ## API Endpoints
 
@@ -77,6 +81,9 @@ For detailed API documentation, see [API.md](./API.md).
 - `GET /api/actions/:id` - Get single governance action
 - `GET /api/actions/:id/votes` - Get action voting results
 
+**Stake Endpoints:**
+- `GET /api/stake/:stake_address/delegation` - Retrieve pool, DRep, and balance information for a stake address
+
 **Health Check:**
 - `GET /health` - Health check endpoint with cache statistics
 
@@ -92,6 +99,7 @@ The backend implements smart routing with automatic fallback:
 - **Governance action details**: Uses Blockfrost (more complete)
 - **Voting results**: Tries Koios first (specialized), falls back to Blockfrost
 - **Active DReps count**: Uses Koios epoch summary
+- **Stake delegation lookups**: Tries Koios first, falls back to Blockfrost
 
 ## Architecture
 

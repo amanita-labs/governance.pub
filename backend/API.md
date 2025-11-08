@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-Production: https://govtwool-backend.onrender.com
+Production: https://<your-backend-host>
 Local: http://localhost:8080
 ```
 
@@ -18,6 +18,7 @@ The GovTwool Backend API provides a unified interface for accessing Cardano gove
 - **Caching**: High-performance in-memory caching with configurable TTLs
 - **CORS Enabled**: All origins allowed by default
 - **Type Safety**: Strong typing with Rust's type system
+- **GovTools Enrichment**: Optional enrichment layer for richer DRep metadata
 
 ## Authentication
 
@@ -506,6 +507,54 @@ GET /api/actions/gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzs
 
 ---
 
+## Stake Endpoints
+
+### Get Stake Delegation
+
+Retrieve delegation and balance details for a stake address.
+
+**Endpoint:** `GET /api/stake/:stake_address/delegation`
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `stake_address` | string | Stake address (e.g., `stake1...`) |
+
+**Example Request:**
+
+```bash
+GET /api/stake/stake1uxz6ljatyc7w52z44hskd5pu5cvw7qemwz6re3ux4pmdqumcn2qyrx/delegation
+```
+
+**Response:** `200 OK`
+
+```json
+{
+  "stake_address": "stake1uxz6ljatyc7w52z44hskd5pu5cvw7qemwz6re3ux4pmdqumcn2qyrx",
+  "delegated_pool": "pool1xyz...",
+  "delegated_drep": "drep1ygqq33rjavhwwynp2pzj478fea67dxeelq2ylfwum0txhhqy8p3fn",
+  "total_balance": "1500000000",
+  "utxo_balance": "1200000000",
+  "rewards_available": "300000000"
+}
+```
+
+**Response Fields:**
+
+- `stake_address`: Stake credential requested
+- `delegated_pool`: Pool ID if delegated to an SPO
+- `delegated_drep`: DRep identifier if representative delegation is active
+- `total_balance`: Total stake balance in lovelace
+- `utxo_balance`: Spendable balance in lovelace
+- `rewards_available`: Rewards awaiting withdrawal in lovelace
+
+**Response:** `404 NOT FOUND` - Stake address not found
+
+**Response:** `500 INTERNAL SERVER ERROR` - Provider error
+
+---
+
 ## Data Models
 
 ### DRep Model
@@ -575,6 +624,19 @@ interface DRepExternalReference {
 interface DRepDelegator {
   address: string;                    // Stake address
   amount: string;                     // Delegated amount in lovelace
+}
+```
+
+### StakeDelegation Model
+
+```typescript
+interface StakeDelegation {
+  stake_address: string;               // Stake credential
+  delegated_pool?: string | null;      // Pool ID if delegated to an SPO
+  delegated_drep?: string | null;      // DRep ID if delegated to a representative
+  total_balance?: string | null;       // Total balance in lovelace
+  utxo_balance?: string | null;        // Spendable balance in lovelace
+  rewards_available?: string | null;   // Rewards available to withdraw in lovelace
 }
 ```
 
@@ -670,6 +732,7 @@ The backend includes an in-memory caching layer with configurable TTLs:
 - **Actions List (Other Pages)**: 60 seconds
 - **Individual Action**: 120 seconds
 - **Action Votes**: 180 seconds
+- **Stake Delegation**: 60 seconds
 
 Cache statistics are included in the `/health` endpoint response.
 
