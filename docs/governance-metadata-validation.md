@@ -89,6 +89,9 @@
   1. Feature-flag outbound calls to avoid mandatory reliance.
   2. Deduplicate calls by caching on `(meta_hash, resolved_url)`.
   3. Surface remote verdict in backend `metadata_checks.author_witness` (pass/fail) and append a note stating “Verified via Cardano Foundation service”.
+- **Implementation (current state)**:
+  - Enable via `CARDANO_VERIFIER_ENABLED=true` (optional `CARDANO_VERIFIER_ENDPOINT` override).
+  - Backend submits available metadata JSON and records pass/fail/warning outcomes while treating network or rate-limit errors as warnings.
 
 - Respect rate limiting (20 requests/minute/IP). Implement exponential backoff or circuit breaking to avoid cascading failures.
 

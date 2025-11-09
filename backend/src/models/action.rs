@@ -90,6 +90,8 @@ pub struct ActionVotingBreakdown {
     pub total_voting_power: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub summary: Option<ProposalVotingSummary>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub vote_timeline: Option<Vec<VoteTimelinePoint>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
@@ -104,6 +106,18 @@ pub struct VoteCounts {
     pub no_votes_cast: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub abstain_votes_cast: Option<u32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[serde(rename_all = "snake_case")]
+pub struct VoteTimelinePoint {
+    pub timestamp: u64,
+    pub yes_votes: u32,
+    pub no_votes: u32,
+    pub abstain_votes: u32,
+    pub yes_power: String,
+    pub no_power: String,
+    pub abstain_power: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
@@ -196,9 +210,7 @@ impl MetadataCheckResult {
         Self {
             hash: CheckOutcome::unknown("Hash validation pending"),
             ipfs: CheckOutcome::unknown("Hosting validation pending"),
-            author_witness: CheckOutcome::pending(
-                "Author witness verification not yet implemented in backend (CIP-100)",
-            ),
+            author_witness: CheckOutcome::pending("Author witness verification pending"),
             resolved_url: None,
             koios_meta_is_valid: meta_is_valid,
             notes: Vec::new(),
@@ -235,6 +247,13 @@ impl CheckOutcome {
     pub fn fail(message: impl Into<String>) -> Self {
         Self {
             status: CheckStatus::Fail,
+            message: Some(message.into()),
+        }
+    }
+
+    pub fn warning(message: impl Into<String>) -> Self {
+        Self {
+            status: CheckStatus::Warning,
             message: Some(message.into()),
         }
     }

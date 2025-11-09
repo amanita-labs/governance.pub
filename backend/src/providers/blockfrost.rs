@@ -429,6 +429,7 @@ impl Provider for BlockfrostProvider {
             },
             total_voting_power: "0".to_string(),
             summary: None,
+            vote_timeline: None,
         };
 
         let mut total_power = 0u128;

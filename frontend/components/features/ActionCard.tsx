@@ -17,9 +17,7 @@ import {
 import type { GovernanceAction, MetadataCheckResult } from '@/types/governance';
 import { Markdown } from '../ui/Markdown';
 import { useRouter } from 'next/navigation';
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
+import { getActionDescription, getActionDisplayType, getActionTitle } from '@/lib/governance';
 
 interface ActionCardProps {
   action: GovernanceAction;
@@ -59,119 +57,13 @@ function formatActionType(type: string | undefined): string {
   if (!type || typeof type !== 'string') {
     return 'Unknown';
   }
+  if (type === 'budget') {
+    return 'Budget Action💰';
+  }
   return type
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
-}
-
-/**
- * Extract string from value (handles both string and object formats)
- */
-function extractString(value: unknown): string | undefined {
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (isRecord(value)) {
-    const candidates: Array<unknown> = [value.content, value.text, value.value, value.description, value.label];
-    for (const candidate of candidates) {
-      if (typeof candidate === 'string') {
-        return candidate;
-      }
-    }
-  }
-  return undefined;
-}
-
-/**
- * Get metadata title from action (ensures it's always a string)
- */
-function getMetadataTitle(action: GovernanceAction): string {
-  // Try meta_json first (handle CIP-100/CIP-108 format)
-  if (action.meta_json) {
-    try {
-      const parsed: unknown =
-        typeof action.meta_json === 'string'
-          ? JSON.parse(action.meta_json)
-          : action.meta_json;
-
-      if (isRecord(parsed)) {
-        const body = isRecord(parsed.body) ? parsed.body : undefined;
-        if (body) {
-          const title = extractString(body.title);
-          if (title) return title;
-          const abstract = extractString(body.abstract);
-          if (abstract) return abstract;
-        }
-
-        const title = extractString(parsed.title);
-        if (title) return title;
-      }
-    } catch {
-      // Ignore parse errors
-    }
-  }
-  
-  // Try metadata field (already normalized from CIP-100/CIP-108 if applicable)
-  if (action.metadata) {
-    const title = extractString(action.metadata.title);
-    if (title) return title;
-    // Fallback to abstract if title not available
-    const abstract = extractString(action.metadata.abstract);
-    if (abstract) return abstract;
-  }
-  
-  // Fallback to description (ensure it's a string)
-  const description = extractString(action.description);
-  if (description) return description;
-  
-  // Final fallback to action ID
-  return `Action ${action.action_id.slice(0, 8)}`;
-}
-
-/**
- * Get metadata description from action (ensures it's always a string or undefined)
- */
-function getMetadataDescription(action: GovernanceAction): string | undefined {
-  // Try meta_json first (handle CIP-100/CIP-108 format)
-  if (action.meta_json) {
-    try {
-      const parsed: unknown =
-        typeof action.meta_json === 'string'
-          ? JSON.parse(action.meta_json)
-          : action.meta_json;
-
-      if (isRecord(parsed)) {
-        const body = isRecord(parsed.body) ? parsed.body : undefined;
-        if (body) {
-          const abstract = extractString(body.abstract);
-          if (abstract) return abstract;
-          const description = extractString(body.description);
-          if (description) return description;
-          const rationale = extractString(body.rationale);
-          if (rationale) return rationale;
-        }
-
-        const description = extractString(parsed.description);
-        if (description) return description;
-      }
-    } catch {
-      // Ignore parse errors
-    }
-  }
-  
-  // Try metadata field (already normalized from CIP-100/CIP-108 if applicable)
-  if (action.metadata) {
-    const abstract = extractString(action.metadata.abstract);
-    if (abstract) return abstract;
-    const description = extractString(action.metadata.description);
-    if (description) return description;
-    const rationale = extractString(action.metadata.rationale);
-    if (rationale) return rationale;
-  }
-  
-  // Fallback to description (ensure it's a string)
-  return extractString(action.description);
 }
 
 function getPreviewMarkdown(content?: string | null): string | undefined {
@@ -265,14 +157,15 @@ function summarizeMetadataStatus(checks?: MetadataCheckResult): MetadataBadge | 
 
 function ActionCard({ action }: ActionCardProps) {
   const status = action.status || 'submitted';
-  const title = getMetadataTitle(action);
-  const description = getMetadataDescription(action);
+  const title = getActionTitle(action);
+  const description = getActionDescription(action);
   const previewDescription = getPreviewMarkdown(description);
   const router = useRouter();
   const actionUrl = `/actions/${action.action_id}`;
   const displayActionId = action.action_id;
   const metadataBadge = summarizeMetadataStatus(action.metadata_checks);
   const hasMetadata = Boolean(action.meta_json || action.metadata);
+  const displayType = getActionDisplayType(action);
 
   const handleNavigate = useCallback(() => {
     router.push(actionUrl);
@@ -322,7 +215,7 @@ function ActionCard({ action }: ActionCardProps) {
             {title}
           </Link>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{formatActionType(action.type)}</Badge>
+            <Badge variant="secondary">{formatActionType(displayType)}</Badge>
             <Badge variant={getStatusVariant(status)} className="flex items-center gap-1">
               {getStatusIcon(status)}
               <span>{status}</span>

@@ -1,7 +1,7 @@
 use crate::cache::{keys::CacheKey, CacheManager};
 use crate::models::*;
 use crate::providers::{GovToolsEnrichment, GovToolsProvider, ProviderRouter};
-use crate::services::metadata_validation::MetadataValidator;
+use crate::services::metadata_validation::{MetadataValidator, VerifierConfig};
 use crate::utils::drep_id::decode_drep_id_to_hex;
 use futures::future::join_all;
 use std::sync::Arc;
@@ -20,9 +20,10 @@ impl CachedProviderRouter {
         router: ProviderRouter,
         cache: CacheManager,
         govtools: Option<GovToolsProvider>,
+        verifier: Option<VerifierConfig>,
     ) -> Self {
         let cache = Arc::new(cache);
-        let metadata_validator = Arc::new(MetadataValidator::new(cache.clone()));
+        let metadata_validator = Arc::new(MetadataValidator::new(cache.clone(), verifier));
         Self {
             router: Arc::new(router),
             cache,

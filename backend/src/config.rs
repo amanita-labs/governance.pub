@@ -12,6 +12,8 @@ pub struct Config {
     pub cache_max_entries: usize,
     pub govtools_base_url: String,
     pub govtools_enabled: bool,
+    pub cardano_verifier_enabled: bool,
+    pub cardano_verifier_endpoint: String,
 }
 
 impl Config {
@@ -57,6 +59,13 @@ impl Config {
             govtools_base_url: env::var("GOVTOOLS_BASE_URL")
                 .unwrap_or_else(|_| "https://be.gov.tools".to_string()),
             govtools_enabled,
+            cardano_verifier_enabled: env::var("CARDANO_VERIFIER_ENABLED")
+                .unwrap_or_else(|_| "false".to_string())
+                .parse()
+                .unwrap_or(false),
+            cardano_verifier_endpoint: env::var("CARDANO_VERIFIER_ENDPOINT").unwrap_or_else(|_| {
+                "https://verifycardanomessage.cardanofoundation.org/api/verify-cip100".to_string()
+            }),
         })
     }
 

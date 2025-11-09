@@ -194,12 +194,23 @@ export interface VoteCounts {
   abstain_votes_cast?: number;
 }
 
+export interface VoteTimelinePoint {
+  timestamp: number;
+  yes_votes: number;
+  no_votes: number;
+  abstain_votes: number;
+  yes_power: string;
+  no_power: string;
+  abstain_power: string;
+}
+
 export interface ActionVotingBreakdown {
   drep_votes: VoteCounts;
   spo_votes: VoteCounts;
   cc_votes: VoteCounts;
   total_voting_power: string;
   summary?: ProposalVotingSummary;
+  vote_timeline?: VoteTimelinePoint[];
 }
 
 export interface DRepDelegator {

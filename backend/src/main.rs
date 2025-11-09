@@ -12,6 +12,7 @@ use config::Config;
 use providers::{
     BlockfrostProvider, CachedProviderRouter, GovToolsProvider, KoiosProvider, ProviderRouter,
 };
+use services::metadata_validation::VerifierConfig;
 use std::net::SocketAddr;
 use tower::ServiceBuilder;
 use tower_http::{
@@ -51,7 +52,20 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // Initialize cache
     let cache_manager = CacheManager::new(config.cache_enabled, config.cache_max_entries);
-    let router = CachedProviderRouter::new(provider_router, cache_manager, govtools_provider);
+    let verifier_config = if config.cardano_verifier_enabled {
+        Some(VerifierConfig {
+            enabled: true,
+            endpoint: config.cardano_verifier_endpoint.clone(),
+        })
+    } else {
+        None
+    };
+    let router = CachedProviderRouter::new(
+        provider_router,
+        cache_manager,
+        govtools_provider,
+        verifier_config,
+    );
 
     let cors = CorsLayer::new()
         .allow_origin(Any)

@@ -4,15 +4,15 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { VotingChart } from '../charts/VotingChart';
+import { VotingTimelineChart } from '../charts/VotingTimelineChart';
 import { VotingProgress } from '../charts/VotingProgress';
 import { ProposalMetadata } from './ProposalMetadata';
 import { MetadataValidationSummary } from './MetadataValidationSummary';
 import { ProposalTimeline } from './ProposalTimeline';
 import { Clock, Calendar, Hash, ExternalLink, DollarSign, Settings } from 'lucide-react';
 import type { GovernanceAction, ActionVotingBreakdown } from '@/types/governance';
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
+import { getActionDisplayType, getActionTitle } from '@/lib/governance';
 
 interface ActionDetailProps {
   action: GovernanceAction;
@@ -20,6 +20,9 @@ interface ActionDetailProps {
 }
 
 function formatActionType(type: string): string {
+  if (type === 'budget') {
+    return 'Budget Action💰';
+  }
   return type
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -39,25 +42,25 @@ function formatVotingPower(power: string): string {
 }
 
 function formatAdaValue(value?: string): string {
-  if (value === undefined) {
+  if (!value) {
     return '—';
   }
   try {
-    return `${formatVotingPower(value)}`;
+    return formatVotingPower(value);
   } catch {
     return '—';
   }
 }
 
 function formatVoteCount(count?: number): string {
-  if (count === undefined) {
+  if (typeof count !== 'number') {
     return '—';
   }
   return count.toLocaleString();
 }
 
 function formatVoteLabel(count?: number): string {
-  if (count === undefined) {
+  if (typeof count !== 'number') {
     return '—';
   }
   const formatted = count.toLocaleString();
@@ -65,11 +68,14 @@ function formatVoteLabel(count?: number): string {
 }
 
 function formatPercent(value?: number): string {
-  if (value === undefined || Number.isNaN(value)) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
     return '—';
   }
   return `${value.toFixed(1)}%`;
 }
+
+const sumCounts = (...values: Array<number | undefined>) =>
+  values.reduce((acc, value) => acc + (value ?? 0), 0);
 
 function getStatusVariant(status: string | undefined): 'success' | 'warning' | 'error' | 'info' | 'default' {
   switch (status) {
@@ -84,71 +90,6 @@ function getStatusVariant(status: string | undefined): 'success' | 'warning' | '
     default:
       return 'default';
   }
-}
-
-/**
- * Extract string from value (handles both string and object formats)
- */
-function extractString(value: unknown): string | undefined {
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (isRecord(value)) {
-    const candidates: Array<unknown> = [value.content, value.text, value.value, value.description, value.label];
-    for (const candidate of candidates) {
-      if (typeof candidate === 'string') {
-        return candidate;
-      }
-    }
-  }
-  return undefined;
-}
-
-/**
- * Get metadata title from action (ensures it's always a string)
- * Handles CIP-100/CIP-108 format
- */
-function getMetadataTitle(action: GovernanceAction): string {
-  // Try meta_json first (handle CIP-100/CIP-108 format)
-  if (action.meta_json) {
-    try {
-      const parsed: unknown =
-        typeof action.meta_json === 'string'
-          ? JSON.parse(action.meta_json)
-          : action.meta_json;
-
-      if (isRecord(parsed)) {
-        const body = isRecord(parsed.body) ? parsed.body : undefined;
-        if (body) {
-          const title = extractString(body.title);
-          if (title) return title;
-          const abstract = extractString(body.abstract);
-          if (abstract) return abstract;
-        }
-
-        const title = extractString(parsed.title);
-        if (title) return title;
-      }
-    } catch {
-      // Ignore parse errors
-    }
-  }
-  
-  // Try metadata field (already normalized from CIP-100/CIP-108 if applicable)
-  if (action.metadata) {
-    const title = extractString(action.metadata.title);
-    if (title) return title;
-    // Fallback to abstract if title not available
-    const abstract = extractString(action.metadata.abstract);
-    if (abstract) return abstract;
-  }
-  
-  // Fallback to description (ensure it's a string)
-  const description = extractString(action.description);
-  if (description) return description;
-  
-  // Final fallback to action ID
-  return `Action ${action.action_id}`;
 }
 
 /**
@@ -180,11 +121,9 @@ function getExplorerUrl(txHash: string): string {
 
 export default function ActionDetail({ action, votingResults }: ActionDetailProps) {
   const status = action.status || 'submitted';
-  const title = getMetadataTitle(action);
+  const title = getActionTitle(action);
+  const displayType = getActionDisplayType(action);
   const summary = votingResults.summary;
-
-  const sumCounts = (...values: Array<number | undefined>) =>
-    values.reduce((acc, value) => acc + (value ?? 0), 0);
 
   const chartData = [
     {
@@ -287,11 +226,11 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
         ? [
             {
               label: 'Always Abstain Power',
-              value: formatAdaValue(summary?.drep_always_abstain_vote_power),
+              value: formatAdaValue(summary.drep_always_abstain_vote_power ?? undefined),
             },
             {
               label: 'Always No-Confidence Power',
-              value: formatAdaValue(summary?.drep_always_no_confidence_vote_power),
+              value: formatAdaValue(summary.drep_always_no_confidence_vote_power ?? undefined),
             },
           ]
         : [],
@@ -323,19 +262,19 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
         ? [
             {
               label: 'Passive Always-Abstain Votes',
-              value: formatVoteCount(summary?.pool_passive_always_abstain_votes_assigned),
+              value: formatVoteCount(summary.pool_passive_always_abstain_votes_assigned ?? undefined),
             },
             {
               label: 'Passive Always-Abstain Power',
-              value: formatAdaValue(summary?.pool_passive_always_abstain_vote_power),
+              value: formatAdaValue(summary.pool_passive_always_abstain_vote_power ?? undefined),
             },
             {
               label: 'Passive Always No-Confidence Votes',
-              value: formatVoteCount(summary?.pool_passive_always_no_confidence_votes_assigned),
+              value: formatVoteCount(summary.pool_passive_always_no_confidence_votes_assigned ?? undefined),
             },
             {
               label: 'Passive Always No-Confidence Power',
-              value: formatAdaValue(summary?.pool_passive_always_no_confidence_vote_power),
+              value: formatAdaValue(summary.pool_passive_always_no_confidence_vote_power ?? undefined),
             },
           ]
         : [],
@@ -381,7 +320,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                 <div className="flex-1">
                   <h1 className="text-3xl font-display font-bold text-foreground mb-4">{title}</h1>
                   <div className="flex items-center space-x-2 mb-4 flex-wrap gap-2">
-                    <Badge variant="default">{formatActionType(action.type)}</Badge>
+                    <Badge variant="default">{formatActionType(displayType)}</Badge>
                     <Badge variant={getStatusVariant(status)}>{status}</Badge>
                     {(action.meta_json || action.metadata) && (
                       <Badge variant="outline" className="flex items-center gap-1">
@@ -586,13 +525,24 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
             </CardContent>
           </Card>
 
-          {/* Voting Results Chart */}
+          {/* Voting Insights */}
           <Card>
-            <CardHeader>
-              <CardTitle>Voting Results</CardTitle>
+            <CardHeader className="pb-0">
+              <CardTitle>Voting Insights</CardTitle>
             </CardHeader>
             <CardContent>
-              <VotingChart data={chartData} />
+              <Tabs defaultValue="breakdown">
+                <TabsList className="mt-4">
+                  <TabsTrigger value="breakdown">By Voter Type</TabsTrigger>
+                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                </TabsList>
+                <TabsContent value="breakdown" className="mt-6">
+                  <VotingChart data={chartData} />
+                </TabsContent>
+                <TabsContent value="timeline" className="mt-6">
+                  <VotingTimelineChart timeline={votingResults.vote_timeline} />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
@@ -604,7 +554,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
               <CardTitle>Voting Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Total Voting Power</p>
                   <p className="text-2xl font-bold">{formatVotingPower(votingResults.total_voting_power)}</p>
@@ -614,9 +564,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm font-medium">Yes</span>
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                        {formatVotingPower(totalYes.toString())}
-                      </span>
+                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">{formatVotingPower(totalYes.toString())}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
                       <div
@@ -626,11 +574,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                         }}
                         aria-label={`Yes votes: ${formatVotingPower(totalYes.toString())}`}
                         role="progressbar"
-                        aria-valuenow={
-                          votingResults.total_voting_power !== '0'
-                            ? (Number(totalYes) / Number(votingResults.total_voting_power)) * 100
-                            : 0
-                        }
+                        aria-valuenow={votingResults.total_voting_power !== '0' ? (Number(totalYes) / Number(votingResults.total_voting_power)) * 100 : 0}
                         aria-valuemin={0}
                         aria-valuemax={100}
                       />
@@ -640,9 +584,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm font-medium">No</span>
-                      <span className="text-sm font-semibold text-red-600 dark:text-red-400">
-                        {formatVotingPower(totalNo.toString())}
-                      </span>
+                      <span className="text-sm font-semibold text-red-600 dark:text-red-400">{formatVotingPower(totalNo.toString())}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
                       <div
@@ -652,11 +594,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                         }}
                         aria-label={`No votes: ${formatVotingPower(totalNo.toString())}`}
                         role="progressbar"
-                        aria-valuenow={
-                          votingResults.total_voting_power !== '0'
-                            ? (Number(totalNo) / Number(votingResults.total_voting_power)) * 100
-                            : 0
-                        }
+                        aria-valuenow={votingResults.total_voting_power !== '0' ? (Number(totalNo) / Number(votingResults.total_voting_power)) * 100 : 0}
                         aria-valuemin={0}
                         aria-valuemax={100}
                       />
@@ -666,9 +604,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm font-medium">Abstain</span>
-                      <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
-                        {formatVotingPower(totalAbstain.toString())}
-                      </span>
+                      <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">{formatVotingPower(totalAbstain.toString())}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
                       <div
@@ -678,11 +614,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                         }}
                         aria-label={`Abstain votes: ${formatVotingPower(totalAbstain.toString())}`}
                         role="progressbar"
-                        aria-valuenow={
-                          votingResults.total_voting_power !== '0'
-                            ? (Number(totalAbstain) / Number(votingResults.total_voting_power)) * 100
-                            : 0
-                        }
+                        aria-valuenow={votingResults.total_voting_power !== '0' ? (Number(totalAbstain) / Number(votingResults.total_voting_power)) * 100 : 0}
                         aria-valuemin={0}
                         aria-valuemax={100}
                       />

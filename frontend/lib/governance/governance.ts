@@ -7,6 +7,7 @@ import type {
   DRepStatsSummary,
   VoteCounts,
   ProposalVotingSummary,
+  VoteTimelinePoint,
 } from '@/types/governance';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -505,6 +506,50 @@ export async function getActionVotingResults(actionId: string): Promise<ActionVo
       };
     };
 
+    const parseTimeline = (value: unknown): VoteTimelinePoint[] | undefined => {
+      if (!Array.isArray(value)) {
+        return undefined;
+      }
+
+      const points = value
+        .map((entry) => {
+          if (!isRecord(entry)) {
+            return undefined;
+          }
+
+          const timestamp = parseOptionalNumber(entry.timestamp);
+          const yesVotes = parseOptionalNumber(entry.yes_votes);
+          const noVotes = parseOptionalNumber(entry.no_votes);
+          const abstainVotes = parseOptionalNumber(entry.abstain_votes);
+
+          const yesPower = typeof entry.yes_power === 'string' ? entry.yes_power : String(entry.yes_power ?? '0');
+          const noPower = typeof entry.no_power === 'string' ? entry.no_power : String(entry.no_power ?? '0');
+          const abstainPower = typeof entry.abstain_power === 'string' ? entry.abstain_power : String(entry.abstain_power ?? '0');
+
+          if (
+            timestamp === undefined ||
+            yesVotes === undefined ||
+            noVotes === undefined ||
+            abstainVotes === undefined
+          ) {
+            return undefined;
+          }
+
+          return {
+            timestamp,
+            yes_votes: yesVotes,
+            no_votes: noVotes,
+            abstain_votes: abstainVotes,
+            yes_power: yesPower,
+            no_power: noPower,
+            abstain_power: abstainPower,
+          } satisfies VoteTimelinePoint;
+        })
+        .filter((point): point is VoteTimelinePoint => point !== undefined);
+
+      return points.length > 0 ? points : undefined;
+    };
+
     const summary = isRecord(breakdown.summary)
       ? (breakdown.summary as ProposalVotingSummary)
       : undefined;
@@ -515,6 +560,7 @@ export async function getActionVotingResults(actionId: string): Promise<ActionVo
       cc_votes: parseVoteCounts(breakdown.cc_votes),
       total_voting_power: String(breakdown.total_voting_power ?? '0'),
       summary,
+      vote_timeline: parseTimeline(breakdown.vote_timeline),
     };
   } catch (error: unknown) {
     if (isNotFoundError(error)) {

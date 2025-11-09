@@ -4,7 +4,7 @@ use crate::utils::drep_id::normalize_to_cip129;
 use async_trait::async_trait;
 use reqwest::Client;
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::time::Duration;
 
 pub struct KoiosProvider {
@@ -517,6 +517,89 @@ impl Provider for KoiosProvider {
                     committee_abstain_votes_cast: Some(committee_abstain_votes),
                 };
 
+                let mut vote_timeline: Option<Vec<VoteTimelinePoint>> = None;
+                if let Some(Value::Array(votes_arr)) = self
+                    .fetch(&format!("/proposal_votes?_proposal_id={}", id), "GET", None)
+                    .await?
+                {
+                    let mut grouped: BTreeMap<u64, (u32, u32, u32, u128, u128, u128)> =
+                        BTreeMap::new();
+
+                    for vote in votes_arr {
+                        let raw_timestamp = vote["block_time"].as_u64().or_else(|| {
+                            vote["block_time"]
+                                .as_str()
+                                .and_then(|s| s.parse::<u64>().ok())
+                        });
+
+                        let timestamp = match raw_timestamp {
+                            Some(ts) if ts > 0 => ts,
+                            _ => continue,
+                        };
+
+                        let power = vote["voting_power"]
+                            .as_str()
+                            .and_then(|s| s.parse::<u128>().ok())
+                            .or_else(|| vote["voting_power"].as_u64().map(|v| v as u128))
+                            .unwrap_or(0);
+
+                        let vote_type = vote["vote"]
+                            .as_str()
+                            .unwrap_or_default()
+                            .to_ascii_lowercase();
+
+                        let entry = grouped
+                            .entry(timestamp)
+                            .or_insert((0u32, 0u32, 0u32, 0u128, 0u128, 0u128));
+
+                        match vote_type.as_str() {
+                            "yes" => {
+                                entry.0 = entry.0.saturating_add(1);
+                                entry.3 = entry.3.saturating_add(power);
+                            }
+                            "no" => {
+                                entry.1 = entry.1.saturating_add(1);
+                                entry.4 = entry.4.saturating_add(power);
+                            }
+                            _ => {
+                                entry.2 = entry.2.saturating_add(1);
+                                entry.5 = entry.5.saturating_add(power);
+                            }
+                        }
+                    }
+
+                    if !grouped.is_empty() {
+                        let mut cumulative_counts = (0u32, 0u32, 0u32);
+                        let mut cumulative_power = (0u128, 0u128, 0u128);
+                        let mut timeline_points = Vec::with_capacity(grouped.len());
+
+                        for (timestamp, (yes_c, no_c, abstain_c, yes_p, no_p, abstain_p)) in grouped
+                        {
+                            cumulative_counts.0 = cumulative_counts.0.saturating_add(yes_c);
+                            cumulative_counts.1 = cumulative_counts.1.saturating_add(no_c);
+                            cumulative_counts.2 = cumulative_counts.2.saturating_add(abstain_c);
+
+                            cumulative_power.0 = cumulative_power.0.saturating_add(yes_p);
+                            cumulative_power.1 = cumulative_power.1.saturating_add(no_p);
+                            cumulative_power.2 = cumulative_power.2.saturating_add(abstain_p);
+
+                            timeline_points.push(VoteTimelinePoint {
+                                timestamp,
+                                yes_votes: cumulative_counts.0,
+                                no_votes: cumulative_counts.1,
+                                abstain_votes: cumulative_counts.2,
+                                yes_power: cumulative_power.0.to_string(),
+                                no_power: cumulative_power.1.to_string(),
+                                abstain_power: cumulative_power.2.to_string(),
+                            });
+                        }
+
+                        if !timeline_points.is_empty() {
+                            vote_timeline = Some(timeline_points);
+                        }
+                    }
+                }
+
                 return Ok(ActionVotingBreakdown {
                     drep_votes: VoteCounts {
                         yes: drep_yes_power,
@@ -544,6 +627,7 @@ impl Provider for KoiosProvider {
                     },
                     total_voting_power: total_power,
                     summary: Some(summary_struct),
+                    vote_timeline,
                 });
             }
         }
@@ -575,6 +659,7 @@ impl Provider for KoiosProvider {
             },
             total_voting_power: "0".to_string(),
             summary: None,
+            vote_timeline: None,
         })
     }
 
