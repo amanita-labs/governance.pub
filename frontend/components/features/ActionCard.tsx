@@ -131,7 +131,7 @@ function summarizeMetadataStatus(checks?: MetadataCheckResult): MetadataBadge | 
 
   if (hashStatus === 'pass' && ipfsStatus === 'pass') {
     return {
-      label: 'Metadata verified',
+      label: 'Metadata Valid',
       variant: 'success',
       icon: CheckCircle,
       message: checks.hash.message,
