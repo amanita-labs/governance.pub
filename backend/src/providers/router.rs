@@ -43,8 +43,19 @@ impl ProviderRouter {
     }
 
     pub async fn get_drep(&self, id: &str) -> Result<Option<DRep>, anyhow::Error> {
-        // Use Blockfrost (more complete metadata)
-        self.blockfrost.get_drep(id).await
+  // Prefer Blockfrost (more complete metadata), but fallback to Koios if not found or on non-fatal error
+        match self.blockfrost.get_drep(id).await {
+            Ok(Some(drep)) => Ok(Some(drep)),
+            Ok(None) => {
+                tracing::debug!("Blockfrost returned None for DRep {}, trying Koios", id);
+                self.koios.get_drep(id).await
+            }
+            Err(e) => {
+                tracing::debug!("Blockfrost failed for DRep {}: {} — trying Koios", id, e);
+                // Try Koios as a fallback on error as well
+                self.koios.get_drep(id).await
+            }
+        }
     }
 
     pub async fn get_drep_delegators(&self, id: &str) -> Result<Vec<DRepDelegator>, anyhow::Error> {
