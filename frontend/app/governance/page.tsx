@@ -32,13 +32,23 @@ export default function GovernancePage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 50;
 
   useEffect(() => {
     async function loadDReps() {
       setLoading(true);
       try {
-        const response = await fetch(`/api/dreps?page=${currentPage}&count=${itemsPerPage}`);
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          count: itemsPerPage.toString(),
+        });
+        
+        if (searchQuery.trim()) {
+          params.append('search', searchQuery.trim());
+        }
+        
+        const response = await fetch(`/api/dreps?${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           if (currentPage === 1) {
@@ -55,7 +65,12 @@ export default function GovernancePage() {
       }
     }
     loadDReps();
-  }, [currentPage]);
+  }, [currentPage, searchQuery]);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when searching
+  };
 
   const loadMoreDReps = () => {
     if (hasMore && !loading) {
@@ -172,6 +187,7 @@ export default function GovernancePage() {
               hasMore={hasMore}
               onLoadMore={hasMore ? loadMoreDReps : undefined}
               loading={loading}
+              onSearch={handleSearch}
             />
           )}
         </TabsContent>

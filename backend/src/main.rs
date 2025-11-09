@@ -32,11 +32,16 @@ async fn main() -> Result<(), anyhow::Error> {
     let blockfrost_base_url = config.blockfrost_base_url();
     let blockfrost_provider =
         BlockfrostProvider::new(blockfrost_base_url, config.blockfrost_api_key);
-    let koios_provider = KoiosProvider::new(config.koios_base_url);
+    let koios_provider = KoiosProvider::new(config.koios_base_url.clone());
     let provider_router = ProviderRouter::new(blockfrost_provider, koios_provider);
     let govtools_provider = if config.govtools_enabled {
+        tracing::info!("GovTools enabled for network: {}", config.blockfrost_network);
         Some(GovToolsProvider::new(config.govtools_base_url.clone()))
     } else {
+        tracing::info!(
+            "GovTools disabled for network: {} (GovTools only supports mainnet)",
+            config.blockfrost_network
+        );
         None
     };
 

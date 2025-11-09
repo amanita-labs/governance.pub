@@ -15,9 +15,10 @@ interface DelegateFormProps {
   hasMore?: boolean;
   onLoadMore?: () => void;
   loading?: boolean;
+  onSearch?: (query: string) => void;
 }
 
-export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: DelegateFormProps) {
+export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSearch }: DelegateFormProps) {
   const { connectedWallet } = useWalletContext();
   const { state, reset, setBuilding, setTxHash, setError } = useTransaction();
   const [selectedDRep, setSelectedDRep] = useState<DRep | null>(null);
@@ -36,13 +37,18 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading }: De
     }
   }, [dreps]);
 
-  const filteredDReps = dreps.filter((drep) => {
-    const matchesSearch = 
-      (drep.metadata?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (drep.metadata?.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      drep.drep_id.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    if (!onSearch) return;
+    
+    const timer = setTimeout(() => {
+      onSearch(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, onSearch]);
+
+  const filteredDReps = dreps;
 
   const handleDelegate = async () => {
     if (!connectedWallet || !selectedDRep) return;

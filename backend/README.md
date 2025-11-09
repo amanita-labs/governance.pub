@@ -31,7 +31,7 @@ BLOCKFROST_API_KEY=your_blockfrost_project_id_here
 BLOCKFROST_NETWORK=preview
 KOIOS_BASE_URL=https://preview.koios.rest/api/v1
 GOVTOOLS_BASE_URL=https://be.gov.tools
-GOVTOOLS_ENABLED=true
+GOVTOOLS_ENABLED=false
 CACHE_ENABLED=true
 CACHE_MAX_ENTRIES=10000
 BACKEND_PORT=8080
@@ -40,14 +40,16 @@ BACKEND_PORT=8080
 
 3. Adjust values as needed:
    - `BLOCKFROST_API_KEY`: Required Blockfrost project ID
-   - `BLOCKFROST_NETWORK`: `mainnet` or `preview` (defaults to `mainnet` if unset)
+   - `BLOCKFROST_NETWORK`: `mainnet`, `preview`, or `preprod` (defaults to `mainnet` if unset)
    - `KOIOS_BASE_URL`: Koios API base URL (defaults to https://preview.koios.rest/api/v1)
    - `GOVTOOLS_BASE_URL`: GovTools enrichment API (defaults to https://be.gov.tools)
-   - `GOVTOOLS_ENABLED`: Toggle GovTools enrichment (`true`/`false`, default `true`)
+   - `GOVTOOLS_ENABLED`: Toggle GovTools enrichment (`true`/`false`, **auto-disabled for non-mainnet**)
    - `CACHE_ENABLED`: Toggle in-memory caching (`true`/`false`, default `true`)
    - `CACHE_MAX_ENTRIES`: Cache size limit (default `10000`)
    - `BACKEND_PORT`: Server port for local runs (defaults to `8080`; Render sets `PORT`)
    - `CORS_ORIGINS`: Comma-separated list of allowed origins (optional; wildcard by default)
+
+> **⚠️ Important Network Configuration:** GovTools only provides mainnet data. When using `preview` or `preprod` networks, `GOVTOOLS_ENABLED` is automatically set to `false` to prevent pulling mainnet DRep data. See [Network Configuration Guide](../docs/NETWORK_CONFIGURATION.md) for details.
 
 > **Note:** The current CORS configuration allows all origins when no override is provided. Fine-grained origin control will honour `CORS_ORIGINS` as the gateway hardening work progresses.
 
