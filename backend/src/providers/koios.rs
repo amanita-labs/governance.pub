@@ -196,6 +196,7 @@ impl KoiosProvider {
             meta_language: proposal["meta_language"].as_str().map(|s| s.to_string()),
             meta_comment: proposal["meta_comment"].as_str().map(|s| s.to_string()),
             meta_is_valid: proposal["meta_is_valid"].as_bool(),
+            metadata_checks: None,
             withdrawal: proposal["withdrawal"].as_object().map(|w| Withdrawal {
                 amount: w["amount"]
                     .as_str()
@@ -221,6 +222,11 @@ impl Provider for KoiosProvider {
         let limit = page.saturating_mul(count).max(count);
         let endpoint = format!("/drep_list?limit={}", limit);
         let json = self.fetch(&endpoint, "GET", None).await?;
+        let _total_returned = json
+            .as_ref()
+            .and_then(|value| value.as_array())
+            .map(|arr| arr.len())
+            .unwrap_or(0);
 
         let mut all_dreps = if let Some(Value::Array(arr)) = json {
             arr.iter()
@@ -328,7 +334,7 @@ impl Provider for KoiosProvider {
         page: u32,
         count: u32,
     ) -> Result<ActionsPage, anyhow::Error> {
-        let endpoint = format!("/proposal_list?limit={}", (page * count));
+        let endpoint = format!("/proposal_list?limit={}", (page * count + 1));
         let json = self.fetch(&endpoint, "GET", None).await?;
 
         let mut all_actions = if let Some(Value::Array(arr)) = json {
@@ -339,6 +345,8 @@ impl Provider for KoiosProvider {
             vec![]
         };
 
+        let has_more = all_actions.len() > (page * count) as usize;
+
         let start = ((page - 1) * count) as usize;
         let end = (start + count as usize).min(all_actions.len());
         let actions = if start < all_actions.len() {
@@ -346,8 +354,6 @@ impl Provider for KoiosProvider {
         } else {
             vec![]
         };
-
-        let has_more = end < all_actions.len() + actions.len();
 
         Ok(ActionsPage {
             actions,
@@ -384,71 +390,160 @@ impl Provider for KoiosProvider {
 
         if let Some(Value::Array(arr)) = json {
             if let Some(summary) = arr.first() {
-                let drep_yes = summary["drep_yes_vote_power"]
-                    .as_str()
-                    .unwrap_or("0")
-                    .to_string();
-                let drep_no = summary["drep_no_vote_power"]
-                    .as_str()
-                    .unwrap_or("0")
-                    .to_string();
-                let drep_abstain = (summary["drep_active_abstain_vote_power"]
-                    .as_str()
-                    .unwrap_or("0")
-                    .parse::<u128>()
-                    .unwrap_or(0)
-                    + summary["drep_always_abstain_vote_power"]
+                let parse_u128 = |value: &Value| -> u128 {
+                    value
                         .as_str()
-                        .unwrap_or("0")
-                        .parse::<u128>()
-                        .unwrap_or(0))
+                        .and_then(|s| s.parse::<u128>().ok())
+                        .or_else(|| value.as_u64().map(|v| v as u128))
+                        .unwrap_or(0)
+                };
+
+                let parse_u32 = |value: &Value| -> u32 {
+                    value
+                        .as_u64()
+                        .or_else(|| value.as_str().and_then(|s| s.parse::<u64>().ok()))
+                        .unwrap_or(0) as u32
+                };
+
+                let parse_f64 = |value: &Value| -> Option<f64> {
+                    value
+                        .as_f64()
+                        .or_else(|| value.as_str().and_then(|s| s.parse::<f64>().ok()))
+                };
+
+                let to_string = |value: &Value| -> String {
+                    value
+                        .as_str()
+                        .map(|s| s.to_string())
+                        .or_else(|| value.as_u64().map(|v| v.to_string()))
+                        .unwrap_or_else(|| "0".to_string())
+                };
+
+                let drep_yes_power = to_string(&summary["drep_yes_vote_power"]);
+                let drep_no_power = to_string(&summary["drep_no_vote_power"]);
+                let drep_abstain_active = parse_u128(&summary["drep_active_abstain_vote_power"]);
+                let drep_abstain_always = parse_u128(&summary["drep_always_abstain_vote_power"]);
+                let drep_abstain_power = (drep_abstain_active + drep_abstain_always).to_string();
+
+                let pool_yes_power = to_string(&summary["pool_yes_vote_power"]);
+                let pool_no_power = to_string(&summary["pool_no_vote_power"]);
+                let pool_abstain_active = parse_u128(&summary["pool_active_abstain_vote_power"]);
+                let pool_abstain_passive =
+                    parse_u128(&summary["pool_passive_always_abstain_vote_power"]);
+                let pool_abstain_power = (pool_abstain_active + pool_abstain_passive).to_string();
+
+                let total_power = (drep_yes_power.parse::<u128>().unwrap_or(0)
+                    + drep_no_power.parse::<u128>().unwrap_or(0)
+                    + drep_abstain_power.parse::<u128>().unwrap_or(0)
+                    + pool_yes_power.parse::<u128>().unwrap_or(0)
+                    + pool_no_power.parse::<u128>().unwrap_or(0)
+                    + pool_abstain_power.parse::<u128>().unwrap_or(0))
                 .to_string();
 
-                let pool_yes = summary["pool_yes_vote_power"]
-                    .as_str()
-                    .unwrap_or("0")
-                    .to_string();
-                let pool_no = summary["pool_no_vote_power"]
-                    .as_str()
-                    .unwrap_or("0")
-                    .to_string();
-                let pool_abstain = (summary["pool_active_abstain_vote_power"]
-                    .as_str()
-                    .unwrap_or("0")
-                    .parse::<u128>()
-                    .unwrap_or(0)
-                    + summary["pool_passive_always_abstain_vote_power"]
-                        .as_str()
-                        .unwrap_or("0")
-                        .parse::<u128>()
-                        .unwrap_or(0))
-                .to_string();
+                let drep_yes_votes = parse_u32(&summary["drep_yes_votes_cast"]);
+                let drep_no_votes = parse_u32(&summary["drep_no_votes_cast"]);
+                let drep_abstain_votes = parse_u32(&summary["drep_abstain_votes_cast"]);
 
-                let total = (drep_yes.parse::<u128>().unwrap_or(0)
-                    + drep_no.parse::<u128>().unwrap_or(0)
-                    + drep_abstain.parse::<u128>().unwrap_or(0)
-                    + pool_yes.parse::<u128>().unwrap_or(0)
-                    + pool_no.parse::<u128>().unwrap_or(0)
-                    + pool_abstain.parse::<u128>().unwrap_or(0))
-                .to_string();
+                let pool_yes_votes = parse_u32(&summary["pool_yes_votes_cast"]);
+                let pool_no_votes = parse_u32(&summary["pool_no_votes_cast"]);
+                let pool_abstain_votes = parse_u32(&summary["pool_abstain_votes_cast"]);
+
+                let committee_yes_votes = parse_u32(&summary["committee_yes_votes_cast"]);
+                let committee_no_votes = parse_u32(&summary["committee_no_votes_cast"]);
+                let committee_abstain_votes = parse_u32(&summary["committee_abstain_votes_cast"]);
+
+                let summary_struct = ProposalVotingSummary {
+                    proposal_type: summary["proposal_type"].as_str().map(|s| s.to_string()),
+                    epoch_no: summary["epoch_no"].as_u64().map(|v| v as u32),
+                    drep_yes_votes_cast: Some(drep_yes_votes),
+                    drep_active_yes_vote_power: summary["drep_active_yes_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    drep_yes_vote_power: Some(drep_yes_power.clone()),
+                    drep_yes_pct: parse_f64(&summary["drep_yes_pct"]),
+                    drep_no_votes_cast: Some(drep_no_votes),
+                    drep_active_no_vote_power: summary["drep_active_no_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    drep_no_vote_power: Some(drep_no_power.clone()),
+                    drep_no_pct: parse_f64(&summary["drep_no_pct"]),
+                    drep_abstain_votes_cast: Some(drep_abstain_votes),
+                    drep_active_abstain_vote_power: summary["drep_active_abstain_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    drep_always_no_confidence_vote_power: summary
+                        ["drep_always_no_confidence_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    drep_always_abstain_vote_power: summary["drep_always_abstain_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    pool_yes_votes_cast: Some(pool_yes_votes),
+                    pool_active_yes_vote_power: summary["pool_active_yes_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    pool_yes_vote_power: Some(pool_yes_power.clone()),
+                    pool_yes_pct: parse_f64(&summary["pool_yes_pct"]),
+                    pool_no_votes_cast: Some(pool_no_votes),
+                    pool_active_no_vote_power: summary["pool_active_no_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    pool_no_vote_power: Some(pool_no_power.clone()),
+                    pool_no_pct: parse_f64(&summary["pool_no_pct"]),
+                    pool_abstain_votes_cast: Some(pool_abstain_votes),
+                    pool_active_abstain_vote_power: summary["pool_active_abstain_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    pool_passive_always_abstain_votes_assigned: summary
+                        ["pool_passive_always_abstain_votes_assigned"]
+                        .as_u64()
+                        .map(|v| v as u32),
+                    pool_passive_always_abstain_vote_power: summary
+                        ["pool_passive_always_abstain_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    pool_passive_always_no_confidence_votes_assigned: summary
+                        ["pool_passive_always_no_confidence_votes_assigned"]
+                        .as_u64()
+                        .map(|v| v as u32),
+                    pool_passive_always_no_confidence_vote_power: summary
+                        ["pool_passive_always_no_confidence_vote_power"]
+                        .as_str()
+                        .map(|s| s.to_string()),
+                    committee_yes_votes_cast: Some(committee_yes_votes),
+                    committee_yes_pct: parse_f64(&summary["committee_yes_pct"]),
+                    committee_no_votes_cast: Some(committee_no_votes),
+                    committee_no_pct: parse_f64(&summary["committee_no_pct"]),
+                    committee_abstain_votes_cast: Some(committee_abstain_votes),
+                };
 
                 return Ok(ActionVotingBreakdown {
                     drep_votes: VoteCounts {
-                        yes: drep_yes,
-                        no: drep_no,
-                        abstain: drep_abstain,
+                        yes: drep_yes_power,
+                        no: drep_no_power,
+                        abstain: drep_abstain_power,
+                        yes_votes_cast: Some(drep_yes_votes),
+                        no_votes_cast: Some(drep_no_votes),
+                        abstain_votes_cast: Some(drep_abstain_votes),
                     },
                     spo_votes: VoteCounts {
-                        yes: pool_yes,
-                        no: pool_no,
-                        abstain: pool_abstain,
+                        yes: pool_yes_power,
+                        no: pool_no_power,
+                        abstain: pool_abstain_power,
+                        yes_votes_cast: Some(pool_yes_votes),
+                        no_votes_cast: Some(pool_no_votes),
+                        abstain_votes_cast: Some(pool_abstain_votes),
                     },
                     cc_votes: VoteCounts {
                         yes: "0".to_string(),
                         no: "0".to_string(),
                         abstain: "0".to_string(),
+                        yes_votes_cast: Some(committee_yes_votes),
+                        no_votes_cast: Some(committee_no_votes),
+                        abstain_votes_cast: Some(committee_abstain_votes),
                     },
-                    total_voting_power: total,
+                    total_voting_power: total_power,
+                    summary: Some(summary_struct),
                 });
             }
         }
@@ -458,18 +553,28 @@ impl Provider for KoiosProvider {
                 yes: "0".to_string(),
                 no: "0".to_string(),
                 abstain: "0".to_string(),
+                yes_votes_cast: Some(0),
+                no_votes_cast: Some(0),
+                abstain_votes_cast: Some(0),
             },
             spo_votes: VoteCounts {
                 yes: "0".to_string(),
                 no: "0".to_string(),
                 abstain: "0".to_string(),
+                yes_votes_cast: Some(0),
+                no_votes_cast: Some(0),
+                abstain_votes_cast: Some(0),
             },
             cc_votes: VoteCounts {
                 yes: "0".to_string(),
                 no: "0".to_string(),
                 abstain: "0".to_string(),
+                yes_votes_cast: Some(0),
+                no_votes_cast: Some(0),
+                abstain_votes_cast: Some(0),
             },
             total_voting_power: "0".to_string(),
+            summary: None,
         })
     }
 

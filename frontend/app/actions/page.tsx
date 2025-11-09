@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ActionList from '@/components/features/ActionList';
 import { Badge } from '@/components/ui/Badge';
 import { Loader2 } from 'lucide-react';
@@ -15,6 +15,7 @@ export default function ActionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const itemsPerPage = 20;
+  const isInitialPageRef = useRef(true);
 
   useEffect(() => {
     async function loadActions() {
@@ -33,7 +34,11 @@ export default function ActionsPage() {
         if (response.ok) {
           const data = await response.json();
           setActions(data.actions);
-          setHasMore(data.hasMore);
+          const inferredHasMore =
+            data.hasMore ??
+            data.has_more ??
+            (Array.isArray(data.actions) && data.actions.length === itemsPerPage);
+          setHasMore(Boolean(inferredHasMore));
           setLoadingMetadata(false);
         } else {
           console.error('Failed to fetch actions');
@@ -47,6 +52,14 @@ export default function ActionsPage() {
       }
     }
     loadActions();
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (isInitialPageRef.current) {
+      isInitialPageRef.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
 
   return (

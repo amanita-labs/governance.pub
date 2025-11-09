@@ -5,6 +5,8 @@ import type {
   ActionVotingBreakdown,
   DRepDelegator,
   DRepStatsSummary,
+  VoteCounts,
+  ProposalVotingSummary,
 } from '@/types/governance';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -477,38 +479,42 @@ export async function getActionVotingResults(actionId: string): Promise<ActionVo
     }
     
     const breakdown: unknown = await response.json();
-    if (!isRecord(breakdown)) {
+    const parseOptionalNumber = (value: unknown): number | undefined => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    };
+
+    const parseVoteCounts = (value: unknown): VoteCounts => {
+      if (!isRecord(value)) {
+        return { yes: '0', no: '0', abstain: '0' };
+      }
+
       return {
-        drep_votes: { yes: '0', no: '0', abstain: '0' },
-        spo_votes: { yes: '0', no: '0', abstain: '0' },
-        cc_votes: { yes: '0', no: '0', abstain: '0' },
-        total_voting_power: '0',
+        yes: String(value.yes ?? '0'),
+        no: String(value.no ?? '0'),
+        abstain: String(value.abstain ?? '0'),
+        yes_votes_cast: parseOptionalNumber(value.yes_votes_cast),
+        no_votes_cast: parseOptionalNumber(value.no_votes_cast),
+        abstain_votes_cast: parseOptionalNumber(value.abstain_votes_cast),
       };
-    }
+    };
+
+    const summary = isRecord(breakdown.summary)
+      ? (breakdown.summary as ProposalVotingSummary)
+      : undefined;
 
     return {
-      drep_votes: isRecord(breakdown.drep_votes)
-        ? {
-            yes: String(breakdown.drep_votes.yes ?? '0'),
-            no: String(breakdown.drep_votes.no ?? '0'),
-            abstain: String(breakdown.drep_votes.abstain ?? '0'),
-          }
-        : { yes: '0', no: '0', abstain: '0' },
-      spo_votes: isRecord(breakdown.spo_votes)
-        ? {
-            yes: String(breakdown.spo_votes.yes ?? '0'),
-            no: String(breakdown.spo_votes.no ?? '0'),
-            abstain: String(breakdown.spo_votes.abstain ?? '0'),
-          }
-        : { yes: '0', no: '0', abstain: '0' },
-      cc_votes: isRecord(breakdown.cc_votes)
-        ? {
-            yes: String(breakdown.cc_votes.yes ?? '0'),
-            no: String(breakdown.cc_votes.no ?? '0'),
-            abstain: String(breakdown.cc_votes.abstain ?? '0'),
-          }
-        : { yes: '0', no: '0', abstain: '0' },
+      drep_votes: parseVoteCounts(breakdown.drep_votes),
+      spo_votes: parseVoteCounts(breakdown.spo_votes),
+      cc_votes: parseVoteCounts(breakdown.cc_votes),
       total_voting_power: String(breakdown.total_voting_power ?? '0'),
+      summary,
     };
   } catch (error: unknown) {
     if (isNotFoundError(error)) {

@@ -172,6 +172,7 @@ impl BlockfrostProvider {
             meta_language: action["meta_language"].as_str().map(|s| s.to_string()),
             meta_comment: action["meta_comment"].as_str().map(|s| s.to_string()),
             meta_is_valid: action["meta_is_valid"].as_bool(),
+            metadata_checks: None,
             withdrawal: action["withdrawal"].as_object().map(|w| Withdrawal {
                 amount: w["amount"]
                     .as_str()
@@ -406,21 +407,34 @@ impl Provider for BlockfrostProvider {
                 yes: "0".to_string(),
                 no: "0".to_string(),
                 abstain: "0".to_string(),
+                yes_votes_cast: Some(0),
+                no_votes_cast: Some(0),
+                abstain_votes_cast: Some(0),
             },
             spo_votes: VoteCounts {
                 yes: "0".to_string(),
                 no: "0".to_string(),
                 abstain: "0".to_string(),
+                yes_votes_cast: Some(0),
+                no_votes_cast: Some(0),
+                abstain_votes_cast: Some(0),
             },
             cc_votes: VoteCounts {
                 yes: "0".to_string(),
                 no: "0".to_string(),
                 abstain: "0".to_string(),
+                yes_votes_cast: Some(0),
+                no_votes_cast: Some(0),
+                abstain_votes_cast: Some(0),
             },
             total_voting_power: "0".to_string(),
+            summary: None,
         };
 
         let mut total_power = 0u128;
+        let mut drep_vote_counts = (0u32, 0u32, 0u32);
+        let mut spo_vote_counts = (0u32, 0u32, 0u32);
+        let mut cc_vote_counts = (0u32, 0u32, 0u32);
 
         for (voter_type, vote, power_str) in all_votes {
             let power: u128 = power_str.parse().unwrap_or(0);
@@ -437,42 +451,51 @@ impl Provider for BlockfrostProvider {
                     "yes" => {
                         let current: u128 = breakdown.drep_votes.yes.parse().unwrap_or(0);
                         breakdown.drep_votes.yes = (current + power).to_string();
+                        drep_vote_counts.0 = drep_vote_counts.0.saturating_add(1);
                     }
                     "no" => {
                         let current: u128 = breakdown.drep_votes.no.parse().unwrap_or(0);
                         breakdown.drep_votes.no = (current + power).to_string();
+                        drep_vote_counts.1 = drep_vote_counts.1.saturating_add(1);
                     }
                     _ => {
                         let current: u128 = breakdown.drep_votes.abstain.parse().unwrap_or(0);
                         breakdown.drep_votes.abstain = (current + power).to_string();
+                        drep_vote_counts.2 = drep_vote_counts.2.saturating_add(1);
                     }
                 },
                 "spo" => match vote_type {
                     "yes" => {
                         let current: u128 = breakdown.spo_votes.yes.parse().unwrap_or(0);
                         breakdown.spo_votes.yes = (current + power).to_string();
+                        spo_vote_counts.0 = spo_vote_counts.0.saturating_add(1);
                     }
                     "no" => {
                         let current: u128 = breakdown.spo_votes.no.parse().unwrap_or(0);
                         breakdown.spo_votes.no = (current + power).to_string();
+                        spo_vote_counts.1 = spo_vote_counts.1.saturating_add(1);
                     }
                     _ => {
                         let current: u128 = breakdown.spo_votes.abstain.parse().unwrap_or(0);
                         breakdown.spo_votes.abstain = (current + power).to_string();
+                        spo_vote_counts.2 = spo_vote_counts.2.saturating_add(1);
                     }
                 },
                 "cc" => match vote_type {
                     "yes" => {
                         let current: u128 = breakdown.cc_votes.yes.parse().unwrap_or(0);
                         breakdown.cc_votes.yes = (current + power).to_string();
+                        cc_vote_counts.0 = cc_vote_counts.0.saturating_add(1);
                     }
                     "no" => {
                         let current: u128 = breakdown.cc_votes.no.parse().unwrap_or(0);
                         breakdown.cc_votes.no = (current + power).to_string();
+                        cc_vote_counts.1 = cc_vote_counts.1.saturating_add(1);
                     }
                     _ => {
                         let current: u128 = breakdown.cc_votes.abstain.parse().unwrap_or(0);
                         breakdown.cc_votes.abstain = (current + power).to_string();
+                        cc_vote_counts.2 = cc_vote_counts.2.saturating_add(1);
                     }
                 },
                 _ => {}
@@ -480,6 +503,15 @@ impl Provider for BlockfrostProvider {
         }
 
         breakdown.total_voting_power = total_power.to_string();
+        breakdown.drep_votes.yes_votes_cast = Some(drep_vote_counts.0);
+        breakdown.drep_votes.no_votes_cast = Some(drep_vote_counts.1);
+        breakdown.drep_votes.abstain_votes_cast = Some(drep_vote_counts.2);
+        breakdown.spo_votes.yes_votes_cast = Some(spo_vote_counts.0);
+        breakdown.spo_votes.no_votes_cast = Some(spo_vote_counts.1);
+        breakdown.spo_votes.abstain_votes_cast = Some(spo_vote_counts.2);
+        breakdown.cc_votes.yes_votes_cast = Some(cc_vote_counts.0);
+        breakdown.cc_votes.no_votes_cast = Some(cc_vote_counts.1);
+        breakdown.cc_votes.abstain_votes_cast = Some(cc_vote_counts.2);
 
         Ok(breakdown)
     }

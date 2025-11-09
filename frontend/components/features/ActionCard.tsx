@@ -4,8 +4,17 @@ import Link from 'next/link';
 import { memo, useCallback, type KeyboardEvent } from 'react';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { Clock, TrendingUp, CheckCircle, XCircle, DollarSign } from 'lucide-react';
-import type { GovernanceAction } from '@/types/governance';
+import {
+  Clock,
+  TrendingUp,
+  CheckCircle,
+  XCircle,
+  DollarSign,
+  Copy,
+  AlertTriangle,
+  HelpCircle,
+} from 'lucide-react';
+import type { GovernanceAction, MetadataCheckResult } from '@/types/governance';
 import { Markdown } from '../ui/Markdown';
 import { useRouter } from 'next/navigation';
 
@@ -203,21 +212,55 @@ function formatTreasuryAmount(amount: string): string {
   return `${ada.toFixed(2)} ₳`;
 }
 
-/**
- * Format relative time from block_time
- */
-function formatRelativeTime(blockTime?: number): string | null {
-  if (!blockTime) return null;
-  
-  const now = Date.now() / 1000; // Current time in seconds
-  const diff = now - blockTime; // Difference in seconds
-  
-  if (diff < 60) return 'Just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  if (diff < 2592000) return `${Math.floor(diff / 604800)}w ago`;
-  return `${Math.floor(diff / 2592000)}mo ago`;
+type MetadataBadge = {
+  label: string;
+  variant: 'success' | 'error' | 'info' | 'outline';
+  icon: React.ElementType;
+  message?: string;
+};
+
+function summarizeMetadataStatus(checks?: MetadataCheckResult): MetadataBadge | null {
+  if (!checks) {
+    return null;
+  }
+
+  const hashStatus = checks.hash.status;
+  const ipfsStatus = checks.ipfs.status;
+
+  if (hashStatus === 'fail' || ipfsStatus === 'fail') {
+    const failingOutcome = hashStatus === 'fail' ? checks.hash : checks.ipfs;
+    return {
+      label: 'Metadata issue',
+      variant: 'error',
+      icon: AlertTriangle,
+      message: failingOutcome.message,
+    };
+  }
+
+  if (hashStatus === 'pass' && ipfsStatus === 'pass') {
+    return {
+      label: 'Metadata verified',
+      variant: 'success',
+      icon: CheckCircle,
+      message: checks.hash.message,
+    };
+  }
+
+  if (hashStatus === 'unknown' && ipfsStatus === 'unknown') {
+    return {
+      label: 'No metadata',
+      variant: 'outline',
+      icon: HelpCircle,
+      message: checks.hash.message ?? checks.ipfs.message,
+    };
+  }
+
+  return {
+    label: 'Metadata pending',
+    variant: 'info',
+    icon: Clock,
+    message: checks.hash.message ?? checks.ipfs.message ?? checks.author_witness.message,
+  };
 }
 
 function ActionCard({ action }: ActionCardProps) {
@@ -227,6 +270,9 @@ function ActionCard({ action }: ActionCardProps) {
   const previewDescription = getPreviewMarkdown(description);
   const router = useRouter();
   const actionUrl = `/actions/${action.action_id}`;
+  const displayActionId = action.action_id;
+  const metadataBadge = summarizeMetadataStatus(action.metadata_checks);
+  const hasMetadata = Boolean(action.meta_json || action.metadata);
 
   const handleNavigate = useCallback(() => {
     router.push(actionUrl);
@@ -281,12 +327,26 @@ function ActionCard({ action }: ActionCardProps) {
               {getStatusIcon(status)}
               <span>{status}</span>
             </Badge>
-            {action.meta_json || action.metadata ? (
-              <Badge variant="outline" className="text-xs flex items-center gap-1">
-                <span aria-hidden="true">🐑</span>
-                <span>Has metadata</span>
-              </Badge>
-            ) : null}
+            {metadataBadge
+              ? (() => {
+                  const Icon = metadataBadge.icon;
+                  return (
+                    <Badge
+                      variant={metadataBadge.variant}
+                      className="flex items-center gap-1 text-xs"
+                      title={metadataBadge.message}
+                    >
+                      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>{metadataBadge.label}</span>
+                    </Badge>
+                  );
+                })()
+              : hasMetadata && (
+                  <Badge variant="outline" className="text-xs flex items-center gap-1">
+                    <span aria-hidden="true">🐑</span>
+                    <span>Has metadata</span>
+                  </Badge>
+                )}
           </div>
         </div>
       </CardHeader>
@@ -314,33 +374,24 @@ function ActionCard({ action }: ActionCardProps) {
         )}
 
         {/* Epoch Information */}
-        {(action.voting_epoch || action.enactment_epoch || action.proposed_epoch) && (
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            {action.proposed_epoch && (
-              <div className="p-2 rounded-md bg-muted/50">
-                <p className="text-xs text-muted-foreground mb-1">Proposed</p>
-                <p className="font-semibold text-foreground">Epoch {action.proposed_epoch}</p>
-                {action.block_time && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatRelativeTime(action.block_time)}
-                  </p>
-                )}
-              </div>
-            )}
-            {action.voting_epoch && !action.proposed_epoch && (
-              <div className="p-2 rounded-md bg-muted/50">
-                <p className="text-xs text-muted-foreground mb-1">Voting Epoch</p>
-                <p className="font-semibold text-foreground">{action.voting_epoch}</p>
-              </div>
-            )}
-            {action.enactment_epoch && (
-              <div className="p-2 rounded-md bg-muted/50">
-                <p className="text-xs text-muted-foreground mb-1">Enactment Epoch</p>
-                <p className="font-semibold text-foreground">{action.enactment_epoch}</p>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="p-3 rounded-md bg-muted/50 flex items-center justify-between gap-3">
+          <p className="font-mono text-xs text-muted-foreground break-all">
+            {displayActionId}
+          </p>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              navigator.clipboard.writeText(action.action_id).catch((error) => {
+                console.error('Failed to copy action ID:', error);
+              });
+            }}
+            className="p-1 rounded-md text-primary hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label="Copy governance action ID"
+          >
+            <Copy className="w-4 h-4" aria-hidden="true" />
+          </button>
+        </div>
 
         {/* Expiry Countdown */}
         {action.expiration && action.status === 'voting' && (

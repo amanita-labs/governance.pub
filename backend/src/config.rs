@@ -18,8 +18,8 @@ impl Config {
     pub fn from_env() -> Result<Self, anyhow::Error> {
         dotenv::dotenv().ok();
 
-        let blockfrost_network = env::var("BLOCKFROST_NETWORK")
-            .unwrap_or_else(|_| "mainnet".to_string());
+        let blockfrost_network =
+            env::var("BLOCKFROST_NETWORK").unwrap_or_else(|_| "mainnet".to_string());
 
         // GovTools only provides mainnet data, so disable it for non-mainnet networks
         let is_mainnet = blockfrost_network.to_lowercase() == "mainnet";

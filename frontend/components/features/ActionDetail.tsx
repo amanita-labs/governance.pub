@@ -6,6 +6,7 @@ import { Badge } from '../ui/Badge';
 import { VotingChart } from '../charts/VotingChart';
 import { VotingProgress } from '../charts/VotingProgress';
 import { ProposalMetadata } from './ProposalMetadata';
+import { MetadataValidationSummary } from './MetadataValidationSummary';
 import { ProposalTimeline } from './ProposalTimeline';
 import { Clock, Calendar, Hash, ExternalLink, DollarSign, Settings } from 'lucide-react';
 import type { GovernanceAction, ActionVotingBreakdown } from '@/types/governance';
@@ -35,6 +36,39 @@ function formatVotingPower(power: string): string {
     return `${(ada / 1_000).toFixed(2)}K ADA`;
   }
   return `${ada.toFixed(2)} ADA`;
+}
+
+function formatAdaValue(value?: string): string {
+  if (value === undefined) {
+    return '—';
+  }
+  try {
+    return `${formatVotingPower(value)}`;
+  } catch {
+    return '—';
+  }
+}
+
+function formatVoteCount(count?: number): string {
+  if (count === undefined) {
+    return '—';
+  }
+  return count.toLocaleString();
+}
+
+function formatVoteLabel(count?: number): string {
+  if (count === undefined) {
+    return '—';
+  }
+  const formatted = count.toLocaleString();
+  return `${formatted} ${count === 1 ? 'vote' : 'votes'}`;
+}
+
+function formatPercent(value?: number): string {
+  if (value === undefined || Number.isNaN(value)) {
+    return '—';
+  }
+  return `${value.toFixed(1)}%`;
 }
 
 function getStatusVariant(status: string | undefined): 'success' | 'warning' | 'error' | 'info' | 'default' {
@@ -147,6 +181,10 @@ function getExplorerUrl(txHash: string): string {
 export default function ActionDetail({ action, votingResults }: ActionDetailProps) {
   const status = action.status || 'submitted';
   const title = getMetadataTitle(action);
+  const summary = votingResults.summary;
+
+  const sumCounts = (...values: Array<number | undefined>) =>
+    values.reduce((acc, value) => acc + (value ?? 0), 0);
 
   const chartData = [
     {
@@ -183,6 +221,43 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
     BigInt(votingResults.drep_votes.abstain) + 
     BigInt(votingResults.spo_votes.abstain) + 
     BigInt(votingResults.cc_votes.abstain);
+
+  const drepYesCount = votingResults.drep_votes.yes_votes_cast ?? summary?.drep_yes_votes_cast ?? 0;
+  const drepNoCount = votingResults.drep_votes.no_votes_cast ?? summary?.drep_no_votes_cast ?? 0;
+  const drepAbstainCount = votingResults.drep_votes.abstain_votes_cast ?? summary?.drep_abstain_votes_cast ?? 0;
+  const spoYesCount = votingResults.spo_votes.yes_votes_cast ?? summary?.pool_yes_votes_cast ?? 0;
+  const spoNoCount = votingResults.spo_votes.no_votes_cast ?? summary?.pool_no_votes_cast ?? 0;
+  const spoAbstainCount = votingResults.spo_votes.abstain_votes_cast ?? summary?.pool_abstain_votes_cast ?? 0;
+  const ccYesCount = votingResults.cc_votes.yes_votes_cast ?? summary?.committee_yes_votes_cast ?? 0;
+  const ccNoCount = votingResults.cc_votes.no_votes_cast ?? summary?.committee_no_votes_cast ?? 0;
+  const ccAbstainCount = votingResults.cc_votes.abstain_votes_cast ?? summary?.committee_abstain_votes_cast ?? 0;
+
+  const drepVotesCast = sumCounts(drepYesCount, drepNoCount, drepAbstainCount);
+  const spoVotesCast = sumCounts(spoYesCount, spoNoCount, spoAbstainCount);
+  const ccVotesCast = sumCounts(ccYesCount, ccNoCount, ccAbstainCount);
+  const totalVotesCast = sumCounts(drepVotesCast, spoVotesCast, ccVotesCast);
+
+  const yesVotesCountTotal = sumCounts(drepYesCount, spoYesCount, ccYesCount);
+  const noVotesCountTotal = sumCounts(drepNoCount, spoNoCount, ccNoCount);
+  const abstainVotesCountTotal = sumCounts(drepAbstainCount, spoAbstainCount, ccAbstainCount);
+
+  const drepYesPower = summary?.drep_yes_vote_power ?? votingResults.drep_votes.yes;
+  const drepNoPower = summary?.drep_no_vote_power ?? votingResults.drep_votes.no;
+  const drepAbstainPower = summary
+    ? (
+        BigInt(summary.drep_active_abstain_vote_power ?? '0') +
+        BigInt(summary.drep_always_abstain_vote_power ?? '0')
+      ).toString()
+    : votingResults.drep_votes.abstain;
+
+  const spoYesPower = summary?.pool_yes_vote_power ?? votingResults.spo_votes.yes;
+  const spoNoPower = summary?.pool_no_vote_power ?? votingResults.spo_votes.no;
+  const spoAbstainPower = summary
+    ? (
+        BigInt(summary.pool_active_abstain_vote_power ?? '0') +
+        BigInt(summary.pool_passive_always_abstain_vote_power ?? '0')
+      ).toString()
+    : votingResults.spo_votes.abstain;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -229,6 +304,15 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
               {(action.meta_json || action.metadata) && (
                 <div className="mb-6">
                   <ProposalMetadata action={action} />
+                </div>
+              )}
+
+              {action.metadata_checks && (
+                <div className="mb-6">
+                  <MetadataValidationSummary
+                    checks={action.metadata_checks}
+                    metaUrl={action.meta_url}
+                  />
                 </div>
               )}
 

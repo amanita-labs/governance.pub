@@ -81,7 +81,7 @@ cat <<'EOF' > .env
 BLOCKFROST_API_KEY=your_blockfrost_project_id_here
 BLOCKFROST_NETWORK=preview
 KOIOS_BASE_URL=https://preview.koios.rest/api/v1
-GOVTOOLS_BASE_URL=https://be.gov.tools
+GOVTOOLS_BASE_URL=https://be.preview.gov.tools
 GOVTOOLS_ENABLED=true
 CACHE_ENABLED=true
 CACHE_MAX_ENTRIES=10000

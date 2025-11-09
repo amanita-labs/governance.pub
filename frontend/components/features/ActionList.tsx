@@ -77,7 +77,6 @@ export default function ActionList({ actions, loading = false }: ActionListProps
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [hasMetadataFilter, setHasMetadataFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   const filteredAndSorted = useMemo(() => {
@@ -93,14 +92,7 @@ export default function ActionList({ actions, loading = false }: ActionListProps
       const matchesStatus = statusFilter === 'all' || action.status === statusFilter;
       const matchesType = typeFilter === 'all' || action.type === typeFilter;
       
-      // Filter by metadata availability
-      const hasMetadata = !!(action.meta_json || action.metadata);
-      const matchesMetadata = 
-        hasMetadataFilter === 'all' || 
-        (hasMetadataFilter === 'yes' && hasMetadata) ||
-        (hasMetadataFilter === 'no' && !hasMetadata);
-      
-      return matchesSearch && matchesStatus && matchesType && matchesMetadata;
+      return matchesSearch && matchesStatus && matchesType;
     });
 
     // Sort actions
@@ -142,7 +134,7 @@ export default function ActionList({ actions, loading = false }: ActionListProps
     });
 
     return filtered;
-  }, [actions, searchQuery, statusFilter, typeFilter, hasMetadataFilter, sortBy]);
+  }, [actions, searchQuery, statusFilter, typeFilter, sortBy]);
 
   const statuses = ['all', 'submitted', 'voting', 'ratified', 'enacted', 'expired', 'rejected', 'dropped'];
   const types = ['all', 'parameter_change', 'hard_fork_initiation', 'treasury_withdrawals', 'no_confidence', 'update_committee', 'new_committee', 'new_constitution', 'info'];
@@ -202,20 +194,6 @@ export default function ActionList({ actions, loading = false }: ActionListProps
             </select>
 
             <select
-              value={hasMetadataFilter}
-              onChange={(e) => setHasMetadataFilter(e.target.value)}
-              className={cn(
-                "px-4 py-2 border border-input rounded-md",
-                "bg-background text-foreground",
-                "focus:ring-2 focus:ring-ring focus:border-transparent"
-              )}
-            >
-              <option value="all">All Metadata</option>
-              <option value="yes">Has Metadata</option>
-              <option value="no">No Metadata</option>
-            </select>
-
-            <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
               className={cn(
@@ -232,11 +210,6 @@ export default function ActionList({ actions, loading = false }: ActionListProps
               <option value="has_metadata">Sort: Has Metadata</option>
             </select>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span aria-hidden="true">🪶</span>
-          <span>Tip: Filter by metadata to spot the most well-groomed proposals in the pasture.</span>
         </div>
 
         {/* Results count */}

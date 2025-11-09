@@ -53,6 +53,8 @@ pub struct GovernanceAction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub meta_is_valid: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata_checks: Option<MetadataCheckResult>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub withdrawal: Option<Withdrawal>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub param_proposal: Option<serde_json::Value>,
@@ -79,19 +81,185 @@ pub struct ActionsPage {
     pub total: Option<u64>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(rename_all = "snake_case")]
 pub struct ActionVotingBreakdown {
     pub drep_votes: VoteCounts,
     pub spo_votes: VoteCounts,
     pub cc_votes: VoteCounts,
     pub total_voting_power: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<ProposalVotingSummary>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(rename_all = "snake_case")]
 pub struct VoteCounts {
     pub yes: String,
     pub no: String,
     pub abstain: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub yes_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub no_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub abstain_votes_cast: Option<u32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[serde(rename_all = "snake_case")]
+pub struct ProposalVotingSummary {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proposal_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub epoch_no: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_yes_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_active_yes_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_yes_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_yes_pct: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_no_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_active_no_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_no_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_no_pct: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_abstain_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_active_abstain_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_always_no_confidence_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drep_always_abstain_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_yes_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_active_yes_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_yes_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_yes_pct: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_no_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_active_no_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_no_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_no_pct: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_abstain_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_active_abstain_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_passive_always_abstain_votes_assigned: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_passive_always_abstain_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_passive_always_no_confidence_votes_assigned: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pool_passive_always_no_confidence_vote_power: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub committee_yes_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub committee_yes_pct: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub committee_no_votes_cast: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub committee_no_pct: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub committee_abstain_votes_cast: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct MetadataCheckResult {
+    pub hash: CheckOutcome,
+    pub ipfs: CheckOutcome,
+    pub author_witness: CheckOutcome,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolved_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub koios_meta_is_valid: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub notes: Vec<String>,
+}
+
+impl MetadataCheckResult {
+    pub fn default_with_koios(meta_is_valid: Option<bool>) -> Self {
+        Self {
+            hash: CheckOutcome::unknown("Hash validation pending"),
+            ipfs: CheckOutcome::unknown("Hosting validation pending"),
+            author_witness: CheckOutcome::pending(
+                "Author witness verification not yet implemented in backend",
+            ),
+            resolved_url: None,
+            koios_meta_is_valid: meta_is_valid,
+            notes: Vec::new(),
+        }
+    }
+
+    pub fn no_metadata(meta_is_valid: Option<bool>) -> Self {
+        let mut result = Self::default_with_koios(meta_is_valid);
+        result.hash = CheckOutcome::unknown("No metadata anchor provided");
+        result.ipfs = CheckOutcome::unknown("No metadata anchor provided");
+        result
+            .notes
+            .push("Governance action lacks metadata URL or hash".to_string());
+        result
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct CheckOutcome {
+    pub status: CheckStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+impl CheckOutcome {
+    pub fn pass(message: impl Into<String>) -> Self {
+        Self {
+            status: CheckStatus::Pass,
+            message: Some(message.into()),
+        }
+    }
+
+    pub fn fail(message: impl Into<String>) -> Self {
+        Self {
+            status: CheckStatus::Fail,
+            message: Some(message.into()),
+        }
+    }
+
+    pub fn pending(message: impl Into<String>) -> Self {
+        Self {
+            status: CheckStatus::Pending,
+            message: Some(message.into()),
+        }
+    }
+
+    pub fn unknown(message: impl Into<String>) -> Self {
+        Self {
+            status: CheckStatus::Unknown,
+            message: Some(message.into()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CheckStatus {
+    Pass,
+    Fail,
+    Warning,
+    Pending,
+    Unknown,
 }

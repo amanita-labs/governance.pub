@@ -1,6 +1,7 @@
 use crate::cache::{keys::CacheKey, CacheManager};
 use crate::models::*;
 use crate::providers::{GovToolsEnrichment, GovToolsProvider, ProviderRouter};
+use crate::services::metadata_validation::MetadataValidator;
 use crate::utils::drep_id::decode_drep_id_to_hex;
 use futures::future::join_all;
 use std::sync::Arc;
@@ -11,6 +12,7 @@ pub struct CachedProviderRouter {
     router: Arc<ProviderRouter>,
     cache: Arc<CacheManager>,
     govtools: Option<Arc<GovToolsProvider>>,
+    metadata_validator: Arc<MetadataValidator>,
 }
 
 impl CachedProviderRouter {
@@ -19,10 +21,13 @@ impl CachedProviderRouter {
         cache: CacheManager,
         govtools: Option<GovToolsProvider>,
     ) -> Self {
+        let cache = Arc::new(cache);
+        let metadata_validator = Arc::new(MetadataValidator::new(cache.clone()));
         Self {
             router: Arc::new(router),
-            cache: Arc::new(cache),
+            cache,
             govtools: govtools.map(Arc::new),
+            metadata_validator,
         }
     }
 
@@ -269,8 +274,10 @@ impl CachedProviderRouter {
         let cache_key = CacheKey::ActionsPage { page, count };
 
         // Check cache first
-        if let Some(cached) = self.cache.get::<ActionsPage>(&cache_key).await {
+        if let Some(mut cached) = self.cache.get::<ActionsPage>(&cache_key).await {
             debug!("Cache hit for actions page {}:{}", page, count);
+            cached.actions = self.with_metadata_checks_for_list(cached.actions).await;
+            self.cache.set(&cache_key, &cached).await;
             return Ok(cached);
         }
 
@@ -279,7 +286,8 @@ impl CachedProviderRouter {
             "Cache miss for actions page {}:{}, fetching from provider",
             page, count
         );
-        let result = self.router.get_governance_actions_page(page, count).await?;
+        let mut result = self.router.get_governance_actions_page(page, count).await?;
+        result.actions = self.with_metadata_checks_for_list(result.actions).await;
 
         // Store in cache
         self.cache.set(&cache_key, &result).await;
@@ -293,8 +301,12 @@ impl CachedProviderRouter {
         let cache_key = CacheKey::Action { id: id.to_string() };
 
         // Check cache first
-        if let Some(cached) = self.cache.get::<GovernanceAction>(&cache_key).await {
+        if let Some(mut cached) = self.cache.get::<GovernanceAction>(&cache_key).await {
             debug!("Cache hit for action {}", id);
+            if cached.metadata_checks.is_none() {
+                cached = self.metadata_validator.attach_checks(cached).await;
+                self.cache.set(&cache_key, &cached).await;
+            }
             return Ok(Some(cached));
         }
 
@@ -302,9 +314,10 @@ impl CachedProviderRouter {
         debug!("Cache miss for action {}, fetching from provider", id);
         match self.router.get_governance_action(id).await? {
             Some(action) => {
+                let enriched = self.metadata_validator.attach_checks(action).await;
                 // Store in cache
-                self.cache.set(&cache_key, &action).await;
-                Ok(Some(action))
+                self.cache.set(&cache_key, &enriched).await;
+                Ok(Some(enriched))
             }
             None => Ok(None),
         }
@@ -573,6 +586,16 @@ impl CachedProviderRouter {
         }
 
         None
+    }
+
+    async fn with_metadata_checks_for_list(
+        &self,
+        actions: Vec<GovernanceAction>,
+    ) -> Vec<GovernanceAction> {
+        let futures = actions
+            .into_iter()
+            .map(|action| self.metadata_validator.attach_checks(action));
+        join_all(futures).await
     }
 }
 

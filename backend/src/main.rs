@@ -3,6 +3,7 @@ mod cache;
 mod config;
 mod models;
 mod providers;
+mod services;
 mod utils;
 
 use axum::{routing::get, Router};
@@ -35,7 +36,10 @@ async fn main() -> Result<(), anyhow::Error> {
     let koios_provider = KoiosProvider::new(config.koios_base_url.clone());
     let provider_router = ProviderRouter::new(blockfrost_provider, koios_provider);
     let govtools_provider = if config.govtools_enabled {
-        tracing::info!("GovTools enabled for network: {}", config.blockfrost_network);
+        tracing::info!(
+            "GovTools enabled for network: {}",
+            config.blockfrost_network
+        );
         Some(GovToolsProvider::new(config.govtools_base_url.clone()))
     } else {
         tracing::info!(

@@ -103,6 +103,22 @@ export interface GovernanceActionMetadata extends JsonObject {
   references?: JsonValue;
 }
 
+export type MetadataCheckStatus = 'pass' | 'fail' | 'warning' | 'pending' | 'unknown';
+
+export interface MetadataCheckOutcome {
+  status: MetadataCheckStatus;
+  message?: string;
+}
+
+export interface MetadataCheckResult {
+  hash: MetadataCheckOutcome;
+  ipfs: MetadataCheckOutcome;
+  author_witness: MetadataCheckOutcome;
+  resolved_url?: string;
+  koios_meta_is_valid?: boolean | null;
+  notes?: string[];
+}
+
 export interface GovernanceAction {
   tx_hash: string;
   action_id: string;
@@ -134,6 +150,7 @@ export interface GovernanceAction {
   meta_language?: string; // CIP-100 language code
   meta_comment?: string;
   meta_is_valid?: boolean | null;
+  metadata_checks?: MetadataCheckResult;
   // Treasury withdrawal (for treasury_withdrawals type)
   withdrawal?: {
     amount: string; // In lovelace
@@ -168,23 +185,21 @@ export interface DRepVotingHistory {
   epoch?: number;
 }
 
+export interface VoteCounts {
+  yes: string;
+  no: string;
+  abstain: string;
+  yes_votes_cast?: number;
+  no_votes_cast?: number;
+  abstain_votes_cast?: number;
+}
+
 export interface ActionVotingBreakdown {
-  drep_votes: {
-    yes: string;
-    no: string;
-    abstain: string;
-  };
-  spo_votes: {
-    yes: string;
-    no: string;
-    abstain: string;
-  };
-  cc_votes: {
-    yes: string;
-    no: string;
-    abstain: string;
-  };
+  drep_votes: VoteCounts;
+  spo_votes: VoteCounts;
+  cc_votes: VoteCounts;
   total_voting_power: string;
+  summary?: ProposalVotingSummary;
 }
 
 export interface DRepDelegator {
@@ -197,41 +212,41 @@ export interface DRepDelegator {
  * Includes percentages and vote counts for each voter type
  */
 export interface ProposalVotingSummary {
-  proposal_type: string;
-  epoch_no: number;
+  proposal_type?: string;
+  epoch_no?: number;
   // DRep votes
-  drep_yes_votes_cast: number;
-  drep_active_yes_vote_power: string;
-  drep_yes_vote_power: string;
-  drep_yes_pct: number;
-  drep_no_votes_cast: number;
-  drep_active_no_vote_power: string;
-  drep_no_vote_power: string;
-  drep_no_pct: number;
-  drep_abstain_votes_cast: number;
-  drep_active_abstain_vote_power: string;
-  drep_always_no_confidence_vote_power: string;
-  drep_always_abstain_vote_power: string;
+  drep_yes_votes_cast?: number;
+  drep_active_yes_vote_power?: string;
+  drep_yes_vote_power?: string;
+  drep_yes_pct?: number;
+  drep_no_votes_cast?: number;
+  drep_active_no_vote_power?: string;
+  drep_no_vote_power?: string;
+  drep_no_pct?: number;
+  drep_abstain_votes_cast?: number;
+  drep_active_abstain_vote_power?: string;
+  drep_always_no_confidence_vote_power?: string;
+  drep_always_abstain_vote_power?: string;
   // SPO/Pool votes
-  pool_yes_votes_cast: number;
-  pool_active_yes_vote_power: string;
-  pool_yes_vote_power: string;
-  pool_yes_pct: number;
-  pool_no_votes_cast: number;
-  pool_active_no_vote_power: string;
-  pool_no_vote_power: string;
-  pool_no_pct: number;
-  pool_abstain_votes_cast: number;
-  pool_active_abstain_vote_power: string;
-  pool_passive_always_abstain_votes_assigned: number;
-  pool_passive_always_abstain_vote_power: string;
-  pool_passive_always_no_confidence_votes_assigned: number;
-  pool_passive_always_no_confidence_vote_power: string;
+  pool_yes_votes_cast?: number;
+  pool_active_yes_vote_power?: string;
+  pool_yes_vote_power?: string;
+  pool_yes_pct?: number;
+  pool_no_votes_cast?: number;
+  pool_active_no_vote_power?: string;
+  pool_no_vote_power?: string;
+  pool_no_pct?: number;
+  pool_abstain_votes_cast?: number;
+  pool_active_abstain_vote_power?: string;
+  pool_passive_always_abstain_votes_assigned?: number;
+  pool_passive_always_abstain_vote_power?: string;
+  pool_passive_always_no_confidence_votes_assigned?: number;
+  pool_passive_always_no_confidence_vote_power?: string;
   // Committee votes
-  committee_yes_votes_cast: number;
-  committee_yes_pct: number;
-  committee_no_votes_cast: number;
-  committee_no_pct: number;
-  committee_abstain_votes_cast: number;
+  committee_yes_votes_cast?: number;
+  committee_yes_pct?: number;
+  committee_no_votes_cast?: number;
+  committee_no_pct?: number;
+  committee_abstain_votes_cast?: number;
 }
 
