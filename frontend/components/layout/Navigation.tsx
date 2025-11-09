@@ -18,9 +18,7 @@ export default function Navigation() {
     { href: '/dreps', label: 'DReps', icon: '👥' },
     { href: '/actions', label: 'Actions', icon: '📋' },
     { href: '/governance', label: 'Governance', icon: '⚖️' },
-    { href: '/delegate', label: 'Delegate', icon: '🗳️' },
-    { href: '/register-drep', label: 'My DRep', icon: '➕' },
-  ];
+    ];
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
