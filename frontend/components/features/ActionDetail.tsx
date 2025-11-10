@@ -1,15 +1,17 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { VotingChart } from '../charts/VotingChart';
 import { VotingTimelineChart } from '../charts/VotingTimelineChart';
 import { VotingProgress } from '../charts/VotingProgress';
 import { ProposalMetadata } from './ProposalMetadata';
 import { MetadataValidationSummary } from './MetadataValidationSummary';
 import { ProposalTimeline } from './ProposalTimeline';
-import { Clock, Calendar, Hash, ExternalLink, DollarSign, Settings } from 'lucide-react';
+import { Clock, Calendar, Hash, ExternalLink, DollarSign, Settings, Vote } from 'lucide-react';
 import type { GovernanceAction, ActionVotingBreakdown } from '@/types/governance';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import { getActionDisplayType, getActionTitle } from '@/lib/governance';
@@ -140,6 +142,7 @@ function getExplorerUrl(txHash: string): string {
 }
 
 export default function ActionDetail({ action, votingResults }: ActionDetailProps) {
+  const router = useRouter();
   const status = action.status || 'submitted';
   const title = getActionTitle(action);
   const displayType = getActionDisplayType(action);
@@ -336,7 +339,7 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
           {/* Main Action Card */}
           <Card>
             <CardHeader>
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <h1 className="text-3xl font-display font-bold text-foreground mb-4">{title}</h1>
                   <div className="flex items-center space-x-2 mb-4 flex-wrap gap-2">
@@ -354,6 +357,15 @@ export default function ActionDetail({ action, votingResults }: ActionDetailProp
                     <span>This proposal is happily grazing under flock supervision.</span>
                   </div>
                 </div>
+                {(status === 'voting' || status === 'submitted') && (
+                  <Button
+                    onClick={() => router.push(`/vote-now?proposal=${action.action_id}`)}
+                    className="shrink-0"
+                  >
+                    <Vote className="w-4 h-4 mr-2" />
+                    Vote Now
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>

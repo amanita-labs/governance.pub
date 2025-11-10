@@ -244,7 +244,16 @@ export default function GovernancePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-display font-bold mb-2">Governance</h1>
+        <div className="flex items-center justify-between gap-4 mb-2">
+          <h1 className="text-4xl font-display font-bold">Governance</h1>
+          <Button 
+            onClick={() => window.location.href = '/vote-now'}
+            className="flex items-center gap-2"
+            size="lg"
+          >
+            🗳️ Vote Now
+          </Button>
+        </div>
         <p className="text-muted-foreground">
           Delegate your voting power, register as a DRep, or manage your DRep status
         </p>

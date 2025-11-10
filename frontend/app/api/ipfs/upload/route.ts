@@ -26,10 +26,22 @@ export async function POST(request: NextRequest) {
     });
 
     // Validate metadata has required fields
-    if (!metadata || typeof metadata !== 'object' || !metadata.body?.givenName) {
+    // Support both DRep metadata (CIP-119) and Vote rationale (CIP-108)
+    const isDRepMetadata = metadata.body?.givenName;
+    const isVoteRationale = metadata.body?.title && metadata.body?.rationale;
+    
+    if (!metadata || typeof metadata !== 'object') {
       console.error('❌ [IPFS API] Invalid metadata structure');
       return NextResponse.json(
-        { error: 'Invalid metadata: givenName is required' },
+        { error: 'Invalid metadata: must be a valid JSON object' },
+        { status: 400 }
+      );
+    }
+    
+    if (!isDRepMetadata && !isVoteRationale) {
+      console.error('❌ [IPFS API] Invalid metadata structure');
+      return NextResponse.json(
+        { error: 'Invalid metadata: must be either DRep metadata (CIP-119) or Vote rationale (CIP-108)' },
         { status: 400 }
       );
     }

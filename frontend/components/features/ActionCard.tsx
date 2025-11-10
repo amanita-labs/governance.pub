@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { memo, useCallback, type KeyboardEvent, type ElementType } from 'react';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import {
   Clock,
   TrendingUp,
@@ -13,6 +14,7 @@ import {
   Copy,
   AlertTriangle,
   HelpCircle,
+  Vote,
 } from 'lucide-react';
 import type { GovernanceAction, MetadataCheckResult } from '@/types/governance';
 import { Markdown } from '../ui/Markdown';
@@ -293,6 +295,21 @@ function ActionCard({ action }: ActionCardProps) {
               Expires at Epoch {action.expiration}
             </p>
           </div>
+        )}
+
+        {/* Vote Now Button for voting proposals */}
+        {(status === 'voting' || status === 'submitted') && (
+          <Button
+            onClick={(event) => {
+              event.stopPropagation();
+              router.push(`/vote-now?proposal=${action.action_id}`);
+            }}
+            className="w-full flex items-center justify-center gap-2"
+            size="sm"
+          >
+            <Vote className="w-4 h-4" />
+            Vote Now
+          </Button>
         )}
       </CardContent>
     </Card>
