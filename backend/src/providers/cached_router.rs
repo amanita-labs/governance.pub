@@ -4,6 +4,7 @@ use crate::providers::{GovToolsEnrichment, GovToolsProvider, ProviderRouter};
 use crate::services::metadata_validation::{MetadataValidator, VerifierConfig};
 use crate::utils::drep_id::decode_drep_id_to_hex;
 use futures::future::join_all;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tracing::debug;
 
@@ -309,6 +310,7 @@ impl CachedProviderRouter {
         if let Some(mut cached) = self.cache.get::<GovernanceAction>(&cache_key).await {
             debug!("Cache hit for action {}", id);
             cached = self.metadata_validator.attach_checks(cached).await;
+            cached = self.enrich_action_with_epoch_times(cached).await;
             self.cache.set(&cache_key, &cached).await;
             return Ok(Some(cached));
         }
@@ -318,6 +320,7 @@ impl CachedProviderRouter {
         match self.router.get_governance_action(id).await? {
             Some(action) => {
                 let enriched = self.metadata_validator.attach_checks(action).await;
+                let enriched = self.enrich_action_with_epoch_times(enriched).await;
                 // Store in cache
                 self.cache.set(&cache_key, &enriched).await;
                 Ok(Some(enriched))
@@ -345,6 +348,125 @@ impl CachedProviderRouter {
         // Store in cache
         self.cache.set(&cache_key, &result).await;
         Ok(result)
+    }
+
+    async fn enrich_action_with_epoch_times(
+        &self,
+        mut action: GovernanceAction,
+    ) -> GovernanceAction {
+        let mut epochs_to_fetch: HashSet<u32> = HashSet::new();
+
+        if let Some(epoch) = action.proposed_epoch {
+            if action.proposed_epoch_start_time.is_none() {
+                epochs_to_fetch.insert(epoch);
+            }
+        }
+        if let Some(epoch) = action.voting_epoch {
+            if action.voting_epoch_start_time.is_none() {
+                epochs_to_fetch.insert(epoch);
+            }
+        }
+        if let Some(epoch) = action.ratification_epoch.or(action.ratified_epoch) {
+            if action.ratification_epoch_start_time.is_none() {
+                epochs_to_fetch.insert(epoch);
+            }
+        }
+        if let Some(epoch) = action.enactment_epoch {
+            if action.enactment_epoch_start_time.is_none() {
+                epochs_to_fetch.insert(epoch);
+            }
+        }
+        if let Some(epoch) = action.expiry_epoch {
+            if action.expiry_epoch_start_time.is_none() {
+                epochs_to_fetch.insert(epoch);
+            }
+        }
+        if let Some(epoch) = action.expiration {
+            if action.expiration_epoch_start_time.is_none() {
+                epochs_to_fetch.insert(epoch);
+            }
+        }
+        if let Some(epoch) = action.dropped_epoch {
+            if action.dropped_epoch_start_time.is_none() {
+                epochs_to_fetch.insert(epoch);
+            }
+        }
+
+        if epochs_to_fetch.is_empty() {
+            return action;
+        }
+
+        let epoch_list: Vec<u32> = epochs_to_fetch.into_iter().collect();
+        let futures = epoch_list
+            .iter()
+            .map(|epoch| self.get_epoch_start_time_cached(*epoch));
+        let results = join_all(futures).await;
+
+        let mut epoch_time_map: HashMap<u32, Option<u64>> = HashMap::new();
+        for (epoch, time) in epoch_list.into_iter().zip(results.into_iter()) {
+            if time.is_none() {
+                tracing::debug!("Epoch {} start time not available", epoch);
+            }
+            epoch_time_map.insert(epoch, time);
+        }
+
+        if let Some(epoch) = action.proposed_epoch {
+            if action.proposed_epoch_start_time.is_none() {
+                action.proposed_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
+            }
+        }
+        if let Some(epoch) = action.voting_epoch {
+            if action.voting_epoch_start_time.is_none() {
+                action.voting_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
+            }
+        }
+        if let Some(epoch) = action.ratification_epoch.or(action.ratified_epoch) {
+            if action.ratification_epoch_start_time.is_none() {
+                action.ratification_epoch_start_time =
+                    epoch_time_map.get(&epoch).copied().flatten();
+            }
+        }
+        if let Some(epoch) = action.enactment_epoch {
+            if action.enactment_epoch_start_time.is_none() {
+                action.enactment_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
+            }
+        }
+        if let Some(epoch) = action.expiry_epoch {
+            if action.expiry_epoch_start_time.is_none() {
+                action.expiry_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
+            }
+        }
+        if let Some(epoch) = action.expiration {
+            if action.expiration_epoch_start_time.is_none() {
+                action.expiration_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
+            }
+        }
+        if let Some(epoch) = action.dropped_epoch {
+            if action.dropped_epoch_start_time.is_none() {
+                action.dropped_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
+            }
+        }
+
+        action
+    }
+
+    async fn get_epoch_start_time_cached(&self, epoch: u32) -> Option<u64> {
+        let cache_key = CacheKey::EpochStartTime { epoch };
+
+        if let Some(cached) = self.cache.get::<Option<u64>>(&cache_key).await {
+            return cached;
+        }
+
+        let start_time = match self.router.get_epoch_start_time(epoch).await {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::debug!("Error fetching epoch {} start time: {}", epoch, error);
+                None
+            }
+        };
+
+        self.cache.set(&cache_key, &start_time).await;
+        start_time
     }
 
     pub async fn get_drep_metadata(

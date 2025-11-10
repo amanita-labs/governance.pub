@@ -39,11 +39,15 @@ async fn main() -> Result<(), anyhow::Error> {
     let govtools_provider = if config.govtools_enabled {
         tracing::info!(
             "GovTools enabled for network: {} (base URL: {})",
-            config.blockfrost_network, config.govtools_base_url
+            config.blockfrost_network,
+            config.govtools_base_url
         );
         Some(GovToolsProvider::new(config.govtools_base_url.clone()))
     } else {
-        tracing::info!("GovTools disabled for network: {}", config.blockfrost_network);
+        tracing::info!(
+            "GovTools disabled for network: {}",
+            config.blockfrost_network
+        );
         None
     };
 

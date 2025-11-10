@@ -15,7 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 
 type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'outline';
-type ValidationKey = 'hash' | 'ipfs' | 'author_witness';
+type ValidationKey = 'hash' | 'ipfs' | 'author_witness' | 'on_chain';
 
 const statusConfig: Record<
   MetadataCheckOutcome['status'],
@@ -47,6 +47,11 @@ const summaryOrder: Array<{
     key: 'author_witness',
     title: 'Author Witness',
     description: 'Validates the correctness of author signatures.',
+  },
+  {
+    key: 'on_chain',
+    title: 'CIP-169 - On-chain Metadata',
+    description: 'Checks for the governance metadata “onChain” extension.',
   },
 ];
 

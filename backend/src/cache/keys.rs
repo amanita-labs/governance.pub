@@ -36,9 +36,13 @@ pub enum CacheKey {
         #[serde(skip_serializing_if = "Option::is_none")]
         meta_hash: Option<String>,
         verifier_enabled: bool,
+        version: u8,
     },
     StakeDelegation {
         stake_address: String,
+    },
+    EpochStartTime {
+        epoch: u32,
     },
 }
 
@@ -70,20 +74,23 @@ impl CacheKey {
                 action_id,
                 meta_hash,
                 verifier_enabled,
+                version,
             } => match meta_hash {
                 Some(hash) => format!(
-                    "action_metadata:{action_id}:hash={}:verifier={}",
+                    "action_metadata:{action_id}:hash={}:verifier={}:v={}",
                     hash.to_lowercase(),
-                    verifier_enabled
+                    verifier_enabled,
+                    version
                 ),
                 None => format!(
-                    "action_metadata:{action_id}:nohash:verifier={}",
-                    verifier_enabled
+                    "action_metadata:{action_id}:nohash:verifier={}:v={}",
+                    verifier_enabled, version
                 ),
             },
             CacheKey::StakeDelegation { stake_address } => {
                 format!("stake_delegation:{}", stake_address)
             }
+            CacheKey::EpochStartTime { epoch } => format!("epoch_start_time:{}", epoch),
         }
     }
 
@@ -113,6 +120,8 @@ impl CacheKey {
             CacheKey::ActionVotes { .. } => 180,
             // Stake delegation: 60 seconds
             CacheKey::StakeDelegation { .. } => 60,
+            // Epoch start times: 1 hour
+            CacheKey::EpochStartTime { .. } => 3600,
         }
     }
 }

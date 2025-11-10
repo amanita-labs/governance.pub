@@ -1,5 +1,5 @@
 use crate::cache::{keys::CacheKey, CacheManager};
-use crate::models::{CheckOutcome, GovernanceAction, MetadataCheckResult};
+use crate::models::{CheckOutcome, CheckStatus, GovernanceAction, MetadataCheckResult};
 use anyhow::{anyhow, Context};
 use blake2b_simd::Params;
 use hex::encode as hex_encode;
@@ -69,6 +69,7 @@ impl MetadataValidator {
             action_id: action.action_id.clone(),
             meta_hash: action.meta_hash.clone(),
             verifier_enabled,
+            version: 2,
         };
 
         if let Some(cached) = self.cache.get::<MetadataCheckResult>(&cache_key).await {
@@ -85,6 +86,9 @@ impl MetadataValidator {
 
         let ipfs_outcome = self.evaluate_ipfs(action.meta_url.as_deref());
         result.ipfs = ipfs_outcome.clone();
+
+        let mut metadata_value = Self::normalize_metadata(action.meta_json.clone())
+            .or_else(|| Self::normalize_metadata(action.metadata.clone()));
 
         let (hash_check, fetched_metadata) = self
             .evaluate_hash(action.meta_url.as_deref(), action.meta_hash.as_deref())
@@ -111,10 +115,22 @@ impl MetadataValidator {
                 .push("Koios flagged metadata anchor as invalid (meta_is_valid=false)".to_string());
         }
 
-        let metadata_document = action
-            .meta_json
-            .clone()
-            .or_else(|| fetched_metadata.as_ref().and_then(|f| f.document.clone()));
+        if metadata_value.is_none() {
+            metadata_value = fetched_metadata.as_ref().and_then(|f| f.document.clone());
+        }
+
+        let on_chain_outcome = Self::evaluate_on_chain(metadata_value.as_ref());
+        if matches!(
+            on_chain_outcome.status,
+            CheckStatus::Fail | CheckStatus::Warning
+        ) {
+            if let Some(message) = on_chain_outcome.message.clone() {
+                result.notes.push(message.clone());
+            }
+        }
+        result.on_chain = on_chain_outcome;
+
+        let metadata_document = metadata_value.clone();
 
         let verifier_payload = metadata_document.as_ref().and_then(|value| {
             let object = if value.is_object() {
@@ -521,6 +537,37 @@ impl MetadataValidator {
             format!("Verifier message: {}", message)
         } else {
             format!("Verifier message: {}…", &message[..LIMIT].trim_end())
+        }
+    }
+
+    fn normalize_metadata(value: Option<serde_json::Value>) -> Option<serde_json::Value> {
+        match value {
+            Some(serde_json::Value::String(raw)) => serde_json::from_str(&raw).ok(),
+            Some(other) => Some(other),
+            None => None,
+        }
+    }
+
+    fn evaluate_on_chain(metadata: Option<&serde_json::Value>) -> CheckOutcome {
+        let Some(root) = metadata else {
+            return CheckOutcome::unknown("On-chain metadata extension not evaluated");
+        };
+
+        let on_chain_value = root
+            .get("onChain")
+            .or_else(|| root.get("body").and_then(|body| body.get("onChain")));
+
+        match on_chain_value {
+            Some(serde_json::Value::Object(_)) => {
+                CheckOutcome::pass("On-chain metadata extension detected")
+            }
+            Some(serde_json::Value::Null) => {
+                CheckOutcome::warning("On-chain metadata extension is null")
+            }
+            Some(_) => {
+                CheckOutcome::warning("On-chain metadata extension is present but not an object")
+            }
+            None => CheckOutcome::warning("On-chain metadata extension not provided"),
         }
     }
 }

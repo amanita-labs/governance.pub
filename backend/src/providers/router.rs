@@ -211,4 +211,8 @@ impl ProviderRouter {
         let koios_ok = self.koios.health_check().await.unwrap_or(false);
         Ok(blockfrost_ok && koios_ok)
     }
+
+    pub async fn get_epoch_start_time(&self, epoch: u32) -> Result<Option<u64>, anyhow::Error> {
+        self.blockfrost.get_epoch_start_time(epoch).await
+    }
 }

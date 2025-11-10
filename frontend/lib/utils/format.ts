@@ -87,3 +87,43 @@ export function formatDate(date: Date | string | number, format: DateFormatKey =
   return new Intl.DateTimeFormat('en-US', options).format(dateObj);
 }
 
+/**
+ * Format a unix timestamp (seconds) into the user's local timezone with a timezone label.
+ */
+export function formatEpochStartTime(
+  epochStartTime?: number,
+  options: Intl.DateTimeFormatOptions = {}
+): string | undefined {
+  if (!epochStartTime) {
+    return undefined;
+  }
+
+  const date = new Date(epochStartTime * 1000);
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short',
+    ...options,
+  });
+
+  return formatter.format(date);
+}
+
+/**
+ * Resolve the user's local timezone label (e.g., \"PDT\" or \"GMT+1\").
+ */
+export function getLocalTimezoneLabel(): string {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' });
+  const parts = formatter.formatToParts(now);
+  const zonePart = parts.find((part) => part.type === 'timeZoneName');
+  if (zonePart?.value) {
+    return zonePart.value;
+  }
+
+  return Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'Local time';
+}
+

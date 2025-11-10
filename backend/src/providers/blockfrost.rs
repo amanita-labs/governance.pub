@@ -166,6 +166,13 @@ impl BlockfrostProvider {
             expiry_epoch: action["expiry_epoch"].as_u64().map(|v| v as u32),
             expiration: action["expiration"].as_u64().map(|v| v as u32),
             dropped_epoch: action["dropped_epoch"].as_u64().map(|v| v as u32),
+            proposed_epoch_start_time: None,
+            voting_epoch_start_time: None,
+            ratification_epoch_start_time: None,
+            enactment_epoch_start_time: None,
+            expiry_epoch_start_time: None,
+            expiration_epoch_start_time: None,
+            dropped_epoch_start_time: None,
             meta_url: action["meta_url"].as_str().map(|s| s.to_string()),
             meta_hash: action["meta_hash"].as_str().map(|s| s.to_string()),
             meta_json: (!action["meta_json"].is_null()).then(|| action["meta_json"].clone()),
@@ -186,6 +193,26 @@ impl BlockfrostProvider {
             block_time: None,
             metadata: (!action["metadata"].is_null()).then(|| action["metadata"].clone()),
         })
+    }
+
+    pub async fn get_epoch_start_time(&self, epoch: u32) -> Result<Option<u64>, anyhow::Error> {
+        let path = format!("/epochs/{}", epoch);
+        let json = self.fetch(&path).await?;
+
+        if let Some(Value::Object(obj)) = json {
+            if let Some(start_time_value) = obj.get("start_time") {
+                if let Some(ts) = start_time_value.as_u64() {
+                    return Ok(Some(ts));
+                }
+                if let Some(ts_str) = start_time_value.as_str() {
+                    if let Ok(parsed) = ts_str.parse::<u64>() {
+                        return Ok(Some(parsed));
+                    }
+                }
+            }
+        }
+
+        Ok(None)
     }
 }
 

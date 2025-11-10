@@ -29,6 +29,20 @@ pub struct GovernanceAction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub voting_epoch: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub proposed_epoch_start_time: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub voting_epoch_start_time: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ratification_epoch_start_time: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enactment_epoch_start_time: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expiry_epoch_start_time: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expiration_epoch_start_time: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dropped_epoch_start_time: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ratification_epoch: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ratified_epoch: Option<u32>,
@@ -197,6 +211,7 @@ pub struct MetadataCheckResult {
     pub hash: CheckOutcome,
     pub ipfs: CheckOutcome,
     pub author_witness: CheckOutcome,
+    pub on_chain: CheckOutcome,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolved_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -211,6 +226,7 @@ impl MetadataCheckResult {
             hash: CheckOutcome::unknown("Hash validation pending"),
             ipfs: CheckOutcome::unknown("Hosting validation pending"),
             author_witness: CheckOutcome::pending("Author witness verification pending"),
+            on_chain: CheckOutcome::unknown("On-chain metadata extension validation pending"),
             resolved_url: None,
             koios_meta_is_valid: meta_is_valid,
             notes: Vec::new(),
@@ -221,6 +237,7 @@ impl MetadataCheckResult {
         let mut result = Self::default_with_koios(meta_is_valid);
         result.hash = CheckOutcome::unknown("No metadata anchor provided");
         result.ipfs = CheckOutcome::unknown("No metadata anchor provided");
+        result.on_chain = CheckOutcome::unknown("No metadata available for on-chain validation");
         result
             .notes
             .push("Governance action lacks metadata URL or hash".to_string());

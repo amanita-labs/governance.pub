@@ -114,6 +114,7 @@ export interface MetadataCheckResult {
   hash: MetadataCheckOutcome;
   ipfs: MetadataCheckOutcome;
   author_witness: MetadataCheckOutcome;
+  on_chain: MetadataCheckOutcome;
   resolved_url?: string;
   koios_meta_is_valid?: boolean | null;
   notes?: string[];
@@ -142,6 +143,13 @@ export interface GovernanceAction {
   enactment_epoch?: number;
   expiry_epoch?: number;
   expiration?: number; // Expected expiration epoch
+  proposed_epoch_start_time?: number;
+  voting_epoch_start_time?: number;
+  ratification_epoch_start_time?: number;
+  enactment_epoch_start_time?: number;
+  expiry_epoch_start_time?: number;
+  expiration_epoch_start_time?: number;
+  dropped_epoch_start_time?: number;
   dropped_epoch?: number; // When dropped/expired
   // Metadata fields
   meta_url?: string;

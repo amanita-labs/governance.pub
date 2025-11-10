@@ -41,6 +41,7 @@
   - Confirm mandatory fields per CIP-0100.
   - Detect malformed localisation blocks (`body.localized`).
   - Normalise string-like fields for display.
+- Identify optional governance metadata extension blocks (proposed CIP `onChain` payload).
 
 ### 4. Author Witness Verification
 
@@ -98,7 +99,17 @@
 
 - Respect rate limiting (20 requests/minute/IP). Implement exponential backoff or circuit breaking to avoid cascading failures.
 
-### 5. Operational Safeguards
+### 5. On-chain Metadata Extension (Draft CIP)
+
+- Proposed extension: `onChain` block defined in [cip-governance-metadata-extension](https://github.com/Ryun1/CIPs/tree/cip-governance-metadata-extension/cip-governance-metadata-extension).
+- Validation policy (phase 1):
+  - **Pass** when `onChain` exists and is a non-null JSON object (schema lenient while CIP evolves).
+  - **Warning** when metadata is present but `onChain` missing or present with incompatible type.
+  - **Unknown** when metadata cannot be parsed (e.g., unreachable URL).
+- Surface results alongside hash/IPFS/author checks so wallet operators can tell whether the on-chain section is present yet.
+
+### 6. Operational Safeguards
+### 6. Operational Safeguards
 
 - Enforce maximum metadata size (CIP-0100 suggests 16 KB, external verifier caps at 5 MB).
 - Apply HTTP timeouts (~10 s) and limit redirects to prevent SSRF.
