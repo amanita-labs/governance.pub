@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       queryParams.set('count', '20');
     }
 
+    // Don't pass status filters from the client unless explicitly chosen; backend now defaults to active+inactive
     const response = await fetch(`${BACKEND_URL}/api/dreps?${queryParams.toString()}`, {
       next: { revalidate: 60 },
     });

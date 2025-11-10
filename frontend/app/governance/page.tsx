@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
@@ -15,7 +15,8 @@ import {
   submitDRepUpdateTransaction,
   submitDRepRetirementTransaction,
 } from '@/lib/governance/transactions/registerDRep';
-import type { DRep } from '@/types/governance';
+import type { DRep, DRepMetadata } from '@/types/governance';
+import { sanitizeMetadataValue, getMetadataName } from '@/lib/governance/drepMetadata';
 
 export default function GovernancePage() {
   const { connectedWallet } = useWalletContext();
@@ -33,9 +34,45 @@ export default function GovernancePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const itemsPerPage = 50;
+  // Use a smaller page size when searching for snappier responses
+  const basePageSize = 50;
+  const searchPageSize = 20;
+  const itemsPerPage = searchQuery.trim() ? searchPageSize : basePageSize;
+
+  // Memory cache for DRep pages keyed by query+page+pageSize
+  const pageCache = useRef<Map<string, { dreps: DRep[]; hasMore: boolean }>>(new Map());
+  const abortRef = useRef<AbortController | null>(null);
+  const metadataCache = useRef<Map<string, DRepMetadata | null>>(new Map());
 
   useEffect(() => {
+    const key = `${searchQuery.trim()}::${currentPage}::${itemsPerPage}`;
+    // If cached, use immediately.
+    if (pageCache.current.has(key)) {
+      const cached = pageCache.current.get(key)!;
+      // If first page, replace; else append (to avoid duplication if we navigated back)
+      if (currentPage === 1) {
+        setDReps(cached.dreps);
+      } else {
+        // ensure we don't duplicate entries
+        setDReps(prev => {
+          const existingIds = new Set(prev.map(d => d.drep_id));
+          const merged = [...prev];
+          cached.dreps.forEach(d => { if (!existingIds.has(d.drep_id)) merged.push(d); });
+          return merged;
+        });
+      }
+      setHasMore(cached.hasMore);
+      setLoading(false);
+      return; // skip fetch
+    }
+
+    // Abort previous in-flight request
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     async function loadDReps() {
       setLoading(true);
       try {
@@ -43,33 +80,93 @@ export default function GovernancePage() {
           page: currentPage.toString(),
           count: itemsPerPage.toString(),
         });
-        
         if (searchQuery.trim()) {
           params.append('search', searchQuery.trim());
         }
-        
-        const response = await fetch(`/api/dreps?${params.toString()}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (currentPage === 1) {
-            setDReps(data.dreps);
-          } else {
-            setDReps(prev => [...prev, ...data.dreps]);
-          }
-          setHasMore(data.hasMore);
+        const response = await fetch(`/api/dreps?${params.toString()}`, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch DReps: ${response.status}`);
+        }
+        const data = await response.json();
+        const pagePayload: { dreps: DRep[]; hasMore: boolean } = {
+          dreps: Array.isArray(data.dreps) ? data.dreps : [],
+          hasMore: Boolean(data.hasMore),
+        };
+        pageCache.current.set(key, pagePayload);
+        // Apply any cached metadata we already fetched
+        const withCachedMeta = pagePayload.dreps.map((d: DRep) => {
+          const cached = metadataCache.current.get(d.drep_id);
+          if (cached) return { ...d, metadata: d.metadata ?? cached };
+          return d;
+        });
+        if (currentPage === 1) {
+          setDReps(withCachedMeta);
+        } else {
+          setDReps(prev => [...prev, ...withCachedMeta]);
+        }
+        setHasMore(pagePayload.hasMore);
+
+        // Lazy-enrich names via metadata for those missing a name
+        const missingIds = withCachedMeta
+          .filter(d => {
+            const name = getMetadataName(d.metadata);
+            return !(name && name.trim().length > 0) && !(d.given_name && d.given_name.trim().length > 0);
+          })
+          .map(d => d.drep_id)
+          .filter(id => !metadataCache.current.has(id));
+
+        if (missingIds.length > 0) {
+          Promise.all(
+            missingIds.map(async (id) => {
+              try {
+                const res = await fetch(`/api/dreps/${encodeURIComponent(id)}/metadata`);
+                if (!res.ok) {
+                  metadataCache.current.set(id, null);
+                  return;
+                }
+                const raw = await res.json();
+                const sanitized = sanitizeMetadataValue(raw);
+                if (sanitized) {
+                  metadataCache.current.set(id, sanitized);
+                } else {
+                  metadataCache.current.set(id, null);
+                }
+              } catch {
+                metadataCache.current.set(id, null);
+              }
+            })
+          ).then(() => {
+            // Apply any newly fetched metadata to current list
+            setDReps(prev => prev.map(d => {
+              const cached = metadataCache.current.get(d.drep_id);
+              if (cached && !d.metadata) {
+                return { ...d, metadata: cached };
+              }
+              return d;
+            }));
+          });
         }
       } catch (error) {
-        console.error('Error loading DReps:', error);
+        if ((error as any)?.name !== 'AbortError') {
+          console.error('Error loading DReps:', error);
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }
     loadDReps();
-  }, [currentPage, searchQuery]);
+
+    return () => {
+      controller.abort();
+    };
+  }, [currentPage, searchQuery, itemsPerPage]);
 
   const handleSearch = (query: string) => {
+    // Only trigger if actually changed (avoid resetting pagination for same value)
+    setCurrentPage(1);
     setSearchQuery(query);
-    setCurrentPage(1); // Reset to first page when searching
   };
 
   const loadMoreDReps = () => {

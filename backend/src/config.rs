@@ -23,14 +23,21 @@ impl Config {
         let blockfrost_network =
             env::var("BLOCKFROST_NETWORK").unwrap_or_else(|_| "mainnet".to_string());
 
-        // GovTools only provides mainnet data, so disable it for non-mainnet networks
-        let is_mainnet = blockfrost_network.to_lowercase() == "mainnet";
-        let govtools_enabled_default = if is_mainnet { "true" } else { "false" };
+        // Choose GovTools base URL by network (GovTools supports mainnet and preview)
+        let network_lc = blockfrost_network.to_lowercase();
+        let default_govtools_base_url = match network_lc.as_str() {
+            "mainnet" => "https://be.gov.tools",
+            "preview" => "https://be.preview.gov.tools",
+            // Unknown for preprod; allow override via GOVTOOLS_BASE_URL if available
+            _ => "https://be.gov.tools",
+        };
 
+        // Enable GovTools by default on networks we know are supported
+        let govtools_supported_by_default = matches!(network_lc.as_str(), "mainnet" | "preview");
         let govtools_enabled = env::var("GOVTOOLS_ENABLED")
-            .unwrap_or_else(|_| govtools_enabled_default.to_string())
-            .parse()
-            .unwrap_or(is_mainnet);
+            .ok()
+            .and_then(|s| s.parse::<bool>().ok())
+            .unwrap_or(govtools_supported_by_default);
 
         Ok(Config {
             server_port: env::var("PORT")
@@ -57,7 +64,7 @@ impl Config {
                 .parse()
                 .unwrap_or(10000),
             govtools_base_url: env::var("GOVTOOLS_BASE_URL")
-                .unwrap_or_else(|_| "https://be.gov.tools".to_string()),
+                .unwrap_or_else(|_| default_govtools_base_url.to_string()),
             govtools_enabled,
             cardano_verifier_enabled: env::var("CARDANO_VERIFIER_ENABLED")
                 .unwrap_or_else(|_| "false".to_string())

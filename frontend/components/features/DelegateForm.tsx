@@ -9,6 +9,7 @@ import { useTransaction } from '@/hooks/useTransaction';
 import { submitDelegationTransaction } from '@/lib/governance/transactions/delegate';
 import { Search } from 'lucide-react';
 import type { DRep } from '@/types/governance';
+import { getMetadataName, getMetadataDescription } from '@/lib/governance/drepMetadata';
 
 interface DelegateFormProps {
   dreps: DRep[];
@@ -20,7 +21,7 @@ interface DelegateFormProps {
 
 export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSearch }: DelegateFormProps) {
   const { connectedWallet } = useWalletContext();
-  const { state, reset, setBuilding, setTxHash, setError } = useTransaction();
+  const { state, reset, setBuilding, setSigning, setSubmitting, setTxHash, setError } = useTransaction();
   const [selectedDRep, setSelectedDRep] = useState<DRep | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -37,33 +38,55 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
     }
   }, [dreps]);
 
-  // Debounce search to avoid too many API calls
+  // Debounce search (tighter 300ms) + skip duplicate queries
   useEffect(() => {
     if (!onSearch) return;
-    
+    const trimmed = searchQuery.trim();
     const timer = setTimeout(() => {
-      onSearch(searchQuery);
-    }, 500);
-
+      onSearch(trimmed);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, onSearch]);
 
-  const filteredDReps = dreps;
+  // Exclude retired DReps but keep both active and inactive (inactive are still valid delegation targets)
+  const filteredDReps = dreps.filter(d => {
+    const status = d.status?.toLowerCase();
+    const isRetired = d.retired === true || status === 'retired';
+    return !isRetired;
+  });
 
   const handleDelegate = async () => {
     if (!connectedWallet || !selectedDRep) return;
 
     reset();
-    setShowModal(true);
-    setBuilding(true);
 
     try {
-      const txHash = await submitDelegationTransaction(connectedWallet, selectedDRep.drep_id);
-      setBuilding(false);
+      const txHash = await submitDelegationTransaction(
+        connectedWallet,
+        selectedDRep.drep_id,
+        (stage) => {
+          switch (stage) {
+            case 'building':
+              setBuilding(true);
+              break;
+            case 'signing':
+              setBuilding(false);
+              setSigning(true);
+              break;
+            case 'submitting':
+              setSigning(false);
+              setSubmitting(true);
+              break;
+          }
+        }
+      );
+      setSubmitting(false);
       setTxHash(txHash);
     } catch (error: unknown) {
       setBuilding(false);
-      setError(error instanceof Error ? error.message : 'Failed to submit transaction');
+      setSigning(false);
+      setSubmitting(false);
+      setError(error instanceof Error ? error.message : 'Failed to submit delegation transaction');
     }
   };
 
@@ -103,18 +126,21 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
               <>
                 {filteredDReps.map((drep) => {
                   const isSelected = selectedDRep?.drep_id === drep.drep_id;
-                  const drepName = drep.metadata?.name || drep.view || drep.drep_id.slice(0, 8);
-                  
+                  const nameFromMetadata = getMetadataName(drep.metadata);
+                  const displayName = nameFromMetadata || drep.given_name || drep.view || drep.drep_id.slice(0, 16);
+                  const shortId = drep.drep_id; // full ID per requirement
+                  const description = getMetadataDescription(drep.metadata) || (typeof drep.metadata?.description === 'string' ? drep.metadata.description : undefined);
+                  const status = drep.status?.toLowerCase();
                   return (
                     <button
                       key={drep.drep_id}
                       onClick={() => setSelectedDRep(drep)}
-                      className={`w-full text-left p-4 rounded-md border-2 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                      className={`w-full text-left p-4 rounded-md border-2 transition-colors min-h-[60px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
                         isSelected
                           ? 'border-field-green bg-field-green/10'
                           : 'border-input hover:border-field-green/50'
                       }`}
-                      aria-label={`Select DRep ${drepName}`}
+                      aria-label={`Select DRep ${displayName} (${shortId})`}
                       aria-pressed={isSelected}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -123,17 +149,24 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
                         }
                       }}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-foreground">{drepName}</p>
-                          {drep.metadata?.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                              {drep.metadata.description}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground truncate" title={displayName}>{displayName}</p>
+                          <p className="text-xs font-mono text-muted-foreground break-all mt-1" title={shortId}>{shortId}</p>
+                          {status && (
+                            <p className={`text-[10px] uppercase tracking-wide font-semibold mt-1 ${status === 'active' ? 'text-green-600' : 'text-amber-600'}`}
+                               aria-label={`Status: ${status}`}>
+                              {status}
+                            </p>
+                          )}
+                          {description && (
+                            <p className="text-xs text-muted-foreground line-clamp-1 mt-1" title={description}>
+                              {description}
                             </p>
                           )}
                         </div>
                         {isSelected && (
-                          <div className="w-4 h-4 rounded-full bg-field-green"></div>
+                          <div className="w-4 h-4 mt-1 rounded-full bg-field-green flex-shrink-0" />
                         )}
                       </div>
                     </button>

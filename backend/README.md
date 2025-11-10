@@ -4,7 +4,7 @@ Rust backend service that abstracts Cardano data provider complexity (Blockfrost
 
 ## Features
 
-- **Provider Abstraction**: Unified interface for Blockfrost, Koios, and GovTools APIs
+- **Provider Abstraction**: Unified interface for Blockfrost, Koios, and GovTools APIs (mainnet & preview)
 - **Smart Routing**: Automatically selects the best provider for each operation type
 - **Automatic Fallback**: Gracefully falls back to alternative providers on failure
 - **Type Safety**: Strong typing with Rust's type system
@@ -49,7 +49,7 @@ BACKEND_PORT=8080
    - `BACKEND_PORT`: Server port for local runs (defaults to `8080`; Render sets `PORT`)
    - `CORS_ORIGINS`: Comma-separated list of allowed origins (optional; wildcard by default)
 
-> **⚠️ Important Network Configuration:** GovTools only provides mainnet data. When using `preview` or `preprod` networks, `GOVTOOLS_ENABLED` is automatically set to `false` to prevent pulling mainnet DRep data. See [Network Configuration Guide](../docs/NETWORK_CONFIGURATION.md) for details.
+> **⚠️ Network Note:** GovTools currently supports mainnet and preview. The backend auto-selects `https://be.gov.tools` for mainnet and `https://be.preview.gov.tools` for preview; other networks default to disabled unless you explicitly configure `GOVTOOLS_ENABLED=true` and provide a `GOVTOOLS_BASE_URL`.
 
 > **Note:** The current CORS configuration allows all origins when no override is provided. Fine-grained origin control will honour `CORS_ORIGINS` as the gateway hardening work progresses.
 

@@ -33,7 +33,11 @@ impl CachedProviderRouter {
     }
 
     pub async fn get_dreps_page(&self, query: &DRepsQuery) -> Result<DRepsPage, anyhow::Error> {
-        let normalized = query.clone().with_defaults();
+        let mut normalized = query.clone().with_defaults();
+        // Default behavior: include active and inactive, exclude retired (unless caller specifies statuses)
+        if self.govtools.is_some() && normalized.normalized_statuses().is_empty() {
+            normalized.statuses = vec!["active".to_string(), "inactive".to_string()];
+        }
         let cache_key = CacheKey::DRepsPage {
             page: normalized.normalized_page(),
             count: normalized.count,

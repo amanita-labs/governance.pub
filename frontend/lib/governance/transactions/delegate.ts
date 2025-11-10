@@ -1,47 +1,81 @@
-import { Transaction } from '@meshsdk/core';
+import { KoiosProvider, MeshTxBuilder } from '@meshsdk/core';
 import type { ConnectedWallet } from '@/lib/api/mesh';
 
-/**
- * Build a transaction to delegate voting rights to a DRep
- */
-export async function buildDelegationTransaction(
-  wallet: ConnectedWallet,
-  drepId: string
-): Promise<Transaction> {
-  // Placeholder usage until delegation builder is implemented
-  void drepId;
+type KoiosNetwork = 'api' | 'preview' | 'preprod' | 'guild';
 
-  const tx = new Transaction({ initiator: wallet.wallet });
-  
-  // Delegate to DRep
-  // Note: This is a simplified version - actual implementation depends on
-  // Mesh SDK's governance transaction APIs
-  // The exact API may vary, but the pattern is:
-  // tx.delegateToDRep(drepId)
-  
-  // For now, we'll use a placeholder structure
-  // In production, you would use Mesh SDK's governance transaction builder
-  // Example: await tx.delegateToDRep(drepId);
-  
-  return tx;
+function resolveKoiosNetwork(networkId: number): KoiosNetwork {
+  switch (networkId) {
+    case 0:
+      return 'preview'; // testnet (note: consider preprod detection if needed)
+    case 1:
+    default:
+      return 'api'; // mainnet
+  }
 }
 
+export type DelegationStageCallback = (stage: 'building' | 'signing' | 'submitting') => void;
+
 /**
- * Sign and submit a delegation transaction
+ * Submit a vote delegation transaction to delegate voting rights to a DRep
+ * Based on MeshJS documentation: https://meshjs.dev/apis/txbuilder/governance#vote-delegation
+ * 
+ * @param wallet - Connected wallet instance
+ * @param drepId - DRep ID to delegate to (in CIP-105 or CIP-129 format)
+ * @param onStageChange - Optional callback to track transaction stages
+ * @returns Transaction hash
  */
 export async function submitDelegationTransaction(
   wallet: ConnectedWallet,
-  drepId: string
+  drepId: string,
+  onStageChange?: DelegationStageCallback
 ): Promise<string> {
-  const tx = await buildDelegationTransaction(wallet, drepId);
+  // Get wallet information
+  const utxos = await wallet.wallet.getUtxos();
+  const rewardAddresses = await wallet.wallet.getRewardAddresses();
+  const rewardAddress = rewardAddresses[0];
+  const changeAddress = await wallet.wallet.getChangeAddress();
+
+  if (!rewardAddress) {
+    throw new Error('No reward address found. Please ensure your wallet has a stake key registered.');
+  }
+
+  // Initialize transaction builder with provider
+  const networkId = await wallet.wallet.getNetworkId();
+  const koiosNetwork = resolveKoiosNetwork(networkId);
+  const koiosApiKey = process.env.NEXT_PUBLIC_KOIOS_API_KEY;
   
-  // Build and sign the transaction
-  const unsignedTx = await tx.build();
+  if (!koiosApiKey) {
+    throw new Error('Koios API key is not set. Please define NEXT_PUBLIC_KOIOS_API_KEY in your environment variables.');
+  }
+
+  const provider = new KoiosProvider(koiosNetwork, koiosApiKey);
+  const txBuilder = new MeshTxBuilder({ fetcher: provider, verbose: true });
+
+  // Build the vote delegation certificate transaction
+  txBuilder
+    .voteDelegationCertificate(
+      {
+        dRepId: drepId,
+      },
+      rewardAddress
+    )
+    .changeAddress(changeAddress)
+    .selectUtxosFrom(utxos);
+
+  // Complete, sign, and submit the transaction
+  console.log('[delegation] Building transaction...');
+  onStageChange?.('building');
+  const unsignedTx = await txBuilder.complete();
+  
+  console.log('[delegation] Signing transaction...');
+  onStageChange?.('signing');
   const signedTx = await wallet.wallet.signTx(unsignedTx);
   
-  // Submit the transaction
+  console.log('[delegation] Submitting transaction...');
+  onStageChange?.('submitting');
   const txHash = await wallet.wallet.submitTx(signedTx);
   
+  console.log('[delegation] Transaction submitted:', txHash);
   return txHash;
 }
 
