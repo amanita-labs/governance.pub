@@ -33,23 +33,25 @@ Build a governance interface tool which;
 
 - Wooly theme
 - CIP-169
-- Global search
+- Global governance search
 
 #### Governance Action Explorer
 
+- Clear timeline view of governance action lifetime
 - Differentiates 'budget' governance actions from Info actions
-- Detailed voting tally summary
 - Detailed metadata validation
   - hash checks
   - warning if author not using IPFS to host metadata
   - author witness validation
   - CIP-0169? | On-chain effects implementation
 - Detailed voter participation tab with export to CSV
+- Detailed voting tally summary
 
 #### DRep Directory
 
 - Full DRep metadata rendering
 - Voting and delegator history
+- Detailed voting statistics
 
 #### Governance Interaction
 
