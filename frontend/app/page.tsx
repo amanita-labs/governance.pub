@@ -1,12 +1,15 @@
 import Link from 'next/link';
+import { Users, FileText, Vote, UserPlus, Sprout, Sparkles } from 'lucide-react';
+import type { Metadata } from 'next';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { Users, FileText, Vote, UserPlus } from 'lucide-react';
-import type { Metadata } from 'next';
+import { SheepFlock } from '@/components/animations/SheepFlock';
+import { WoolyQuote } from '@/components/ui/WoolyQuote';
+import { Badge } from '@/components/ui/Badge';
 
 // Static metadata for better SEO and performance
 export const metadata: Metadata = {
-  title: 'GovTwool - Cardano Governance Made Wooly',
+  title: 'GovtWool - Cardano Governance Made Wooly',
   description: 'A platform for participating in Cardano on-chain governance.',
 };
 
@@ -44,31 +47,96 @@ export default function Home() {
       variant: 'outline' as const,
     },
   ];
+  const quickHighlights = [
+    'Live governance actions & vote tallies',
+    'Battle-tested metadata validation',
+    'Wallet-native delegation flows',
+  ];
 
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b">
-        <div className="absolute inset-0 bg-gradient-to-br from-field-green/5 via-background to-sky-blue/5" />
-        <div className="container mx-auto px-4 py-24 md:py-32 relative">
-          <div className="max-w-3xl mx-auto text-center space-y-6 animate-fade-in">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <span className="text-4xl">🐑</span>
-              <h1 className="text-5xl md:text-7xl font-display font-bold bg-gradient-to-r from-field-green to-field-dark bg-clip-text text-transparent dark:from-field-light dark:to-field-green">
-                GovTwool
-              </h1>
+      <section className="relative overflow-hidden border-b bg-wool-gradient">
+        <div className="absolute inset-0 pointer-events-none opacity-80">
+          <div className="absolute -top-20 -left-24 h-72 w-72 rounded-full bg-field-green/20 blur-3xl" />
+          <div className="absolute -bottom-24 right-0 h-60 w-60 rounded-full bg-sky-blue/20 blur-3xl" />
+        </div>
+        <div className="container relative mx-auto flex flex-col gap-16 px-4 py-20 md:py-28">
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-3 rounded-full border border-primary/30 bg-background/70 px-4 py-2 text-sm font-medium text-primary backdrop-blur">
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                <span>Governance for the whole flock</span>
+              </div>
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2">
+                  <span className="text-4xl md:text-5xl">🐑</span>
+                  <h1 className="text-4xl font-display font-bold text-foreground md:text-6xl">
+                    GovtWool
+                  </h1>
+                </div>
+                <p className="text-lg text-muted-foreground md:text-xl">
+                  Wrangling Cardano governance into one cozy meadow—follow proposals, delegate your
+                  vote, and register as a DRep without losing a single tuft of wool.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Link href="/dreps">
+                  <Button size="lg" className="gap-2">
+                    <Users className="h-5 w-5" />
+                    Explore DReps
+                  </Button>
+                </Link>
+                <Link href="/delegate">
+                  <Button size="lg" variant="outline" className="gap-2">
+                    <Vote className="h-5 w-5" />
+                    Delegate Power
+                  </Button>
+                </Link>
+                <Link href="/governance">
+                  <Button size="lg" variant="ghost" className="gap-2">
+                    <Sprout className="h-5 w-5" />
+                    Governance Primer
+                  </Button>
+                </Link>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {quickHighlights.map((highlight) => (
+                  <div
+                    key={highlight}
+                    className="flex items-center gap-2 rounded-lg bg-background/70 px-3 py-2 text-sm text-muted-foreground shadow-sm ring-1 ring-border/60 backdrop-blur"
+                  >
+                    <span aria-hidden="true">🧶</span>
+                    <span>{highlight}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="text-2xl md:text-3xl font-semibold text-foreground">
-              Cardano Governance Made Wooly
-            </p>
-            <div className="flex justify-center gap-4 flex-wrap pt-4">
-              <Link href="/dreps">
-                <Button size="lg" variant="outline" className="gap-2">
-                  <Users className="w-5 h-5" />
-                  Explore DReps
-                </Button>
-              </Link>
+
+            <div className="relative">
+              <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-background/80 p-6 shadow-xl backdrop-blur wooly-border">
+                <div className="mb-6 flex items-center justify-center">
+                  <SheepFlock count={5} />
+                </div>
+                <div className="space-y-4 text-center">
+                  <h2 className="text-xl font-display font-semibold text-foreground">
+                    The Flock Is Already Voting
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Wake up to fresh on-chain insights and follow along as the Cardano community
+                    shepherds proposals from idea to enactment.
+                  </p>
+                  <Badge variant="info" className="mx-auto w-fit gap-2">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>New actions every epoch</span>
+                  </Badge>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div className="mx-auto w-full max-w-4xl">
+            <WoolyQuote variant="banner" emphasis="bold" />
           </div>
         </div>
       </section>
@@ -77,10 +145,11 @@ export default function Home() {
       <section className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-            Some stuff you may want
+            Build your flock-friendly workflow
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Access tools and stuff in one wooly place
+            From first delegation to drafting rationale, GovtWool keeps every governance step soft
+            on the hooves and transparent for the herd.
           </p>
         </div>
 
@@ -101,6 +170,31 @@ export default function Home() {
             </Link>
           ))}
         </div>
+
+        <div className="mt-16 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
+          <div className="rounded-3xl border bg-muted/50 p-8 shadow-lg wooly-border">
+            <h3 className="text-2xl font-display font-semibold text-foreground mb-4">
+              Meet the meadow keepers
+            </h3>
+            <p className="text-muted-foreground leading-relaxed">
+              We stitch together live data from the Cardano governance API, weave in CIP-compliant
+              metadata validation, and wrap it all in approachable UI. Whether you&apos;re
+              registering as a DRep or nudging your favorite delegate with a vote rationale, this
+              pasture is yours.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Badge variant="info" className="gap-2">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                CIP-119 &amp; CIP-136 ready
+              </Badge>
+              <Badge variant="success" className="gap-2">
+                <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                Built for delegators &amp; builders
+              </Badge>
+            </div>
+          </div>
+          <WoolyQuote variant="card" className="bg-meadow-haze border-none shadow-xl" />
+        </div>
       </section>
 
       {/* About Section */}
@@ -110,14 +204,16 @@ export default function Home() {
             <CardContent className="p-8 md:p-12">
               <div className="text-center space-y-6">
                 <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-                  About GovTwool
+                  About GovtWool
                 </h2>
                 <div className="space-y-4 text-muted-foreground leading-relaxed">
                   <p className="text-lg">
-                    GovTwool is a interface for Cardano's on-chain governance. 
+                    GovtWool is your wool-soft interface for Cardano&apos;s on-chain governance,
+                    helping curious community members feel right at home in the protocol pasture.
                   </p>
-                  <p>
-                  Built for Cardano Summit LayerUp Hackathon by team insects 🪰.
+                  <p className="text-muted-foreground">
+                    Built for Cardano Summit LayerUp Hackathon by team insects 🪰, and lovingly
+                    extended to keep every epoch approachable.
                   </p>
                 </div>
               </div>

@@ -15,18 +15,27 @@ function resolveKoiosNetwork(networkId: number): KoiosNetwork {
 
 export type DelegationStageCallback = (stage: 'building' | 'signing' | 'submitting') => void;
 
+export interface DelegationOptions {
+  donationPercentage?: number;
+  donationAddress?: string;
+}
+
+const CIP149_METADATA_LABEL = 3692;
+
 /**
  * Submit a vote delegation transaction to delegate voting rights to a DRep
  * Based on MeshJS documentation: https://meshjs.dev/apis/txbuilder/governance#vote-delegation
  * 
  * @param wallet - Connected wallet instance
  * @param drepId - DRep ID to delegate to (in CIP-105 or CIP-129 format)
+ * @param options - Additional delegation options (e.g., donation percentage for CIP-149)
  * @param onStageChange - Optional callback to track transaction stages
  * @returns Transaction hash
  */
 export async function submitDelegationTransaction(
   wallet: ConnectedWallet,
   drepId: string,
+  options?: DelegationOptions,
   onStageChange?: DelegationStageCallback
 ): Promise<string> {
   // Get wallet information
@@ -44,11 +53,11 @@ export async function submitDelegationTransaction(
   const koiosNetwork = resolveKoiosNetwork(networkId);
   const koiosApiKey = process.env.NEXT_PUBLIC_KOIOS_API_KEY;
   
-  if (!koiosApiKey) {
-    throw new Error('Koios API key is not set. Please define NEXT_PUBLIC_KOIOS_API_KEY in your environment variables.');
-  }
+  // if (!koiosApiKey) {
+  //   throw new Error('Koios API key is not set. Please define NEXT_PUBLIC_KOIOS_API_KEY in your environment variables.');
+  // }
 
-  const provider = new KoiosProvider(koiosNetwork, koiosApiKey);
+  const provider = new KoiosProvider(koiosNetwork);
   const txBuilder = new MeshTxBuilder({ fetcher: provider, verbose: true });
 
   // Build the vote delegation certificate transaction
@@ -61,6 +70,27 @@ export async function submitDelegationTransaction(
     )
     .changeAddress(changeAddress)
     .selectUtxosFrom(utxos);
+
+  // Attach optional CIP-149 donation metadata when applicable.
+  // Downstream reward withdrawal flows can read label 3692 for { donationBasisPoints }
+  // which stores tenths of a percent (1 => 0.1% donation) per CIP-149.
+  const donationPercentage = options?.donationPercentage ?? 0;
+  const donationAddress = options?.donationAddress?.trim();
+
+  if (donationAddress && donationPercentage > 0) {
+    const clampedPercentage = Math.max(0, Math.min(donationPercentage, 100));
+    const donationBasisPoints = Math.round(clampedPercentage * 10);
+
+    if (donationBasisPoints > 0) {
+      console.log(
+        '[delegation] Attaching CIP-149 metadata',
+        JSON.stringify({ donationBasisPoints })
+      );
+      txBuilder.metadataValue(CIP149_METADATA_LABEL, {
+        donationBasisPoints,
+      });
+    }
+  }
 
   // Complete, sign, and submit the transaction
   console.log('[delegation] Building transaction...');

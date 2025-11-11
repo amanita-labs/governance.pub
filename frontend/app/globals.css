@@ -26,6 +26,12 @@
     --radius: 0.5rem;
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --wool-cream: 45 77% 96%;
+    --wool-rose: 347 85% 94%;
+    --field-soft: 110 45% 88%;
+    --field-deep: 118 52% 56%;
+    --sky-lilac: 222 86% 94%;
+    --sunset-honey: 32 95% 85%;
   }
 
   .dark {
@@ -48,6 +54,12 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    --wool-cream: 45 45% 21%;
+    --wool-rose: 347 60% 30%;
+    --field-soft: 110 35% 22%;
+    --field-deep: 118 45% 42%;
+    --sky-lilac: 238 62% 21%;
+    --sunset-honey: 32 70% 40%;
   }
 }
 
@@ -70,6 +82,52 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .bg-wool-gradient {
+    background-image: radial-gradient(at 10% 20%, hsl(var(--wool-cream)) 0%, transparent 50%),
+      radial-gradient(at 90% 0%, hsl(var(--sky-lilac)) 0%, transparent 55%),
+      radial-gradient(at 50% 100%, hsl(var(--field-soft)) 0%, transparent 50%);
+  }
+
+  .bg-meadow-haze {
+    background-image: linear-gradient(135deg, hsl(var(--field-soft)/0.6), hsl(var(--sky-lilac)/0.4)),
+      linear-gradient(45deg, hsl(var(--sunset-honey)/0.25), transparent);
+    background-blend-mode: soft-light;
+  }
+
+  .wooly-card {
+    background: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--wool-cream)/0.65) 100%);
+    box-shadow:
+      0 12px 30px -18px hsl(var(--field-deep)/0.45),
+      inset 0 1px 0 0 hsl(var(--wool-cream)/0.9);
+  }
+
+  .dark .wooly-card {
+    background: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--field-soft)/0.25) 100%);
+    box-shadow:
+      0 12px 30px -18px hsl(var(--field-deep)/0.65),
+      inset 0 1px 0 0 hsl(var(--field-soft)/0.6);
+  }
+
+  .wooly-border {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .wooly-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(120deg, hsl(var(--field-deep)/0.6), hsl(var(--sky-lilac)/0.5), hsl(var(--wool-rose)/0.6));
+    opacity: 0.65;
+    z-index: -1;
+  }
+
+  .dark .wooly-border::before {
+    background: linear-gradient(140deg, hsl(var(--field-deep)/0.7), hsl(var(--sky-lilac)/0.7), hsl(var(--sunset-honey)/0.45));
+    opacity: 0.75;
   }
   
   /* Smooth transitions for theme switching */

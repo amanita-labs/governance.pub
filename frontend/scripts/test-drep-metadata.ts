@@ -4,6 +4,7 @@ import {
   getMetadataName,
   getMetadataDescription,
   getMetadataWebsite,
+  getMetadataPaymentAddress,
 } from '../lib/governance/drepMetadata';
 
 type Sample = {
@@ -11,6 +12,7 @@ type Sample = {
   expectedName?: string;
   expectedDescription?: string;
   expectedWebsite?: string;
+  expectedPaymentAddress?: string;
 };
 
 const samples: Sample[] = [
@@ -60,6 +62,20 @@ const samples: Sample[] = [
     expectedDescription: 'Cardano DRep',
     expectedWebsite: 'https://cardano.org',
   },
+  {
+    raw: {
+      paymentAddress: 'addr1q9examplepayment',
+    },
+    expectedPaymentAddress: 'addr1q9examplepayment',
+  },
+  {
+    raw: {
+      body: {
+        paymentAddress: 'addr1qybodyaddress',
+      },
+    },
+    expectedPaymentAddress: 'addr1qybodyaddress',
+  },
 ];
 
 for (const sample of samples) {
@@ -67,6 +83,7 @@ for (const sample of samples) {
   const name = getMetadataName(metadata);
   const description = getMetadataDescription(metadata);
   const website = getMetadataWebsite(metadata);
+  const paymentAddress = getMetadataPaymentAddress(metadata);
 
   if (sample.expectedName !== undefined) {
     assert.equal(name, sample.expectedName, 'expected metadata name to match');
@@ -78,6 +95,10 @@ for (const sample of samples) {
 
   if (sample.expectedWebsite !== undefined) {
     assert.equal(website, sample.expectedWebsite, 'expected website to match');
+  }
+
+  if (sample.expectedPaymentAddress !== undefined) {
+    assert.equal(paymentAddress, sample.expectedPaymentAddress, 'expected payment address to match');
   }
 }
 

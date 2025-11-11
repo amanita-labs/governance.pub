@@ -199,3 +199,14 @@ export const getMetadataWebsite = (metadata: DRepMetadata | null | undefined) =>
   const url = findFirstStringValue(metadata, ['website', 'url', 'homepage', 'link']);
   return url ? url.trim() : undefined;
 };
+
+export const getMetadataPaymentAddress = (metadata: DRepMetadata | null | undefined) => {
+  if (!metadata) return undefined;
+  const address = findFirstStringValue(metadata, [
+    'paymentAddress',
+    'payment_address',
+    'donationAddress',
+    'donation_address',
+  ]);
+  return address ? address.trim() : undefined;
+};

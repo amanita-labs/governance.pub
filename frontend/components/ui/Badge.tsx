@@ -22,6 +22,8 @@ const badgeVariants = cva(
           'border-transparent bg-red-500/10 text-red-700 dark:text-red-400 dark:bg-red-500/20',
         info:
           'border-transparent bg-blue-500/10 text-blue-700 dark:text-blue-400 dark:bg-blue-500/20',
+        wooly:
+          'border-transparent bg-wool-gradient text-foreground shadow-sm shadow-field-green/10 dark:text-foreground/90',
       },
     },
     defaultVariants: {
@@ -40,5 +42,26 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   );
 }
 
-export { Badge, badgeVariants };
+interface EmojiBadgeProps extends BadgeProps {
+  emoji: string;
+  srLabel?: string;
+}
+
+function EmojiBadge({ emoji, srLabel, children, className, variant = 'wooly', ...props }: EmojiBadgeProps) {
+  return (
+    <Badge
+      className={cn('gap-2 px-3 py-1 text-xs', className)}
+      variant={variant}
+      {...props}
+    >
+      <span aria-hidden="true" className="text-base leading-none">
+        {emoji}
+      </span>
+      <span>{children}</span>
+      {srLabel ? <span className="sr-only">{srLabel}</span> : null}
+    </Badge>
+  );
+}
+
+export { Badge, badgeVariants, EmojiBadge };
 

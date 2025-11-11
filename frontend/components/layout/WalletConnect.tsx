@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useWalletContext } from './WalletProvider';
-import { Wallet, LogOut, Loader2 } from 'lucide-react';
+import { Wallet, LogOut, Loader2, Sparkles } from 'lucide-react';
+import { EmojiBadge } from '../ui/Badge';
 
 export function WalletConnect() {
   const { connectedWallet, availableWallets, isConnecting, connect, disconnect } = useWalletContext();
@@ -19,7 +20,7 @@ export function WalletConnect() {
       <div className="relative">
         <button
           onClick={() => toggleMenu()}
-          className="flex items-center space-x-2 bg-sky-blue text-white px-4 py-2 rounded-md hover:bg-sky-dark transition-colors min-h-[44px]"
+          className="flex items-center gap-2 rounded-full border border-field-green/40 bg-field-green/20 px-4 py-2 text-sm font-semibold text-field-dark shadow-sm transition hover:border-field-green/60 hover:bg-field-green/30 dark:text-field-light"
           aria-label="Open wallet menu"
           aria-expanded={showMenu}
           aria-haspopup="true"
@@ -31,8 +32,9 @@ export function WalletConnect() {
         >
           <Wallet className="w-4 h-4" aria-hidden="true" />
           <span className="hidden sm:inline">
-            {connectedWallet.address.slice(0, 6)}...{connectedWallet.address.slice(-4)}
+            Woollet {connectedWallet.address.slice(0, 4)}…{connectedWallet.address.slice(-4)}
           </span>
+          <span className="sr-only">Open connected wallet menu</span>
         </button>
         
         {showMenu && (
@@ -47,9 +49,16 @@ export function WalletConnect() {
               role="menu"
               aria-label="Wallet menu"
             >
-              <div className="p-4 border-b">
-                <p className="text-sm font-medium text-card-foreground">Connected Wallet</p>
-                <p className="text-xs text-muted-foreground mt-1 break-all" aria-label={`Wallet address: ${connectedWallet.address}`}>{connectedWallet.address}</p>
+              <div className="space-y-3 border-b p-4">
+                <EmojiBadge emoji="🧶" className="w-fit">
+                  Fleece-secured connection
+                </EmojiBadge>
+                <div>
+                  <p className="text-sm font-medium text-card-foreground">Connected Wallet</p>
+                  <p className="mt-1 break-all text-xs text-muted-foreground" aria-label={`Wallet address: ${connectedWallet.address}`}>
+                    {connectedWallet.address}
+                  </p>
+                </div>
                 {connectedWallet.stakeAddress && (
                   <p className="text-xs text-muted-foreground mt-1 break-all" aria-label={`Stake address: ${connectedWallet.stakeAddress}`}>
                     Stake: {connectedWallet.stakeAddress.slice(0, 10)}...
@@ -62,7 +71,7 @@ export function WalletConnect() {
                   disconnect();
                   toggleMenu(false);
                 }}
-                className="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted flex items-center space-x-2 min-h-[44px]"
+                className="flex min-h-[44px] w-full items-center gap-2 px-4 py-2 text-left text-sm text-destructive transition hover:bg-muted"
                 role="menuitem"
                 aria-label="Disconnect wallet"
                 onKeyDown={(e) => {
@@ -83,7 +92,7 @@ export function WalletConnect() {
 
   if (availableWallets.length === 0) {
     return (
-      <div className="text-white text-sm">
+      <div className="rounded-full border border-border/60 bg-background/70 px-3 py-2 text-sm text-muted-foreground">
         No wallet found
       </div>
     );
@@ -94,7 +103,7 @@ export function WalletConnect() {
       <button
   onClick={() => toggleMenu()}
         disabled={isConnecting}
-        className="flex items-center space-x-2 bg-sky-blue text-white px-4 py-2 rounded-md hover:bg-sky-dark transition-colors disabled:opacity-50 min-h-[44px]"
+        className="flex min-h-[44px] items-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:border-primary/70 hover:bg-primary/15 disabled:opacity-50"
         aria-label={isConnecting ? "Connecting wallet..." : "Open wallet connection menu"}
         aria-expanded={showMenu}
         aria-haspopup="true"
@@ -113,6 +122,7 @@ export function WalletConnect() {
           <>
             <Wallet className="w-4 h-4" aria-hidden="true" />
             <span>Connect Wallet</span>
+            <Sparkles className="h-4 w-4 text-amber-500" aria-hidden="true" />
           </>
         )}
       </button>
@@ -130,7 +140,14 @@ export function WalletConnect() {
             aria-label="Available wallets"
           >
             <div className="p-2">
-              <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase" id="wallet-menu-label">Available Wallets</p>
+              <div className="flex items-center justify-between px-3 py-2">
+                <p className="text-xs font-semibold uppercase text-muted-foreground" id="wallet-menu-label">
+                  Available Wallets
+                </p>
+                <EmojiBadge emoji="🌙" className="text-[10px] font-medium" variant="info">
+                  Night-safe
+                </EmojiBadge>
+              </div>
               {availableWallets.map((walletName, index) => (
                 <button
                   key={walletName}

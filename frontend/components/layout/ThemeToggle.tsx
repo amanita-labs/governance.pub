@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { Button } from '../ui/Button';
+import { cn } from '@/lib/utils';
 
 export function ThemeToggle() {
   const { theme, setTheme, actualTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [pressed, setPressed] = useState(false);
 
   // Only render the icon after hydration to avoid mismatch
   useEffect(() => {
@@ -29,10 +31,16 @@ export function ThemeToggle() {
 
   return (
     <Button
-      variant="ghost"
+      variant="secondary"
       size="sm"
       onClick={toggleTheme}
-      className="w-9 h-9 px-0"
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onMouseLeave={() => setPressed(false)}
+      className={cn(
+        'h-10 gap-2 rounded-full border border-border/60 bg-background/80 px-3 text-sm font-semibold text-foreground transition-all',
+        pressed ? 'scale-95' : 'hover:border-primary/50 hover:text-primary'
+      )}
       aria-label="Toggle theme"
     >
       {iconToShow === 'sun' ? (
@@ -40,6 +48,9 @@ export function ThemeToggle() {
       ) : (
         <Moon className="h-5 w-5" />
       )}
+      <span className="hidden md:inline text-xs font-medium uppercase tracking-widest text-muted-foreground">
+        {iconToShow === 'sun' ? 'Dawn Mode' : 'Dusk Mode'}
+      </span>
     </Button>
   );
 }

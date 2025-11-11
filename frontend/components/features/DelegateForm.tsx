@@ -3,13 +3,18 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 import { TransactionModal } from './TransactionModal';
 import { useWalletContext } from '../layout/WalletProvider';
 import { useTransaction } from '@/hooks/useTransaction';
 import { submitDelegationTransaction } from '@/lib/governance/transactions/delegate';
 import { Search } from 'lucide-react';
 import type { DRep } from '@/types/governance';
-import { getMetadataName, getMetadataDescription } from '@/lib/governance/drepMetadata';
+import {
+  getMetadataName,
+  getMetadataDescription,
+  getMetadataPaymentAddress,
+} from '@/lib/governance/drepMetadata';
 
 interface DelegateFormProps {
   dreps: DRep[];
@@ -19,12 +24,30 @@ interface DelegateFormProps {
   onSearch?: (query: string) => void;
 }
 
+const DONATION_PRESET_PERCENTAGES = [1, 5, 10] as const;
+const DEFAULT_DONATION_PERCENTAGE = 10;
+const DONATION_SLIDER_MIN = 0;
+const DONATION_SLIDER_MAX = 20;
+const DONATION_SLIDER_STEP = 0.5;
+
+const resolveDonationAddress = (drep: DRep | null | undefined): string | undefined => {
+  if (!drep) return undefined;
+  const metadataAddress = getMetadataPaymentAddress(drep.metadata);
+  if (metadataAddress && metadataAddress.length > 0) {
+    return metadataAddress;
+  }
+  const fallback =
+    typeof drep.payment_address === 'string' ? drep.payment_address.trim() : undefined;
+  return fallback && fallback.length > 0 ? fallback : undefined;
+};
+
 export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSearch }: DelegateFormProps) {
   const { connectedWallet } = useWalletContext();
   const { state, reset, setBuilding, setSigning, setSubmitting, setTxHash, setError } = useTransaction();
   const [selectedDRep, setSelectedDRep] = useState<DRep | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [donationPercent, setDonationPercent] = useState<number>(DEFAULT_DONATION_PERCENTAGE);
 
   // Get DRep from URL params if present
   useEffect(() => {
@@ -48,6 +71,15 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
     return () => clearTimeout(timer);
   }, [searchQuery, onSearch]);
 
+  useEffect(() => {
+    if (!selectedDRep) {
+      setDonationPercent(DEFAULT_DONATION_PERCENTAGE);
+      return;
+    }
+    const eligible = Boolean(resolveDonationAddress(selectedDRep));
+    setDonationPercent(eligible ? DEFAULT_DONATION_PERCENTAGE : 0);
+  }, [selectedDRep]);
+
   // Exclude retired DReps but keep both active and inactive (inactive are still valid delegation targets)
   const filteredDReps = dreps.filter(d => {
     const status = d.status?.toLowerCase();
@@ -64,6 +96,10 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
       const txHash = await submitDelegationTransaction(
         connectedWallet,
         selectedDRep.drep_id,
+        {
+          donationPercentage: donationAvailable ? donationPercent : 0,
+          donationAddress: donationAvailable ? selectedDonationAddress : undefined,
+        },
         (stage) => {
           switch (stage) {
             case 'building':
@@ -89,6 +125,9 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
       setError(error instanceof Error ? error.message : 'Failed to submit delegation transaction');
     }
   };
+
+  const selectedDonationAddress = resolveDonationAddress(selectedDRep);
+  const donationAvailable = Boolean(selectedDonationAddress);
 
   if (!connectedWallet) {
     return (
@@ -131,6 +170,8 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
                   const shortId = drep.drep_id; // full ID per requirement
                   const description = getMetadataDescription(drep.metadata) || (typeof drep.metadata?.description === 'string' ? drep.metadata.description : undefined);
                   const status = drep.status?.toLowerCase();
+                  const donationAddress = resolveDonationAddress(drep);
+                  const donationEligible = Boolean(donationAddress);
                   return (
                     <button
                       key={drep.drep_id}
@@ -163,6 +204,13 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
                             <p className="text-xs text-muted-foreground line-clamp-1 mt-1" title={description}>
                               {description}
                             </p>
+                          )}
+                          {donationEligible && (
+                            <div className="mt-2">
+                              <Badge variant="success" aria-label="Supports optional DRep compensation">
+                                CIP-149 donations supported
+                              </Badge>
+                            </div>
                           )}
                         </div>
                         {isSelected && (
@@ -201,9 +249,14 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Selected DRep</p>
-                <p className="font-semibold text-lg text-foreground">
-                  {selectedDRep.metadata?.name || selectedDRep.view || selectedDRep.drep_id.slice(0, 8)}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold text-lg text-foreground">
+                    {selectedDRep.metadata?.name || selectedDRep.view || selectedDRep.drep_id.slice(0, 8)}
+                  </p>
+                  {donationAvailable && (
+                    <Badge variant="success">CIP-149 donations supported</Badge>
+                  )}
+                </div>
               </div>
 
               {selectedDRep.metadata?.description && (
@@ -218,6 +271,57 @@ export default function DelegateForm({ dreps, hasMore, onLoadMore, loading, onSe
                 <p className="text-sm font-mono break-all text-foreground">
                   {connectedWallet.address.slice(0, 20)}...
                 </p>
+              </div>
+
+              <div className="pt-2">
+                {donationAvailable ? (
+                  <div className="space-y-3 rounded-lg border border-dashed border-field-green/40 bg-field-green/5 p-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-foreground">Optional donation to this DRep</span>
+                      <span className="font-semibold text-field-green">{donationPercent.toFixed(1)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={DONATION_SLIDER_MIN}
+                      max={DONATION_SLIDER_MAX}
+                      step={DONATION_SLIDER_STEP}
+                      value={donationPercent}
+                      onChange={(event) => setDonationPercent(Number(event.target.value))}
+                      className="w-full accent-field-green"
+                      aria-label="Donation percentage slider"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {DONATION_PRESET_PERCENTAGES.map((preset) => (
+                        <Button
+                          key={preset}
+                          type="button"
+                          variant={donationPercent === preset ? 'primary' : 'outline'}
+                          size="sm"
+                          onClick={() => setDonationPercent(preset)}
+                          aria-pressed={donationPercent === preset}
+                        >
+                          {preset}%
+                        </Button>
+                      ))}
+                      <Button
+                        type="button"
+                        variant={donationPercent === 0 ? 'primary' : 'outline'}
+                        size="sm"
+                        onClick={() => setDonationPercent(0)}
+                        aria-pressed={donationPercent === 0}
+                      >
+                        0%
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Donation is optional. Adjust this value anytime by submitting a new delegation.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-muted p-4 text-sm text-muted-foreground">
+                    This DRep has not provided a payment address, so optional donations are unavailable.
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 border-t">
