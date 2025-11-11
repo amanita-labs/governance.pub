@@ -242,34 +242,41 @@ export default function VoteNowPage() {
     setError('');
 
     try {
-      // PLACEHOLDER: This will be implemented later with actual wallet integration
-      // For now, we'll simulate a successful submission
-      
-      // TODO: Implement actual vote submission using Cardano wallet
-      // This should:
-      // 1. Build a vote transaction with the DRep credential
-      // 2. Include the proposal ID (action_id)
-      // 3. Attach the vote choice (yes/no/abstain)
-      // 4. Optionally attach the rationale anchor (URL + hash)
-      // 5. Sign the transaction with the wallet
-      // 6. Submit to the blockchain
-      
-      console.log('Vote submission (placeholder):', {
+      if (!connectedWallet) {
+        throw new Error('Please connect a wallet to submit your vote.');
+      }
+      if (!drepId?.trim()) {
+        throw new Error('DRep ID is required to submit a vote.');
+      }
+      if (!selectedProposal) {
+        throw new Error('No proposal selected.');
+      }
+      if (!voteChoice) {
+        throw new Error('Please select a vote choice.');
+      }
+
+      // Indicate submission progress
+      setStep('uploading');
+
+      const { submitVoteTransaction } = await import('@/lib/governance/transactions/vote');
+
+      const txHashSubmitted = await submitVoteTransaction({
+        wallet: connectedWallet,
+        action: selectedProposal,
         drepId,
-        proposalId: selectedProposal?.action_id,
         vote: voteChoice,
-        rationaleUrl,
-        rationaleHash,
+        anchorUrl: rationaleUrl || undefined,
+        anchorHash: rationaleHash || undefined,
+        onStageChange: (stage) => {
+          // Keep simple UI: we're already in 'uploading' step
+          console.log('[vote] stage:', stage);
+        },
       });
 
-      // Simulate async operation
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Simulate successful transaction
-      const mockTxHash = 'tx_' + Math.random().toString(36).substring(2, 15);
-      setTxHash(mockTxHash);
+      setTxHash(txHashSubmitted);
       setStep('success');
     } catch (err) {
+      console.error('[vote] submit error:', err);
       setError(err instanceof Error ? err.message : 'Failed to submit vote');
       setStep('confirm');
     } finally {

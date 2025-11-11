@@ -25,7 +25,22 @@
 - **Values**: `mainnet` or `preview`
 - **Note**: Used to determine which CardanoScan explorer URL to use
 
-### 3. IPFS Provider API Keys (Optional - For DRep Registration)
+### 3. `NEXT_PUBLIC_KOIOS_API_KEY` (Required for on-chain transactions in browser)
+
+- Purpose: API key for Koios provider used by the Mesh SDK to build and submit transactions (register/update DRep, delegate, vote)
+- Used in: `frontend/lib/governance/transactions/*.ts`
+- Notes:
+	- Must be prefixed with `NEXT_PUBLIC_` to be available in the browser environment where the wallet signs
+	- For mainnet, create an API key at <https://koios.rest/>
+	- On preview/preprod networks, the same env var is used; the network is auto-detected from the wallet
+
+Example:
+
+```env
+NEXT_PUBLIC_KOIOS_API_KEY=your_koios_api_key
+```
+
+### 4. IPFS Provider API Keys (Optional - For DRep Registration & Vote Rationale Upload)
 
 Users can provide these keys at registration time, or use the custom URL option. These are not required environment variables but can be provided by users when registering as a DRep.
 
@@ -49,6 +64,7 @@ Users can provide these keys at registration time, or use the custom URL option.
 
 ```env
 NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
+NEXT_PUBLIC_KOIOS_API_KEY=your_koios_api_key
 ```
 
 ### Recommended Configuration
