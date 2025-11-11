@@ -31,7 +31,8 @@ function isDRepMetadata(value: unknown): value is DRepMetadata {
 export async function POST(request: NextRequest) {
   try {
     console.log('🚀 [IPFS API] Received upload request');
-    const { metadata, provider, apiKey }: UploadRequest = await request.json();
+    const payload = (await request.json()) as UploadRequest;
+    const { metadata, provider, apiKey } = payload;
 
     console.log('📋 [IPFS API] Request details:', {
       provider,
@@ -42,10 +43,6 @@ export async function POST(request: NextRequest) {
     });
 
     // Validate metadata has required fields
-    // Support both DRep metadata (CIP-119) and Vote rationale (CIP-136)
-    const isDRepMetadata = metadata.body?.givenName;
-    const isVoteRationale = metadata.body?.summary && metadata.body?.rationaleStatement;
-    
     if (!metadata || typeof metadata !== 'object') {
       console.error('❌ [IPFS API] Invalid metadata structure');
       return NextResponse.json(
@@ -53,8 +50,16 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    if (!isDRepMetadata && !isVoteRationale) {
+
+    const metadataObject = metadata as Record<string, unknown>;
+    const metadataBody = metadataObject.body as Record<string, unknown> | undefined;
+
+    // Support both DRep metadata (CIP-119) and Vote rationale (CIP-136)
+    const isDRep = isDRepMetadata(metadata);
+    const isVoteRationale =
+      typeof metadataBody?.summary === 'string' && typeof metadataBody?.rationaleStatement === 'string';
+
+    if (!isDRep && !isVoteRationale) {
       console.error('❌ [IPFS API] Invalid metadata structure');
       return NextResponse.json(
         { error: 'Invalid metadata: must be either DRep metadata (CIP-119) or Vote rationale (CIP-136)' },
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate blake2b-256 hash of the metadata (minified for stable hashing)
     console.log('🔐 [IPFS API] Calculating blake2b-256 hash...');
-    const metadataString = JSON.stringify(metadata);
+    const metadataString = JSON.stringify(metadataObject);
     const hash = crypto
       .createHash('blake2b512')
       .update(metadataString)
@@ -85,10 +90,10 @@ export async function POST(request: NextRequest) {
 
     if (provider === 'pinata') {
       console.log('📤 [IPFS API] Using Pinata provider');
-      ipfsHash = await uploadToPinata(metadata, apiKey);
+      ipfsHash = await uploadToPinata(metadata as DRepMetadata, apiKey);
     } else if (provider === 'blockfrost') {
       console.log('📤 [IPFS API] Using Blockfrost provider');
-      ipfsHash = await uploadToBlockfrost(metadata, apiKey);
+      ipfsHash = await uploadToBlockfrost(metadata as DRepMetadata, apiKey);
     } else {
       console.error('❌ [IPFS API] Invalid provider:', provider);
       return NextResponse.json(
