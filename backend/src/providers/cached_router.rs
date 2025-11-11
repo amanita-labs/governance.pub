@@ -8,6 +8,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tracing::debug;
 
+const CARDANO_EPOCH_DURATION_SECONDS: u64 = 432_000;
+
 #[derive(Clone)]
 pub struct CachedProviderRouter {
     router: Arc<ProviderRouter>,
@@ -396,6 +398,7 @@ impl CachedProviderRouter {
             return action;
         }
 
+        let mut known_times = Self::collect_known_epoch_times(&action);
         let epoch_list: Vec<u32> = epochs_to_fetch.into_iter().collect();
         let futures = epoch_list
             .iter()
@@ -404,48 +407,45 @@ impl CachedProviderRouter {
 
         let mut epoch_time_map: HashMap<u32, Option<u64>> = HashMap::new();
         for (epoch, time) in epoch_list.into_iter().zip(results.into_iter()) {
-            if time.is_none() {
+            if let Some(value) = time {
+                known_times.insert(epoch, value);
+            } else {
                 tracing::debug!("Epoch {} start time not available", epoch);
             }
             epoch_time_map.insert(epoch, time);
         }
 
-        if let Some(epoch) = action.proposed_epoch {
-            if action.proposed_epoch_start_time.is_none() {
-                action.proposed_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
+        let mut apply_epoch_time = |epoch: Option<u32>, field: &mut Option<u64>| {
+            if let Some(epoch) = epoch {
+                if let Some(existing) = *field {
+                    known_times.insert(epoch, existing);
+                } else {
+                    let resolved = epoch_time_map
+                        .get(&epoch)
+                        .copied()
+                        .flatten()
+                        .or_else(|| Self::infer_epoch_start_time(epoch, &known_times));
+                    if let Some(time) = resolved {
+                        *field = Some(time);
+                        known_times.insert(epoch, time);
+                    }
+                }
             }
-        }
-        if let Some(epoch) = action.voting_epoch {
-            if action.voting_epoch_start_time.is_none() {
-                action.voting_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
-            }
-        }
-        if let Some(epoch) = action.ratification_epoch.or(action.ratified_epoch) {
-            if action.ratification_epoch_start_time.is_none() {
-                action.ratification_epoch_start_time =
-                    epoch_time_map.get(&epoch).copied().flatten();
-            }
-        }
-        if let Some(epoch) = action.enactment_epoch {
-            if action.enactment_epoch_start_time.is_none() {
-                action.enactment_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
-            }
-        }
-        if let Some(epoch) = action.expiry_epoch {
-            if action.expiry_epoch_start_time.is_none() {
-                action.expiry_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
-            }
-        }
-        if let Some(epoch) = action.expiration {
-            if action.expiration_epoch_start_time.is_none() {
-                action.expiration_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
-            }
-        }
-        if let Some(epoch) = action.dropped_epoch {
-            if action.dropped_epoch_start_time.is_none() {
-                action.dropped_epoch_start_time = epoch_time_map.get(&epoch).copied().flatten();
-            }
-        }
+        };
+
+        apply_epoch_time(action.proposed_epoch, &mut action.proposed_epoch_start_time);
+        apply_epoch_time(action.voting_epoch, &mut action.voting_epoch_start_time);
+        apply_epoch_time(
+            action.ratification_epoch.or(action.ratified_epoch),
+            &mut action.ratification_epoch_start_time,
+        );
+        apply_epoch_time(
+            action.enactment_epoch,
+            &mut action.enactment_epoch_start_time,
+        );
+        apply_epoch_time(action.expiry_epoch, &mut action.expiry_epoch_start_time);
+        apply_epoch_time(action.expiration, &mut action.expiration_epoch_start_time);
+        apply_epoch_time(action.dropped_epoch, &mut action.dropped_epoch_start_time);
 
         action
     }
@@ -467,6 +467,74 @@ impl CachedProviderRouter {
 
         self.cache.set(&cache_key, &start_time).await;
         start_time
+    }
+
+    fn collect_known_epoch_times(action: &GovernanceAction) -> HashMap<u32, u64> {
+        let mut known = HashMap::new();
+
+        if let (Some(epoch), Some(ts)) = (action.proposed_epoch, action.proposed_epoch_start_time) {
+            known.insert(epoch, ts);
+        }
+        if let (Some(epoch), Some(ts)) = (action.voting_epoch, action.voting_epoch_start_time) {
+            known.insert(epoch, ts);
+        }
+        if let (Some(epoch), Some(ts)) = (
+            action.ratification_epoch.or(action.ratified_epoch),
+            action.ratification_epoch_start_time,
+        ) {
+            known.insert(epoch, ts);
+        }
+        if let (Some(epoch), Some(ts)) = (action.enactment_epoch, action.enactment_epoch_start_time)
+        {
+            known.insert(epoch, ts);
+        }
+        if let (Some(epoch), Some(ts)) = (action.expiry_epoch, action.expiry_epoch_start_time) {
+            known.insert(epoch, ts);
+        }
+        if let (Some(epoch), Some(ts)) = (action.expiration, action.expiration_epoch_start_time) {
+            known.insert(epoch, ts);
+        }
+        if let (Some(epoch), Some(ts)) = (action.dropped_epoch, action.dropped_epoch_start_time) {
+            known.insert(epoch, ts);
+        }
+
+        known
+    }
+
+    fn infer_epoch_start_time(epoch: u32, known: &HashMap<u32, u64>) -> Option<u64> {
+        if let Some(time) = known.get(&epoch) {
+            return Some(*time);
+        }
+
+        let mut best: Option<(u64, u64)> = None;
+
+        for (&known_epoch, &known_time) in known.iter() {
+            let delta_epochs = if epoch >= known_epoch {
+                (epoch - known_epoch) as u64
+            } else {
+                (known_epoch - epoch) as u64
+            };
+
+            let Some(offset_seconds) = delta_epochs.checked_mul(CARDANO_EPOCH_DURATION_SECONDS)
+            else {
+                continue;
+            };
+
+            let candidate = if epoch >= known_epoch {
+                known_time.checked_add(offset_seconds)
+            } else {
+                known_time.checked_sub(offset_seconds)
+            };
+
+            if let Some(candidate_time) = candidate {
+                match best {
+                    Some((best_delta, _)) if delta_epochs >= best_delta => {}
+                    _ => best = Some((delta_epochs, candidate_time)),
+                }
+            }
+        }
+
+        best.map(|(_, time)| time)
     }
 
     pub async fn get_drep_metadata(

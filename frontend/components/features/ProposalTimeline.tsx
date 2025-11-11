@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Clock, CheckCircle, XCircle, Calendar, PlayCircle } from 'lucide-react';
 import type { GovernanceAction } from '@/types/governance';
@@ -43,7 +44,11 @@ const helperByStatus: Record<TimelineEvent['status'], string | undefined> = {
 
 export function ProposalTimeline({ action }: ProposalTimelineProps) {
   const status = action.status ?? 'submitted';
-  const timezoneLabel = getLocalTimezoneLabel();
+  const [timezoneLabel, setTimezoneLabel] = useState<string>('Local time');
+
+  useEffect(() => {
+    setTimezoneLabel(getLocalTimezoneLabel());
+  }, []);
   const currentStageRank = (() => {
     switch (status) {
       case 'submitted':
