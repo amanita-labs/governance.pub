@@ -60,8 +60,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : 'button';
     const { playRandom, playById } = useFarmSounds();
 
-    const handleClick = React.useCallback(
-      (event: React.MouseEvent<HTMLElement>) => {
+    const handleClick = React.useCallback<React.MouseEventHandler<HTMLButtonElement>>(
+      (event) => {
         if (onClick) {
           onClick(event);
         }
