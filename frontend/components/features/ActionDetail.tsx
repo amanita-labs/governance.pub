@@ -11,7 +11,7 @@ import { VotingProgress } from '../charts/VotingProgress';
 import { ProposalMetadata } from './ProposalMetadata';
 import { MetadataValidationSummary } from './MetadataValidationSummary';
 import { ProposalTimeline } from './ProposalTimeline';
-import { Clock, Calendar, Hash, ExternalLink, DollarSign, Settings } from 'lucide-react';
+import { Clock, Calendar, Hash, ExternalLink, DollarSign, Settings, Vote } from 'lucide-react';
 import type {
   GovernanceAction,
   ActionVotingBreakdown,

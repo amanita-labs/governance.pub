@@ -56,7 +56,6 @@ export default function VoteNowPage() {
   const [rationaleHash, setRationaleHash] = useState<string>('');
 
   // Upload state
-  const [isUploading, setIsUploading] = useState(false);
   const [txHash, setTxHash] = useState<string>('');
 
   // Load proposals on mount and check for pre-selected proposal
@@ -85,7 +84,7 @@ export default function VoteNowPage() {
               setDrepId(dRep.dRepIDCip105);
             }
           }
-        } catch (err) {
+        } catch {
           // Fallback: leave drepId empty
         }
       }
@@ -196,7 +195,6 @@ export default function VoteNowPage() {
   };
 
   const uploadRationaleToIpfs = async () => {
-    setIsUploading(true);
     setError('');
     setStep('uploading');
 
@@ -233,12 +231,11 @@ export default function VoteNowPage() {
       setError(err instanceof Error ? err.message : 'Failed to upload to IPFS');
       setStep('ipfs-config');
     } finally {
-      setIsUploading(false);
+      // step will be updated by success or error handling
     }
   };
 
   const submitVote = async () => {
-    setIsUploading(true);
     setError('');
 
     try {
@@ -280,7 +277,7 @@ export default function VoteNowPage() {
       setError(err instanceof Error ? err.message : 'Failed to submit vote');
       setStep('confirm');
     } finally {
-      setIsUploading(false);
+      // keep current step; upload mode handled via step state
     }
   };
 
