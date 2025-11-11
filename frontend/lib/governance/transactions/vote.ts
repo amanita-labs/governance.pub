@@ -90,7 +90,7 @@ export async function submitVoteTransaction(params: SubmitVoteParams): Promise<s
     throw new Error('Koios API key missing (NEXT_PUBLIC_KOIOS_API_KEY). Voting requires a Koios provider.');
   }
 
-  const provider = new KoiosProvider(koiosNetwork, koiosApiKey);
+  const provider = new KoiosProvider(koiosNetwork);
   const txBuilder = new MeshTxBuilder({ fetcher: provider, verbose: true });
 
   // Gather wallet context

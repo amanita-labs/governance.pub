@@ -32,12 +32,14 @@ Build a governance interface tool which;
 #### Key Features
 
 - Wooly theme
+- meme generator
 - CIP-169
 - Global governance search
 
 #### Governance Action Explorer
 
 - Clear timeline view of governance action lifetime
+- generate memes
 - Differentiates 'budget' governance actions from Info actions
 - Detailed metadata validation
   - hash checks
@@ -50,6 +52,7 @@ Build a governance interface tool which;
 #### DRep Directory
 
 - Full DRep metadata rendering
+- generate memes
 - Voting and delegator history
 - Detailed voting statistics
 
@@ -63,9 +66,12 @@ Build a governance interface tool which;
 
 ### Features we would like to add
 
+- Get user feedback on UI UX
 - Properly connect all DRep and governance action filters
 - Create a custom backend to stop reliance on data services
 - Deep governance analytics
+- Governance action submission
+- Global governance search
 
 ## Tech Stack
 

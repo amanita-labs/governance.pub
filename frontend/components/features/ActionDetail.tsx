@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -20,6 +21,8 @@ import type {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import { getActionDisplayType, getActionTitle } from '@/lib/governance';
 import { VoterParticipationView } from './VoterParticipation';
+import { MemeGenerator } from './MemeGenerator';
+import { sanitizeMemeCaption } from '@/lib/utils/memegen';
 
 interface ActionDetailProps {
   action: GovernanceAction;
@@ -335,6 +338,64 @@ export default function ActionDetail({
       extras: [] as Array<{ label: string; value: string }>,
     },
   ];
+
+  const truncatedTitle = useMemo(
+    () => (title.length > 70 ? `${title.slice(0, 67)}...` : title),
+    [title]
+  );
+
+  const yesPowerLabel = useMemo(
+    () => sanitizeMemeCaption(`Yes power ${formatVotingPower(totalYes.toString())}`),
+    [totalYes]
+  );
+
+  const statusLabel = useMemo(
+    () => sanitizeMemeCaption(`Status: ${status.toUpperCase()}`),
+    [status]
+  );
+
+  const totalVotesLabel = useMemo(
+    () =>
+      totalVotesCast > 0
+        ? sanitizeMemeCaption(`${totalVotesCast} ballots cast`)
+        : 'Waiting on ballots',
+    [totalVotesCast]
+  );
+
+  const memeCaptionOptions = useMemo(() => {
+    const options = [
+      {
+        top: `When a ${displayType} hits the docket`,
+        bottom: `${yesPowerLabel} · ${statusLabel}`,
+      },
+      {
+        top: `${truncatedTitle}`,
+        bottom: `${statusLabel} · ${totalVotesLabel}`,
+      },
+      {
+        top: `Cardano fam debating ${displayType}`,
+        bottom: `${yesPowerLabel} · ${totalVotesLabel}`,
+      },
+      {
+        top: `Governance call: ${displayType}`,
+        bottom: `${statusLabel} · ${yesPowerLabel}`,
+      },
+    ];
+
+    return options
+      .map(({ top, bottom }) => ({
+        top: sanitizeMemeCaption(top),
+        bottom: sanitizeMemeCaption(bottom),
+      }))
+      .filter((option) => option.top && option.bottom);
+  }, [displayType, yesPowerLabel, statusLabel, truncatedTitle, totalVotesLabel]);
+
+  const memeTopDefault =
+    memeCaptionOptions[0]?.top ?? sanitizeMemeCaption(`${displayType} decision time`);
+
+  const memeBottomDefault =
+    memeCaptionOptions[0]?.bottom ??
+    sanitizeMemeCaption(`${truncatedTitle} | ${status.toUpperCase()} | ${yesPowerLabel}`);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -779,6 +840,12 @@ export default function ActionDetail({
               <VotingProgress votingResults={votingResults} showLabels />
             </CardContent>
           </Card>
+
+          <MemeGenerator
+            defaultTopText={memeTopDefault}
+            defaultBottomText={memeBottomDefault}
+            contextLabel={`action ${action.action_id ?? ''}`.trim()}
+          />
         </div>
       </div>
     </div>

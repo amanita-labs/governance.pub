@@ -3,13 +3,16 @@
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { Badge, EmojiBadge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { ExternalLink, TrendingUp, Calendar, Hash, Mail, Globe, FileText, Users, Copy, Check } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import type { DRep, DRepVotingHistory, DRepDelegator, JsonValue } from '@/types/governance';
 import { SheepIcon } from '@/components/ui/SheepIcon';
+import { WoolyQuote } from '@/components/ui/WoolyQuote';
+import { MemeGenerator } from './MemeGenerator';
+import { sanitizeMemeCaption } from '@/lib/utils/memegen';
 import {
   getMetadataDescription,
   getMetadataName,
@@ -113,6 +116,61 @@ export default function DRepDetail({ drep, votingHistory, delegators = [] }: DRe
   const participationRate = votingHistory.length > 0 
     ? ((votingHistory.length / (votingHistory.length + 10)) * 100).toFixed(1) 
     : '0';
+
+  const votingPowerLabel = useMemo(
+    () =>
+      sanitizeMemeCaption(
+        formatVotingPower(drep.voting_power_active || drep.voting_power)
+      ),
+    [drep.voting_power_active, drep.voting_power]
+  );
+
+  const voteCountLabel = useMemo(
+    () =>
+      votingHistory.length > 0
+        ? sanitizeMemeCaption(`${votingHistory.length} votes logged`)
+        : 'Awaiting first ballots',
+    [votingHistory.length]
+  );
+
+  const delegatorLabel = useMemo(() => {
+    if (!delegators || delegators.length === 0) {
+      return 'Fresh pasture';
+    }
+    return sanitizeMemeCaption(`${delegators.length} delegators in tow`);
+  }, [delegators]);
+
+  const memeCaptionOptions = useMemo(() => {
+    const baseOptions = [
+      {
+        top: `When ${drepName} posts their governance take`,
+        bottom: `${voteCountLabel} · Power ${votingPowerLabel}`,
+      },
+      {
+        top: `${drepName} walking into the epoch`,
+        bottom: `${delegatorLabel} · Power ${votingPowerLabel}`,
+      },
+      {
+        top: `Trying to keep up with ${drepName}`,
+        bottom: `${voteCountLabel} · Delegators ${delegators?.length ?? 0}`,
+      },
+      {
+        top: `Stake chat after ${drepName}'s vote`,
+        bottom: `${voteCountLabel} · Power ${votingPowerLabel}`,
+      },
+    ];
+
+    return baseOptions
+      .map(({ top, bottom }) => ({
+        top: sanitizeMemeCaption(top),
+        bottom: sanitizeMemeCaption(bottom),
+      }))
+      .filter((option) => option.top && option.bottom);
+  }, [drepName, voteCountLabel, votingPowerLabel, delegatorLabel, delegators?.length]);
+
+  const memeTopDefault = memeCaptionOptions[0]?.top ?? sanitizeMemeCaption(`Delegating to ${drepName}?`);
+  const memeBottomDefault =
+    memeCaptionOptions[0]?.bottom ?? sanitizeMemeCaption(`${voteCountLabel} · Power ${votingPowerLabel}`);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -603,6 +661,14 @@ export default function DRepDetail({ drep, votingHistory, delegators = [] }: DRe
               Delegate to this DRep
             </Button>
           </Link>
+
+          <MemeGenerator
+            className="mt-6"
+            defaultTopText={memeTopDefault}
+            defaultBottomText={memeBottomDefault}
+            contextLabel={`DRep ${drepName}`}
+            captionOptions={memeCaptionOptions}
+          />
         </div>
       </div>
     </div>

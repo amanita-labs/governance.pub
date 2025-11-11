@@ -38,11 +38,11 @@ async function createTxContext(wallet: ConnectedWallet) {
   const networkId = await wallet.wallet.getNetworkId();
   const koiosNetwork = resolveKoiosNetwork(networkId);
   const koiosApiKey = process.env.NEXT_PUBLIC_KOIOS_API_KEY;
-  if (!koiosApiKey) {
-    throw new Error('Koios API key is not set. Please define NEXT_PUBLIC_KOIOS_API_KEY in your environment variables.');
-  }
+  // if (!koiosApiKey) {
+  //   throw new Error('Koios API key is not set. Please define NEXT_PUBLIC_KOIOS_API_KEY in your environment variables.');
+  // }
 
-  const provider = new KoiosProvider(koiosNetwork, koiosApiKey);
+  const provider = new KoiosProvider(koiosNetwork);
   const txBuilder = new MeshTxBuilder({ fetcher: provider, verbose: true });
   const utxos = await wallet.wallet.getUtxos();
   const changeAddress = await wallet.wallet.getChangeAddress();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Badge, EmojiBadge } from '@/components/ui/Badge';
 import { CheckCircle2, XCircle, ExternalLink, User, AlertCircle } from 'lucide-react';
 import {
   getDRepIdFromWallet,
@@ -98,7 +98,7 @@ export default function WalletDRepStatus({ stakeAddress, connectedWallet }: Wall
 
   if (loading) {
     return (
-      <Card className="p-6 mb-6">
+      <Card className="mb-6 rounded-3xl border border-border/70 bg-background/85 p-6 shadow-lg">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
@@ -110,7 +110,7 @@ export default function WalletDRepStatus({ stakeAddress, connectedWallet }: Wall
 
   if (error) {
     return (
-      <Card className="p-6 mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+      <Card className="mb-6 rounded-3xl border border-red-200/70 bg-red-50/70 p-6 shadow-lg dark:border-red-800/70 dark:bg-red-900/20">
         <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
           <XCircle className="h-5 w-5" />
           <span className="font-medium">Error checking DRep status</span>
@@ -120,223 +120,150 @@ export default function WalletDRepStatus({ stakeAddress, connectedWallet }: Wall
     );
   }
 
+  const formattedVotingPower =
+    drepInfo?.voting_power_active || drepInfo?.voting_power
+      ? `${(parseInt(drepInfo.voting_power_active ?? drepInfo.voting_power ?? '0') / 1_000_000).toFixed(0)} ₳`
+      : '0 ₳';
+  const delegatorCountLabel =
+    typeof drepInfo?.delegator_count === 'number' ? `${drepInfo.delegator_count}` : '—';
+
   return (
-    <Card className="p-6 mb-6">
-      <h2 className="text-xl font-bold mb-4">Your Wallet Status</h2>
-      
-      <div className="space-y-4">
-        {/* DRep Registration Status */}
-        <div className="flex items-start gap-3">
-          {isRegistered ? (
-            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-          ) : (
-            <XCircle className="h-5 w-5 text-gray-400 dark:text-gray-600 mt-0.5 flex-shrink-0" />
-          )}
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold">DRep Registration</span>
-              {isRegistered ? (
-                <Badge variant="success">Registered</Badge>
-              ) : (
-                <Badge variant="secondary">Not Registered</Badge>
-              )}
-            </div>
-            
-            {drepId && (
-              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                <span className="font-mono text-xs break-all">{drepId}</span>
-                {isRegistered && (
-                  <Link 
-                    href={`/dreps/${drepId}`}
-                    className="ml-2 inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    View Profile
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                )}
-              </div>
-            )}
-
-            {isRegistered && drepInfo && (
-              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                {metadata?.body?.givenName && (
-                  <div className="flex items-center gap-2 mb-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">{metadata.body.givenName}</span>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                    <span className="ml-2 font-medium capitalize">{drepInfo.status || 'Active'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Voting Power:</span>
-                    <span className="ml-2 font-medium">
-                      {drepInfo.voting_power_active 
-                        ? `${(parseInt(drepInfo.voting_power_active) / 1_000_000).toFixed(0)} ₳`
-                        : '0 ₳'
-                      }
-                    </span>
-                  </div>
-                  {drepInfo.delegator_count !== undefined && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Delegators:</span>
-                      <span className="ml-2 font-medium">{drepInfo.delegator_count}</span>
-                    </div>
-                  )}
-                  {drepInfo.vote_count !== undefined && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Votes Cast:</span>
-                      <span className="ml-2 font-medium">{drepInfo.vote_count}</span>
-                    </div>
-                  )}
-                </div>
-
-                {metadata?.body?.objectives && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <span className="text-xs text-gray-600 dark:text-gray-400">Objectives:</span>
-                    <p className="text-sm mt-1 line-clamp-2">{metadata.body.objectives}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!isRegistered && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                You can register as a DRep using the &quot;Register as DRep&quot; tab below.
-              </p>
-            )}
-          </div>
+    <Card className="mb-6 rounded-2xl border border-border/60 bg-background/85 p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <EmojiBadge emoji="🐏" className="text-[11px] font-semibold">
+            Wallet snapshot
+          </EmojiBadge>
+          <span className="text-xs text-muted-foreground">Governance readiness at a glance</span>
         </div>
+        {drepId && isRegistered && (
+          <Link
+            href={`/dreps/${drepId}`}
+            className="inline-flex items-center gap-1 rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-primary hover:border-primary/60"
+          >
+            View DRep profile
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        )}
+      </div>
 
-        {/* Delegation Status */}
-        <div className="flex items-start gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <User className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold">Delegation Status</span>
-              {delegationLoading ? (
-                <Badge variant="secondary">Loading...</Badge>
-              ) : delegatedTo ? (
-                <Badge variant="info">Delegated</Badge>
-              ) : (
-                <Badge variant="secondary">Not Delegated</Badge>
-              )}
-            </div>
-            
-            {delegationLoading ? (
-              <div className="mt-2">
-                <div className="animate-pulse space-y-2">
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                </div>
-              </div>
-            ) : delegatedTo ? (
-              <div className="mt-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Delegated to:</span>
-                  <Link 
-                    href={`/dreps/${delegatedTo}`}
-                    className="font-mono text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
-                  >
-                    {delegatedTo.slice(0, 20)}...{delegatedTo.slice(-10)}
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                </div>
-
-                {delegatedDRepInfo && (
-                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    {delegatedDRepMetadata?.body?.givenName && (
-                      <div className="flex items-center gap-2 mb-2">
-                        <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <span className="font-medium text-blue-900 dark:text-blue-100">
-                          {delegatedDRepMetadata.body.givenName}
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                        <span className="ml-2 font-medium capitalize">
-                          {delegatedDRepInfo.status || 'Active'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600 dark:text-gray-400">Voting Power:</span>
-                        <span className="ml-2 font-medium">
-                          {delegatedDRepInfo.voting_power_active 
-                            ? `${(parseInt(delegatedDRepInfo.voting_power_active) / 1_000_000).toFixed(0)} ₳`
-                            : '0 ₳'
-                          }
-                        </span>
-                      </div>
-                      {delegatedDRepInfo.vote_count !== undefined && (
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Votes Cast:</span>
-                          <span className="ml-2 font-medium">{delegatedDRepInfo.vote_count}</span>
-                        </div>
-                      )}
-                      {delegatedDRepInfo.delegator_count !== undefined && (
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Total Delegators:</span>
-                          <span className="ml-2 font-medium">{delegatedDRepInfo.delegator_count}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {delegatedDRepMetadata?.body?.objectives && (
-                      <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
-                        <span className="text-xs text-gray-600 dark:text-gray-400">Objectives:</span>
-                        <p className="text-sm mt-1 line-clamp-2 text-gray-700 dark:text-gray-300">
-                          {delegatedDRepMetadata.body.objectives}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
-                      <Link
-                        href={`/dreps/${delegatedTo}`}
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
-                      >
-                        View Full DRep Profile
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </div>
-                  </div>
-                )}
-
-                {!delegatedDRepInfo && (
-                  <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="text-sm">Unable to load delegated DRep information</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <div className="rounded-xl border border-border/60 bg-background/75 p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+            {isRegistered ? (
+              <CheckCircle2 className="h-4 w-4 text-field-green" />
             ) : (
-              <div className="mt-2">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  You haven&apos;t delegated your voting power yet.
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Use the &quot;Delegate&quot; tab below to delegate your voting power to a DRep of your choice.
-                </p>
-              </div>
+              <XCircle className="h-4 w-4 text-muted-foreground" />
             )}
+            <span>Registration</span>
+            <Badge variant={isRegistered ? 'success' : 'secondary'}>
+              {isRegistered ? 'Registered' : 'Not registered'}
+            </Badge>
           </div>
+          <dl className="grid grid-cols-2 gap-y-1 text-xs">
+            <dt className="text-muted-foreground">Status</dt>
+            <dd className="text-right font-medium text-foreground capitalize">
+              {drepInfo?.status || (isRegistered ? 'active' : 'n/a')}
+            </dd>
+            <dt className="text-muted-foreground">Voting power</dt>
+            <dd className="text-right font-medium text-foreground">{formattedVotingPower}</dd>
+            <dt className="text-muted-foreground">Delegators</dt>
+            <dd className="text-right font-medium text-foreground">{delegatorCountLabel}</dd>
+            {typeof drepInfo?.vote_count === 'number' && (
+              <>
+                <dt className="text-muted-foreground">Votes cast</dt>
+                <dd className="text-right font-medium text-foreground">{drepInfo.vote_count}</dd>
+              </>
+            )}
+          </dl>
+          {metadata?.body?.givenName && (
+            <p className="mt-2 truncate text-xs text-muted-foreground">
+              <User className="mr-1 inline-block h-3 w-3 align-middle text-muted-foreground" />
+              <span className="align-middle font-medium text-foreground">{metadata.body.givenName}</span>
+            </p>
+          )}
+          {!isRegistered && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Register via the <span className="font-medium text-foreground">Register</span> tab below.
+            </p>
+          )}
         </div>
 
-        {/* Stake Address Info */}
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-          <span className="text-xs text-gray-500 dark:text-gray-500">Stake Address:</span>
-          <p className="text-xs font-mono text-gray-600 dark:text-gray-400 mt-1 break-all">
-            {stakeAddress}
-          </p>
+        <div className="rounded-xl border border-border/60 bg-background/75 p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <User className="h-4 w-4 text-primary" />
+            <span>Delegation</span>
+            {delegationLoading ? (
+              <Badge variant="secondary">Loading…</Badge>
+            ) : delegatedTo ? (
+              <Badge variant="info">Delegated</Badge>
+            ) : (
+              <Badge variant="secondary">Not delegated</Badge>
+            )}
+          </div>
+          {delegationLoading ? (
+            <div className="space-y-1">
+              <div className="h-2 rounded bg-muted/60" />
+              <div className="h-2 rounded bg-muted/60" />
+            </div>
+          ) : delegatedTo ? (
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <div className="flex items-center justify-between gap-2">
+                <span>Delegated to</span>
+                <Link
+                  href={`/dreps/${delegatedTo}`}
+                  className="truncate font-mono text-foreground hover:text-primary"
+                  title={delegatedTo}
+                >
+                  {delegatedTo.slice(0, 10)}…{delegatedTo.slice(-6)}
+                </Link>
+              </div>
+              {delegatedDRepInfo ? (
+                <div className="grid grid-cols-2 gap-y-1">
+                  <span>Status</span>
+                  <span className="text-right text-foreground capitalize">
+                    {delegatedDRepInfo.status || 'active'}
+                  </span>
+                  <span>Voting power</span>
+                  <span className="text-right text-foreground">
+                    {delegatedDRepInfo.voting_power_active
+                      ? `${(parseInt(delegatedDRepInfo.voting_power_active) / 1_000_000).toFixed(0)} ₳`
+                      : '0 ₳'}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                  <AlertCircle className="h-3 w-3" />
+                  <span>Delegated DRep details unavailable</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Use the <span className="font-medium text-foreground">Delegate</span> tab to choose a DRep.
+            </p>
+          )}
         </div>
+      </div>
+
+      {metadata?.body?.objectives && (
+        <details className="mt-2 text-xs text-muted-foreground">
+          <summary className="cursor-pointer text-foreground">View DRep objectives</summary>
+          <p className="mt-2 rounded-lg bg-background/70 p-2 leading-relaxed text-foreground">
+            {metadata.body.objectives}
+          </p>
+        </details>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <span className="font-mono truncate" title={stakeAddress}>
+          {stakeAddress.slice(0, 22)}…{stakeAddress.slice(-6)}
+        </span>
+        {drepId && (
+          <span className="font-mono truncate text-muted-foreground/80" title={drepId}>
+            DRep ID: {drepId.slice(0, 14)}…{drepId.slice(-6)}
+          </span>
+        )}
       </div>
     </Card>
   );

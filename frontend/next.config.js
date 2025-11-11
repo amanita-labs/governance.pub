@@ -12,6 +12,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'avatars.githubusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'api.memegen.link',
+      },
     ],
   },
   // Enable SWC minification (faster than Terser) - default in Next.js 13+

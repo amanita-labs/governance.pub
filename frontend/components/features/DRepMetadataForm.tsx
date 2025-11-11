@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
+import { EmojiBadge } from '../ui/Badge';
 import { Upload, Link as LinkIcon, FileJson, X, Plus } from 'lucide-react';
 
 export interface DRepMetadata {
@@ -242,7 +243,7 @@ export default function DRepMetadataForm({
 
   if (step === 'uploading') {
     return (
-      <Card>
+      <Card className="wooly-border rounded-3xl border border-border/70 bg-background/85 p-10 text-center shadow-lg">
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-field-green mx-auto mb-4"></div>
           <p className="text-lg font-medium mb-2">Uploading to IPFS...</p>
@@ -256,22 +257,27 @@ export default function DRepMetadataForm({
 
   if (step === 'storage') {
     return (
-      <Card>
+      <Card className="wooly-border rounded-3xl border border-border/70 bg-background/85 p-6 shadow-lg">
         <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-display font-bold mb-2">Storage Configuration</h2>
-            <p className="text-sm text-muted-foreground">
-              Choose how you want to host your DRep metadata
-            </p>
+          <div className="flex flex-col gap-3">
+            <EmojiBadge emoji="🧺" srLabel="Storage options">
+              Choose a storage path
+            </EmojiBadge>
+            <div>
+              <h2 className="text-2xl font-display font-bold text-foreground">Storage Configuration</h2>
+              <p className="text-sm text-muted-foreground">
+                Choose how you want to host your DRep metadata
+              </p>
+            </div>
           </div>
 
           <div className="space-y-3">
             <button
               onClick={() => setStorageOption('ipfs')}
-              className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+              className={`w-full rounded-2xl border-2 p-4 text-left transition-all ${
                 storageOption === 'ipfs'
-                  ? 'border-field-green bg-field-green/10'
-                  : 'border-input hover:border-field-green/50'
+                  ? 'border-field-green/70 bg-field-green/10 shadow-lg shadow-field-green/20'
+                  : 'border-border/60 bg-background/80 hover:border-field-green/50'
               }`}
             >
               <div className="flex items-start gap-3">
@@ -288,10 +294,10 @@ export default function DRepMetadataForm({
 
             <button
               onClick={() => setStorageOption('custom')}
-              className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+              className={`w-full rounded-2xl border-2 p-4 text-left transition-all ${
                 storageOption === 'custom'
-                  ? 'border-field-green bg-field-green/10'
-                  : 'border-input hover:border-field-green/50'
+                  ? 'border-field-green/70 bg-field-green/10 shadow-lg shadow-field-green/20'
+                  : 'border-border/60 bg-background/80 hover:border-field-green/50'
               }`}
             >
               <div className="flex items-start gap-3">
@@ -307,10 +313,10 @@ export default function DRepMetadataForm({
 
             <button
               onClick={() => setStorageOption('none')}
-              className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+              className={`w-full rounded-2xl border-2 p-4 text-left transition-all ${
                 storageOption === 'none'
-                  ? 'border-field-green bg-field-green/10'
-                  : 'border-input hover:border-field-green/50'
+                  ? 'border-field-green/70 bg-field-green/10 shadow-lg shadow-field-green/20'
+                  : 'border-border/60 bg-background/80 hover:border-field-green/50'
               }`}
             >
               <div className="flex items-start gap-3">
@@ -326,7 +332,7 @@ export default function DRepMetadataForm({
           </div>
 
           {storageOption === 'custom' && (
-            <div className="space-y-4 p-4 bg-muted rounded-lg">
+            <div className="space-y-4 rounded-2xl border border-border/60 bg-background/70 p-4">
               <div>
                 <label htmlFor="custom-url" className="block text-sm font-medium mb-2">
                   Metadata URL *
@@ -365,7 +371,7 @@ export default function DRepMetadataForm({
           )}
 
           {storageOption === 'ipfs' && (
-            <div className="space-y-4 p-4 bg-muted rounded-lg">
+            <div className="space-y-4 rounded-2xl border border-border/60 bg-background/70 p-4">
               <div>
                 <label htmlFor="ipfs-provider" className="block text-sm font-medium mb-2">
                   IPFS Provider *
@@ -424,7 +430,7 @@ export default function DRepMetadataForm({
                   )}
                 </p>
               </div>
-              <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="rounded-2xl border border-blue-200/60 bg-blue-50/70 p-3 dark:border-blue-800/70 dark:bg-blue-950/20">
                 <p className="text-xs text-blue-900 dark:text-blue-100">
                   <strong>Note:</strong> Your API key is only used for this upload and is not stored.
                   Your metadata will be permanently available on IPFS.
@@ -434,7 +440,7 @@ export default function DRepMetadataForm({
           )}
 
           {storageOption === 'ipfs' && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="rounded-2xl border border-blue-200/60 bg-blue-50/70 p-4 dark:border-blue-800/70 dark:bg-blue-950/20">
               <p className="text-sm text-blue-900 dark:text-blue-100">
                 <strong>Note:</strong> Your metadata will be uploaded to IPFS and will be permanently available.
                 Make sure all information is correct before proceeding.
@@ -443,16 +449,16 @@ export default function DRepMetadataForm({
           )}
 
           {uploadError && (
-            <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="rounded-2xl border border-red-300/70 bg-red-100/50 p-4 dark:border-red-800/70 dark:bg-red-950/20">
               <p className="text-sm text-red-900 dark:text-red-100">{uploadError}</p>
             </div>
           )}
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setStep('fields')} className="flex-1">
+            <Button variant="outline" onClick={() => setStep('fields')} className="flex-1 rounded-full">
               Back to Metadata
             </Button>
-            <Button onClick={handleStorageComplete} className="flex-1">
+            <Button onClick={handleStorageComplete} className="flex-1 rounded-full">
               Continue
             </Button>
           </div>
@@ -462,13 +468,18 @@ export default function DRepMetadataForm({
   }
 
   return (
-    <Card>
+    <Card className="wooly-border rounded-3xl border border-border/70 bg-background/85 p-6 shadow-lg">
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-display font-bold mb-2">DRep Metadata</h2>
-          <p className="text-sm text-muted-foreground">
-            Create your DRep profile following the CIP-119 standard. Only Given Name is required.
-          </p>
+        <div className="flex flex-col gap-3">
+          <EmojiBadge emoji="📜" srLabel="Metadata creation">
+            Craft your story
+          </EmojiBadge>
+          <div>
+            <h2 className="text-2xl font-display font-bold text-foreground">DRep Metadata</h2>
+            <p className="text-sm text-muted-foreground">
+              Create your DRep profile following the CIP-119 standard. Only Given Name is required.
+            </p>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -663,7 +674,7 @@ export default function DRepMetadataForm({
           </div>
 
           {/* Do Not List */}
-          <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+          <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/70 p-4">
             <input
               id="do-not-list"
               type="checkbox"
@@ -678,16 +689,16 @@ export default function DRepMetadataForm({
         </div>
 
         {uploadError && (
-          <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="rounded-2xl border border-red-300/70 bg-red-100/50 p-4 dark:border-red-800/70 dark:bg-red-950/20">
             <p className="text-sm text-red-900 dark:text-red-100">{uploadError}</p>
           </div>
         )}
 
         <div className="flex gap-3">
-          <Button variant="outline" onClick={onCancel} className="flex-1">
+          <Button variant="outline" onClick={onCancel} className="flex-1 rounded-full">
             Cancel
           </Button>
-          <Button onClick={handleNextToStorage} disabled={!givenName.trim()} className="flex-1">
+          <Button onClick={handleNextToStorage} disabled={!givenName.trim()} className="flex-1 rounded-full">
             Next: Storage
           </Button>
         </div>

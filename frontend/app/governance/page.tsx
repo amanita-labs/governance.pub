@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { EmojiBadge } from '@/components/ui/Badge';
+import { WoolyQuote } from '@/components/ui/WoolyQuote';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import DelegateForm from '@/components/features/DelegateForm';
 import DRepMetadataForm from '@/components/features/DRepMetadataForm';
@@ -247,20 +249,44 @@ export default function GovernancePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between gap-4 mb-2">
-          <h1 className="text-4xl font-display font-bold">Governance</h1>
-          <Button 
-            onClick={() => window.location.href = '/vote-now'}
-            className="flex items-center gap-2"
-            size="lg"
-          >
-            🗳️ Vote Now
-          </Button>
+      <div className="mb-10">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-background/80 p-6 shadow-lg wooly-border">
+            <div className="absolute inset-x-10 top-0 h-32 bg-gradient-to-b from-field-green/15 via-transparent to-transparent blur-3xl" />
+            <div className="relative z-10 space-y-5">
+              <EmojiBadge emoji="🧭" srLabel="Governance navigation">
+                Cardano Governance Hub
+              </EmojiBadge>
+              <div className="flex flex-col gap-3">
+                <h1 className="text-4xl font-display font-bold text-foreground md:text-5xl">
+                  Govern with Confidence
+                </h1>
+                <p className="max-w-2xl text-base text-muted-foreground md:text-lg">
+                  Delegate voting power, register your DRep profile, or update your status—all in one
+                  meadow-fresh workspace tuned to the Wooliverse.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  onClick={() => (window.location.href = '/vote-now')}
+                  className="flex items-center gap-2 rounded-full px-6 py-2 text-sm font-semibold"
+                  size="lg"
+                >
+                  🗳️ Vote Now
+                </Button>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                  Interact | Delegate | Register
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="hidden lg:block">
+            <WoolyQuote variant="card" emphasis="bold" className="h-full rounded-3xl" hideIcon seed={42} />
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          Delegate your voting power, register as a DRep, or manage your DRep status
-        </p>
+        <div className="mt-6 lg:hidden">
+          <WoolyQuote variant="inline" emphasis="subtle" hideIcon seed={7} />
+        </div>
       </div>
 
       {/* Wallet DRep Status Section */}
@@ -272,11 +298,51 @@ export default function GovernancePage() {
       )}
 
       <Tabs defaultValue="delegate">
-        <TabsList>
-          <TabsTrigger value="delegate">🗳️ Delegate</TabsTrigger>
-          <TabsTrigger value="register">➕ Register as DRep</TabsTrigger>
-          <TabsTrigger value="update">✏️ Update DRep</TabsTrigger>
-          <TabsTrigger value="deregister">❌ Deregister DRep</TabsTrigger>
+        <TabsList className="mb-8 grid gap-3 rounded-3xl border border-border/70 bg-background/80 p-3 shadow-sm backdrop-blur-sm wooly-border sm:grid-cols-2 lg:grid-cols-4">
+          <TabsTrigger
+            value="delegate"
+            className="group flex flex-col items-start gap-2 rounded-2xl px-4 py-4 text-left text-sm font-semibold text-muted-foreground transition-all data-[state=active]:bg-field-green/20 data-[state=active]:text-field-dark data-[state=active]:shadow-lg"
+          >
+            <span className="flex items-center gap-2 text-base">
+              🗳️ <span>Delegate</span>
+            </span>
+            <span className="text-xs font-normal uppercase tracking-widest text-muted-foreground transition-colors group-data-[state=active]:text-field-dark/80">
+              Redirect voting power
+            </span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="register"
+            className="group flex flex-col items-start gap-2 rounded-2xl px-4 py-4 text-left text-sm font-semibold text-muted-foreground transition-all data-[state=active]:bg-field-green/20 data-[state=active]:text-field-dark data-[state=active]:shadow-lg"
+          >
+            <span className="flex items-center gap-2 text-base">
+              ➕ <span>Register as DRep</span>
+            </span>
+            <span className="text-xs font-normal uppercase tracking-widest text-muted-foreground transition-colors group-data-[state=active]:text-field-dark/80">
+              Launch your profile
+            </span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="update"
+            className="group flex flex-col items-start gap-2 rounded-2xl px-4 py-4 text-left text-sm font-semibold text-muted-foreground transition-all data-[state=active]:bg-field-green/20 data-[state=active]:text-field-dark data-[state=active]:shadow-lg"
+          >
+            <span className="flex items-center gap-2 text-base">
+              ✏️ <span>Update DRep</span>
+            </span>
+            <span className="text-xs font-normal uppercase tracking-widest text-muted-foreground transition-colors group-data-[state=active]:text-field-dark/80">
+              Refresh anchor details
+            </span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="deregister"
+            className="group flex flex-col items-start gap-2 rounded-2xl px-4 py-4 text-left text-sm font-semibold text-muted-foreground transition-all data-[state=active]:bg-field-green/20 data-[state=active]:text-field-dark data-[state=active]:shadow-lg"
+          >
+            <span className="flex items-center gap-2 text-base">
+              ❌ <span>Deregister DRep</span>
+            </span>
+            <span className="text-xs font-normal uppercase tracking-widest text-muted-foreground transition-colors group-data-[state=active]:text-field-dark/80">
+              Exit & reclaim deposit
+            </span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="delegate">
@@ -312,18 +378,23 @@ export default function GovernancePage() {
               }}
             />
           ) : (
-            <Card>
+            <Card className="wooly-border overflow-hidden rounded-3xl border border-border/70 bg-background/85 p-6 shadow-lg">
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-display font-bold mb-2">Register as a DRep</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Become a Delegated Representative and participate in Cardano governance
-                  </p>
+                <div className="flex flex-col gap-3">
+                  <EmojiBadge emoji="🌱" srLabel="Register badge">
+                    Start your DRep journey
+                  </EmojiBadge>
+                  <div>
+                    <h2 className="text-2xl font-display font-bold text-foreground">Register as a DRep</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Become a Delegated Representative and participate in Cardano governance
+                    </p>
+                  </div>
                 </div>
 
-                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">What is a DRep?</h3>
-                  <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                <div className="space-y-3 rounded-2xl border border-field-green/40 bg-field-green/10 p-5 shadow-inner">
+                  <h3 className="font-semibold text-field-dark dark:text-field-light">What is a DRep?</h3>
+                  <ul className="space-y-2 text-sm text-field-dark/90 dark:text-field-light/90">
                     <li>DReps vote on governance actions on behalf of delegators</li>
                     <li>You can provide metadata to help delegators find and trust you</li>
                     <li>Registration requires a deposit (refundable when you deregister)</li>
@@ -331,14 +402,18 @@ export default function GovernancePage() {
                   </ul>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Connected wallet</p>
-                  <p className="text-sm font-mono break-all bg-muted px-3 py-2 rounded">
+                  <p className="rounded-2xl bg-muted/60 px-4 py-3 font-mono text-xs text-foreground">
                     {connectedWallet.address}
                   </p>
                 </div>
 
-                <Button onClick={() => { setCurrentAction('register'); setShowMetadataForm(true); }} size="lg" className="w-full">
+                <Button
+                  onClick={() => { setCurrentAction('register'); setShowMetadataForm(true); }}
+                  size="lg"
+                  className="w-full rounded-full"
+                >
                   Create Metadata & Register
                 </Button>
 
@@ -350,7 +425,7 @@ export default function GovernancePage() {
                       setMetadataHash(undefined);
                       setShowModal(true);
                     }}
-                    className="text-sm text-muted-foreground hover:text-foreground underline"
+                    className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
                   >
                     Skip metadata and register without profile
                   </button>
@@ -370,18 +445,23 @@ export default function GovernancePage() {
               }}
             />
           ) : (
-            <Card>
+            <Card className="wooly-border overflow-hidden rounded-3xl border border-border/70 bg-background/85 p-6 shadow-lg">
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-display font-bold mb-2">Update DRep Metadata</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Update your DRep profile information and anchor data
-                  </p>
+                <div className="flex flex-col gap-3">
+                  <EmojiBadge emoji="🪄" srLabel="Update badge">
+                    Refresh your profile
+                  </EmojiBadge>
+                  <div>
+                    <h2 className="text-2xl font-display font-bold text-foreground">Update DRep Metadata</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Update your DRep profile information and anchor data
+                    </p>
+                  </div>
                 </div>
 
-                <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">Important Notes</h3>
-                  <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1 list-disc list-inside">
+                <div className="space-y-3 rounded-2xl border border-amber-300/70 bg-amber-100/40 p-5 shadow-inner dark:border-amber-500/60 dark:bg-amber-900/30">
+                  <h3 className="font-semibold text-amber-900 dark:text-amber-100">Important Notes</h3>
+                  <ul className="space-y-2 text-sm text-amber-900/80 dark:text-amber-100/80">
                     <li>Updating only changes your metadata, not your DRep ID</li>
                     <li>Your deposit remains untouched</li>
                     <li>Only transaction fees are required</li>
@@ -389,14 +469,18 @@ export default function GovernancePage() {
                   </ul>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Connected wallet</p>
-                  <p className="text-sm font-mono break-all bg-muted px-3 py-2 rounded">
+                  <p className="rounded-2xl bg-muted/60 px-4 py-3 font-mono text-xs text-foreground">
                     {connectedWallet.address}
                   </p>
                 </div>
 
-                <Button onClick={() => { setCurrentAction('update'); setShowMetadataForm(true); }} size="lg" className="w-full">
+                <Button
+                  onClick={() => { setCurrentAction('update'); setShowMetadataForm(true); }}
+                  size="lg"
+                  className="w-full rounded-full"
+                >
                   Create New Metadata & Update
                 </Button>
 
@@ -408,7 +492,7 @@ export default function GovernancePage() {
                       setMetadataHash(undefined);
                       setShowModal(true);
                     }}
-                    className="text-sm text-muted-foreground hover:text-foreground underline"
+                    className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
                   >
                     Update without changing metadata
                   </button>
@@ -419,18 +503,25 @@ export default function GovernancePage() {
         </TabsContent>
 
         <TabsContent value="deregister">
-          <Card>
+          <Card className="wooly-border overflow-hidden rounded-3xl border border-border/70 bg-background/85 p-6 shadow-lg">
             <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-display font-bold mb-2">Deregister as DRep</h2>
-                <p className="text-sm text-muted-foreground">
-                  Remove your DRep registration and reclaim your deposit
-                </p>
+              <div className="flex flex-col gap-3">
+                <EmojiBadge emoji="🧵" srLabel="Deregister badge">
+                  Step away thoughtfully
+                </EmojiBadge>
+                <div>
+                  <h2 className="text-2xl font-display font-bold text-foreground">Deregister as DRep</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Remove your DRep registration and reclaim your deposit
+                  </p>
+                </div>
               </div>
 
-              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <h3 className="font-semibold text-red-900 dark:text-red-100 mb-2">⚠️ Warning</h3>
-                <ul className="text-sm text-red-800 dark:text-red-200 space-y-1 list-disc list-inside">
+              <div className="space-y-3 rounded-2xl border border-red-300/70 bg-red-100/40 p-5 shadow-inner dark:border-red-500/60 dark:bg-red-900/30">
+                <h3 className="flex items-center gap-2 font-semibold text-red-800 dark:text-red-100">
+                  ⚠️ Warning
+                </h3>
+                <ul className="space-y-2 text-sm text-red-800 dark:text-red-200">
                   <li>This will permanently remove your DRep registration</li>
                   <li>Your deposit will be refunded after confirmation</li>
                   <li>Delegators will no longer be able to delegate to you</li>
@@ -439,9 +530,9 @@ export default function GovernancePage() {
                 </ul>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Connected wallet</p>
-                <p className="text-sm font-mono break-all bg-muted px-3 py-2 rounded">
+                <p className="rounded-2xl bg-muted/60 px-4 py-3 font-mono text-xs text-foreground">
                   {connectedWallet.address}
                 </p>
               </div>
@@ -449,7 +540,7 @@ export default function GovernancePage() {
               <Button
                 onClick={() => { setCurrentAction('deregister'); setShowModal(true); }}
                 size="lg"
-                className="w-full bg-red-600 hover:bg-red-700"
+                className="w-full rounded-full bg-red-600 hover:bg-red-700"
               >
                 Deregister DRep
               </Button>

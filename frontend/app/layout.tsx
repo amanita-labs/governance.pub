@@ -4,6 +4,7 @@ import "./globals.css";
 import { WalletProvider } from "@/components/layout/WalletProvider";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import Navigation from "@/components/layout/Navigation";
+import Footer from "@/components/layout/Footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,7 +21,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "GovTwool - Wooly Governance",
+  title: "GovtWool - Wooly Governance",
   description: "A wooly Cardano governance app",
   icons: {
     icon: '/icon.svg',
@@ -56,8 +57,11 @@ export default function RootLayout({
         />
         <ThemeProvider defaultTheme="system" storageKey="govtwool-theme">
           <WalletProvider>
-            <Navigation />
-            {children}
+            <div className="flex min-h-screen flex-col">
+              <Navigation />
+              <div className="flex-1">{children}</div>
+              <Footer />
+            </div>
           </WalletProvider>
         </ThemeProvider>
       </body>
