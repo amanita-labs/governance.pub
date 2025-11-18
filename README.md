@@ -1,8 +1,8 @@
-# govtWool 🐏 -- 2025 LayerUp hackathon entry
+# govtWool 🐏
 
-Team insects entry for the 2025 LayerUp hackathon -- Gov**tWo**ol (get it?)
+The cosiest Cardano governance interface.
 
-We have it hosted here: [govtwool.vercel.app](https://govtwool.vercel.app/) (using Preview testnet)
+Built by [@Ryun1](https://github.com/Ryun1) & [@elenabardho](https://github.com/elenabardho) originally for the 2025 Cardano Summit LayerUp hackathon.
 
 ## Motivation
 
@@ -34,12 +34,12 @@ Build a governance interface tool which;
 - Wooly theme
 - meme generator
 - CIP-169
-- Global governance search
+- CIP-149
 
 #### Governance Action Explorer
 
 - Clear timeline view of governance action lifetime
-- generate memes
+- Generate memes
 - Differentiates 'budget' governance actions from Info actions
 - Detailed metadata validation
   - hash checks
@@ -67,11 +67,11 @@ Build a governance interface tool which;
 ### Features we would like to add
 
 - Get user feedback on UI UX
+- Global governance search
 - Properly connect all DRep and governance action filters
 - Create a custom backend to stop reliance on data services
 - Deep governance analytics
 - Governance action submission
-- Global governance search
 
 ## Tech Stack
 
