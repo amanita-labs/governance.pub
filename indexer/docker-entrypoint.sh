@@ -1,13 +1,37 @@
 #!/bin/bash
 set -e
 
-# Ensure JDBC URL has jdbc: prefix (Render connectionString may not include it)
+# Parse Render's connectionString and construct proper JDBC URL
+# Render format: postgresql://user:password@host:port/database
+# Spring Boot needs: jdbc:postgresql://host:port/database (credentials provided separately)
 if [ -n "$SPRING_DATASOURCE_URL" ]; then
-    if [[ ! "$SPRING_DATASOURCE_URL" =~ ^jdbc: ]]; then
-        # Add jdbc: prefix if missing
-        export SPRING_DATASOURCE_URL="jdbc:${SPRING_DATASOURCE_URL}"
-        echo "Added jdbc: prefix to SPRING_DATASOURCE_URL"
+    # Store original for debugging
+    ORIGINAL_URL="$SPRING_DATASOURCE_URL"
+    
+    # Remove protocol prefixes (handle both formats)
+    DB_URL="${ORIGINAL_URL}"
+    DB_URL="${DB_URL#postgresql://}"
+    DB_URL="${DB_URL#jdbc:postgresql://}"
+    
+    # Extract host:port/database part by removing user:password@
+    # Pattern: user:password@host:port/database -> host:port/database
+    if [[ "$DB_URL" == *"@"* ]]; then
+        # Split at @ and take the second part
+        IFS='@' read -r CREDS DB_URL <<< "$DB_URL"
+        echo "Removed credentials from URL"
     fi
+    
+    # Construct clean JDBC URL without credentials
+    export SPRING_DATASOURCE_URL="jdbc:postgresql://${DB_URL}"
+    echo "Original URL: ${ORIGINAL_URL}"
+    echo "Parsed JDBC URL (without credentials): ${SPRING_DATASOURCE_URL}"
+elif [ -n "$SPRING_DATASOURCE_USERNAME" ] && [ -n "$SPRING_DATASOURCE_PASSWORD" ]; then
+    # Fallback: construct from individual components if available
+    DB_HOST="${DB_HOST:-localhost}"
+    DB_PORT="${DB_PORT:-5432}"
+    DB_NAME="${DB_NAME:-yaci_store}"
+    export SPRING_DATASOURCE_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    echo "Constructed JDBC URL from components"
 fi
 
 # Generate application.properties from environment variables
