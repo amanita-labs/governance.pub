@@ -38,6 +38,9 @@ async fn main() -> Result<(), anyhow::Error> {
     let database = Database::new(&config.database_url).await?;
     tracing::info!("Database connection established");
 
+    // Clone database for app state (health endpoint needs it)
+    let database_for_state = database.clone();
+
     // Initialize Yaci Store provider
     let yaci_store_provider = YaciStoreProvider::new(database);
     let provider_router = YaciStoreRouter::new(yaci_store_provider);
@@ -112,7 +115,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 .layer(TraceLayer::new_for_http())
                 .layer(cors),
         )
-        .with_state((router, database));
+        .with_state((router, database_for_state));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
     tracing::info!("Starting server on http://{}", addr);

@@ -258,7 +258,7 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
     let (latest_block_number, latest_block_slot, latest_block_time) = latest_block.unwrap_or((None, None, None));
     
     // Get total block count
-    let total_blocks = sqlx::query_as::<_, (Option<i64>,)>(
+    let total_blocks: Option<i64> = sqlx::query_as::<_, (i64,)>(
         "SELECT COUNT(*)::bigint FROM block"
     )
     .fetch_optional(pool)
@@ -267,15 +267,29 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
     .flatten()
     .map(|(count,)| count);
     
-    // Get latest epoch
-    let latest_epoch = sqlx::query_as::<_, (Option<i32>,)>(
-        "SELECT MAX(epoch_no) FROM epoch"
+    // Get latest epoch (try epoch table first, fallback to block.epoch)
+    let latest_epoch_from_table: Option<i32> = sqlx::query_as::<_, (Option<i32>,)>(
+        "SELECT MAX(number) FROM epoch"
     )
     .fetch_optional(pool)
     .await
     .ok()
     .flatten()
-    .map(|(epoch,)| epoch);
+    .and_then(|(epoch,)| epoch);
+    
+    // If epoch table is empty, get from block table
+    let latest_epoch = if latest_epoch_from_table.is_some() {
+        latest_epoch_from_table
+    } else {
+        sqlx::query_as::<_, (Option<i32>,)>(
+            "SELECT MAX(epoch) FROM block"
+        )
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten()
+        .and_then(|(epoch,)| epoch)
+    };
     
     // Determine sync status
     let sync_progress = if let (Some(block_num), Some(total)) = (latest_block_number, total_blocks) {

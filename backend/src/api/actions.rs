@@ -1,3 +1,4 @@
+use crate::db::Database;
 use crate::models::*;
 use crate::providers::CachedProviderRouter;
 use axum::{
@@ -16,7 +17,7 @@ pub struct ActionsQueryParams {
 }
 
 pub async fn get_actions(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Query(params): Query<ActionsQueryParams>,
 ) -> Result<Json<ActionsPage>, StatusCode> {
     let page = params.page.unwrap_or(1);
@@ -32,7 +33,7 @@ pub async fn get_actions(
 }
 
 pub async fn get_action(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<GovernanceAction>>, StatusCode> {
     match router.get_governance_action(&id).await {
@@ -46,7 +47,7 @@ pub async fn get_action(
 }
 
 pub async fn get_action_votes(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionVotingBreakdown>, StatusCode> {
     match router.get_action_voting_results(&id).await {
@@ -59,7 +60,7 @@ pub async fn get_action_votes(
 }
 
 pub async fn get_action_participation(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionVoterParticipation>, StatusCode> {
     match router.get_action_voter_participation(&id).await {
