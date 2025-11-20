@@ -1,8 +1,9 @@
 databases:
   # PostgreSQL Database for Yaci Store
+  # Using basic-256mb plan (free tier may not be available)
   - name: govtwool-database
     databaseName: yaci_store
-    plan: starter
+    plan: basic-256mb
     user: yaci_store_user
 
 services:
