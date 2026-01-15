@@ -228,6 +228,50 @@ pub async fn get_epoch_start_time(pool: &PgPool, epoch: u32) -> Result<Option<u6
     Ok(None)
 }
 
+// Database statistics structures
+#[derive(Debug, Clone)]
+pub struct DatabaseStats {
+    pub connected: bool,
+    pub database_name: String,
+    pub database_size_bytes: Option<i64>,
+    pub total_tables: Option<i32>,
+    pub total_rows: Option<i64>,
+    pub connection_pool_size: Option<u32>,
+    pub active_connections: Option<u32>,
+    pub table_details: Vec<TableStats>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TableStats {
+    pub table_name: String,
+    pub row_count: Option<i64>,
+    pub column_count: Option<i32>,
+    pub table_size_bytes: Option<i64>,
+}
+
+// Indexer health structures
+#[derive(Debug, Clone)]
+pub enum IndexerStatus {
+    Active,
+    Stale,
+    Stopped,
+}
+
+#[derive(Debug, Clone)]
+pub struct IndexerHealth {
+    pub connected: bool,
+    pub is_syncing: bool,
+    pub latest_block_number: Option<i64>,
+    pub latest_block_time: Option<i64>,
+    pub total_blocks: Option<i64>,
+    pub latest_epoch: Option<i32>,
+    pub blocks_last_hour: Option<i64>,
+    pub blocks_last_day: Option<i64>,
+    pub sync_rate_per_minute: Option<f64>,
+    pub last_sync_ago_seconds: Option<i64>,
+    pub status: IndexerStatus,
+}
+
 // Yaci Store sync status queries
 pub struct SyncStatus {
     pub connected: bool,
@@ -313,3 +357,253 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
     })
 }
 
+// Database statistics queries
+pub async fn get_database_stats(pool: &PgPool) -> Result<DatabaseStats> {
+    // Check connection
+    let connected = sqlx::query("SELECT 1")
+        .execute(pool)
+        .await
+        .is_ok();
+
+    // Get database name
+    let database_name: String = sqlx::query_as::<_, (String,)>(
+        "SELECT current_database()"
+    )
+    .fetch_one(pool)
+    .await
+    .map(|(name,)| name)
+    .unwrap_or_else(|_| "unknown".to_string());
+
+    // Get database size
+    let database_size_bytes: Option<i64> = sqlx::query_as::<_, (i64,)>(
+        "SELECT pg_database_size(current_database())"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .map(|(size,)| size);
+
+    // Get table count
+    let total_tables: Option<i32> = sqlx::query_as::<_, (i64,)>(
+        "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .map(|(count,)| count as i32);
+
+    // Get total row count (sum across all tables)
+    let total_rows: Option<i64> = sqlx::query_as::<_, (Option<i64>,)>(
+        "SELECT SUM(n_live_tup) FROM pg_stat_user_tables"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .and_then(|(sum,)| sum);
+
+    // Get per-table statistics
+    let table_rows: Vec<(String, i64, i64)> = sqlx::query_as::<_, (String, i64, i64)>(
+        r#"
+        SELECT 
+            tablename,
+            COALESCE(n_live_tup, 0)::bigint as row_count,
+            pg_total_relation_size(schemaname||'.'||tablename) as table_size
+        FROM pg_stat_user_tables
+        ORDER BY n_live_tup DESC
+        "#
+    )
+    .fetch_all(pool)
+    .await
+    .unwrap_or_default();
+
+    // Get column counts per table
+    let column_counts: Vec<(String, i32)> = sqlx::query_as::<_, (String, i64)>(
+        r#"
+        SELECT 
+            table_name,
+            COUNT(*)::bigint as column_count
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+        GROUP BY table_name
+        "#
+    )
+    .fetch_all(pool)
+    .await
+    .unwrap_or_default()
+    .into_iter()
+    .map(|(name, count)| (name, count as i32))
+    .collect();
+
+    // Combine table stats
+    let mut table_details = Vec::new();
+    let mut column_map: std::collections::HashMap<String, i32> = column_counts.into_iter().collect();
+
+    for (table_name, row_count, table_size) in table_rows {
+        let column_count = column_map.remove(&table_name);
+        table_details.push(TableStats {
+            table_name,
+            row_count: Some(row_count),
+            column_count,
+            table_size_bytes: Some(table_size),
+        });
+    }
+
+    // Add tables that have columns but no rows yet
+    for (table_name, column_count) in column_map {
+        table_details.push(TableStats {
+            table_name,
+            row_count: Some(0),
+            column_count: Some(column_count),
+            table_size_bytes: None,
+        });
+    }
+
+    Ok(DatabaseStats {
+        connected,
+        database_name,
+        database_size_bytes,
+        total_tables,
+        total_rows,
+        connection_pool_size: None, // Will be set by Database wrapper
+        active_connections: None,    // Will be set by Database wrapper
+        table_details,
+    })
+}
+
+// Enhanced indexer health query
+pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
+    // Check connection
+    let connected = sqlx::query("SELECT 1")
+        .execute(pool)
+        .await
+        .is_ok();
+
+    if !connected {
+        return Ok(IndexerHealth {
+            connected: false,
+            is_syncing: false,
+            latest_block_number: None,
+            latest_block_time: None,
+            total_blocks: None,
+            latest_epoch: None,
+            blocks_last_hour: None,
+            blocks_last_day: None,
+            sync_rate_per_minute: None,
+            last_sync_ago_seconds: None,
+            status: IndexerStatus::Stopped,
+        });
+    }
+
+    // Get latest block information
+    let latest_block = sqlx::query_as::<_, (Option<i64>, Option<i64>)>(
+        "SELECT number, block_time FROM block ORDER BY number DESC LIMIT 1"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten();
+
+    let (latest_block_number, latest_block_time) = latest_block.unwrap_or((None, None));
+
+    // Get total block count
+    let total_blocks: Option<i64> = sqlx::query_as::<_, (i64,)>(
+        "SELECT COUNT(*)::bigint FROM block"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .map(|(count,)| count);
+
+    // Get latest epoch
+    let latest_epoch_from_table: Option<i32> = sqlx::query_as::<_, (Option<i32>,)>(
+        "SELECT MAX(number) FROM epoch"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .and_then(|(epoch,)| epoch);
+
+    let latest_epoch = if latest_epoch_from_table.is_some() {
+        latest_epoch_from_table
+    } else {
+        sqlx::query_as::<_, (Option<i32>,)>(
+            "SELECT MAX(epoch) FROM block"
+        )
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten()
+        .and_then(|(epoch,)| epoch)
+    };
+
+    // Get blocks synced in last hour
+    let blocks_last_hour: Option<i64> = sqlx::query_as::<_, (i64,)>(
+        "SELECT COUNT(*)::bigint FROM block WHERE block_time > NOW() - INTERVAL '1 hour'"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .map(|(count,)| count);
+
+    // Get blocks synced in last day
+    let blocks_last_day: Option<i64> = sqlx::query_as::<_, (i64,)>(
+        "SELECT COUNT(*)::bigint FROM block WHERE block_time > NOW() - INTERVAL '1 day'"
+    )
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten()
+    .map(|(count,)| count);
+
+    // Calculate sync rate (blocks per minute)
+    let sync_rate_per_minute = blocks_last_hour.map(|blocks| blocks as f64 / 60.0);
+
+    // Calculate time since last sync
+    let last_sync_ago_seconds = latest_block_time.and_then(|block_time| {
+        // block_time is Unix timestamp in milliseconds
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .ok()?
+            .as_secs() as i64;
+        let block_time_secs = block_time / 1000;
+        Some(now - block_time_secs)
+    });
+
+    // Determine indexer status
+    let status = if let Some(ago_seconds) = last_sync_ago_seconds {
+        if ago_seconds < 300 {
+            // Synced within last 5 minutes - Active
+            IndexerStatus::Active
+        } else if ago_seconds < 3600 {
+            // Synced within last hour but > 5 minutes - Stale
+            IndexerStatus::Stale
+        } else {
+            // No sync in last hour - Stopped
+            IndexerStatus::Stopped
+        }
+    } else {
+        IndexerStatus::Stopped
+    };
+
+    let is_syncing = matches!(status, IndexerStatus::Active) && blocks_last_hour.unwrap_or(0) > 0;
+
+    Ok(IndexerHealth {
+        connected,
+        is_syncing,
+        latest_block_number,
+        latest_block_time,
+        total_blocks,
+        latest_epoch,
+        blocks_last_hour,
+        blocks_last_day,
+        sync_rate_per_minute,
+        last_sync_ago_seconds,
+        status,
+    })
+}

@@ -89,6 +89,8 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let app = Router::new()
         .route("/health", get(api::health::health_check))
+        .route("/health/database", get(api::health::database_health))
+        .route("/health/indexer", get(api::health::indexer_health))
         .route("/api/dreps", get(api::dreps::get_dreps))
         .route("/api/dreps/stats", get(api::dreps::get_drep_stats))
         .route("/api/dreps/:id", get(api::dreps::get_drep))
