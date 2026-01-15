@@ -47,12 +47,12 @@ target/
 # logs
 *.log
 *.log.*
-indexer/logs/
+backend/indexer/logs/
 backend/backend.log
 
 # Yaci Store (keep JAR but ignore logs)
-indexer/yaci-store.log
-indexer/logs/
+backend/indexer/yaci-store.log
+backend/indexer/logs/
 
 # IDE
 .idea/

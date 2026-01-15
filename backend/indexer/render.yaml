@@ -1,13 +1,13 @@
-# Yaci Store Indexer Service Configuration for Render
-# This can be used if deploying the indexer separately
-# Or use the root-level render.yaml for full stack deployment
+# DEPRECATED: This file is kept for reference only
+# Use the root-level render.yaml for full stack deployment
+# This file only defines the indexer service in isolation and requires manual database setup
 
 services:
   - type: worker
     name: govtwool-indexer
     env: docker
     region: oregon
-    rootDir: indexer
+    rootDir: backend/indexer
     dockerfilePath: ./Dockerfile
     dockerContext: .
     envVars:

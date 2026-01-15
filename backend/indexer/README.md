@@ -24,7 +24,7 @@ This will automatically download the latest Yaci Store release.
 ### Option 2: Manual Download
 
 1. Download Yaci Store binary from [releases](https://github.com/bloxbean/yaci-store/releases) or build from source
-2. Place the JAR file in this directory (`indexer/`)
+2. Place the JAR file in this directory (`backend/indexer/`)
 
 ### Then:
 

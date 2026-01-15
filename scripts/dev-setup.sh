@@ -20,7 +20,7 @@ BACKEND_PORT="${PORT:-8080}"
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-INDEXER_DIR="$PROJECT_ROOT/indexer"
+INDEXER_DIR="$PROJECT_ROOT/backend/indexer"
 BACKEND_DIR="$PROJECT_ROOT/backend"
 
 # PID files for cleanup

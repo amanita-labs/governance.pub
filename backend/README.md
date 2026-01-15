@@ -19,7 +19,7 @@ Rust backend service that provides a unified REST API for Cardano governance dat
 - **Rust 1.70+** (stable toolchain)
 - **Cargo** (comes with Rust)
 - **PostgreSQL Database**: Yaci Store database must be running and accessible
-- **Yaci Store Indexer**: Must be running and synced (see `../indexer/README.md`)
+- **Yaci Store Indexer**: Must be running and synced (see `indexer/README.md`)
 
 ### Installation
 
@@ -28,7 +28,7 @@ Rust backend service that provides a unified REST API for Cardano governance dat
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-2. Ensure Yaci Store indexer is running and database is accessible (see `../indexer/README.md`)
+2. Ensure Yaci Store indexer is running and database is accessible (see `indexer/README.md`)
 
 3. Create a `.env` file in `backend/` with the required configuration:
 ```env
@@ -37,6 +37,11 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/yaci_store
 
 # Optional: Server configuration
 PORT=8080
+
+# Optional: Network configuration (used for GovTools URL selection)
+CARDANO_NETWORK=preview  # Options: mainnet, preview, preprod
+
+# Optional: Cache configuration
 CACHE_ENABLED=true
 CACHE_MAX_ENTRIES=10000
 
@@ -48,15 +53,16 @@ GOVTOOLS_BASE_URL=https://be.preview.gov.tools
 CARDANO_VERIFIER_ENABLED=false
 ```
 
-4. See `.env.example` for all available configuration options:
+4. Configuration options:
    - `DATABASE_URL`: PostgreSQL connection string (required)
    - `PORT`: Server port (defaults to `8080`)
+   - `CARDANO_NETWORK`: Network identifier for GovTools URL selection (defaults to `mainnet`)
    - `CACHE_ENABLED`: Toggle in-memory caching (default `true`)
    - `CACHE_MAX_ENTRIES`: Cache size limit (default `10000`)
-   - `GOVTOOLS_ENABLED`: Toggle GovTools enrichment (default `false`)
+   - `GOVTOOLS_ENABLED`: Toggle GovTools enrichment (default `false` for unsupported networks)
    - `CARDANO_VERIFIER_ENABLED`: Toggle metadata validation (default `false`)
 
-> **Note:** The current CORS configuration allows all origins when no override is provided. Fine-grained origin control will honour `CORS_ORIGINS` as the gateway hardening work progresses.
+> **Note:** The backend uses Yaci Store as the sole data source. All governance data is queried directly from the PostgreSQL database populated by the Yaci Store indexer.
 
 ## Development
 
@@ -106,32 +112,70 @@ The backend queries Yaci Store's PostgreSQL database directly for all governance
 
 All queries are optimized with proper indexing and connection pooling.
 
-## Architecture
+### Data Flow
+
+```
+┌─────────────────┐
+│   Frontend      │
+│   (Next.js)     │
+└────────┬────────┘
+         │ HTTP/REST API
+         ▼
+┌─────────────────┐
+│  Backend API    │
+│  (Rust/Axum)    │
+│  ┌───────────┐  │
+│  │  Cache    │  │
+│  └───────────┘  │
+└────────┬────────┘
+         │ SQL Queries
+         ▼
+┌─────────────────┐      ┌─────────────────┐
+│  PostgreSQL     │◄─────│  Yaci Store     │
+│  Database       │      │  Indexer        │
+└─────────────────┘      └─────────────────┘
+```
+
+### Code Structure
 
 ```
 backend/
 ├── src/
-│   ├── main.rs          # Server entry point
-│   ├── config.rs        # Configuration management
-│   ├── db/              # Database layer
-│   │   ├── mod.rs       # Database connection pool
-│   │   └── queries.rs   # SQL queries
-│   ├── api/             # REST API handlers
+│   ├── main.rs              # Server entry point
+│   ├── config.rs            # Configuration management
+│   ├── db/                  # Database layer
+│   │   ├── mod.rs           # Database connection pool
+│   │   └── queries.rs       # SQL queries
+│   ├── api/                 # REST API handlers
+│   │   ├── mod.rs
 │   │   ├── dreps.rs
 │   │   ├── actions.rs
-│   │   └── health.rs
-│   ├── providers/       # Provider abstraction layer
-│   │   ├── yaci_store.rs        # Yaci Store provider
-│   │   ├── yaci_store_router.rs # Yaci Store router
-│   │   ├── cached_router.rs     # Caching wrapper
-│   │   └── router_trait.rs     # Router trait
-│   ├── models/          # Data models
+│   │   ├── health.rs
+│   │   └── stake.rs
+│   ├── providers/           # Provider layer
+│   │   ├── mod.rs
+│   │   ├── yaci_store.rs           # Yaci Store provider
+│   │   ├── yaci_store_router.rs    # Yaci Store router
+│   │   ├── cached_router.rs        # Caching wrapper
+│   │   ├── router_trait.rs         # Router trait
+│   │   └── govtools.rs             # GovTools enrichment (optional)
+│   ├── services/            # Business logic services
+│   │   ├── mod.rs
+│   │   └── metadata_validation.rs
+│   ├── models/              # Data models
+│   │   ├── mod.rs
 │   │   ├── drep.rs
 │   │   ├── action.rs
-│   │   └── common.rs
-│   └── utils/           # Utility functions
+│   │   ├── common.rs
+│   │   ├── participation.rs
+│   │   └── stake.rs
+│   ├── cache/               # Caching layer
+│   │   ├── mod.rs
+│   │   └── keys.rs
+│   └── utils/               # Utility functions
+│       ├── mod.rs
 │       ├── bech32.rs
-│       ├── drep_id.rs   # CIP-105/CIP-129 conversions
+│       ├── drep_id.rs       # CIP-105/CIP-129 conversions
 │       └── proposal_id.rs
 └── Cargo.toml
 ```

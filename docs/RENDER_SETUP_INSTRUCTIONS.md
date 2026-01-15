@@ -63,7 +63,7 @@ If you prefer not to use Blueprints:
    - Set environment variables as above
 3. Create Indexer Worker:
    - **Environment**: Docker
-   - **Root Directory**: `indexer`
+   - **Root Directory**: `backend/indexer`
    - **Dockerfile Path**: `./Dockerfile`
    - Set environment variables as above
 

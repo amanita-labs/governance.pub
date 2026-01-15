@@ -1,3 +1,11 @@
+//! Data models
+//!
+//! Domain models representing Cardano governance entities:
+//! - DReps (Delegation Representatives)
+//! - Governance Actions
+//! - Votes and Participation
+//! - Stake Delegations
+
 pub mod action;
 pub mod common;
 pub mod drep;

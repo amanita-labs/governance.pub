@@ -1,3 +1,7 @@
+# DEPRECATED: This file is kept for reference only
+# Use the root-level render.yaml for full stack deployment
+# This file only defines the backend service in isolation and requires manual database setup
+
 services:
   - type: web
     name: govtwool-backend
@@ -15,6 +19,10 @@ services:
       - key: PORT
         value: 8080
       
+      # Network Configuration
+      - key: CARDANO_NETWORK
+        value: preview
+      
       # Cache Configuration
       - key: CACHE_ENABLED
         value: "true"
@@ -26,17 +34,4 @@ services:
         value: "false"
       - key: GOVTOOLS_BASE_URL
         value: https://be.preview.gov.tools
-      
-      # CORS Configuration
-      - key: CORS_ORIGINS
-        value: "*"
-      
-      # Legacy Blockfrost/Koios (optional, not used with Yaci Store)
-      - key: BLOCKFROST_NETWORK
-        value: preview
-        sync: false
-      - key: BLOCKFROST_API_KEY
-        sync: false
-      - key: KOIOS_BASE_URL
-        sync: false
 

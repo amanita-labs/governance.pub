@@ -1,6 +1,13 @@
+# GovTwool Render Deployment Configuration
+# This file defines the complete stack deployment for Render:
+# - PostgreSQL database (stores blockchain data indexed by Yaci Store)
+# - Backend API service (Rust/Axum, queries the database)
+# - Yaci Store indexer (Java worker, syncs blockchain data to database)
+
 databases:
   # PostgreSQL Database for Yaci Store
-  # Using basic-256mb plan (free tier may not be available)
+  # Stores all blockchain data indexed by Yaci Store (governance actions, DReps, votes, etc.)
+  # Plan: basic-256mb (free tier may not be available, upgrade as needed)
   - name: govtwool-database
     databaseName: yaci_store
     plan: basic-256mb
@@ -8,6 +15,8 @@ databases:
 
 services:
   # Backend API Service
+  # Rust service that provides REST API endpoints for governance data
+  # Queries the PostgreSQL database populated by Yaci Store indexer
   - type: web
     name: govtwool-backend
     env: rust
@@ -18,10 +27,12 @@ services:
     healthCheckPath: /health
     envVars:
       # Database Configuration (auto-linked to PostgreSQL database)
+      # DATABASE_URL is the primary connection string
       - key: DATABASE_URL
         fromDatabase:
           name: govtwool-database
           property: connectionString
+      # Individual DB components (for fallback connection string construction)
       - key: DB_HOST
         fromDatabase:
           name: govtwool-database
@@ -47,36 +58,37 @@ services:
       - key: PORT
         value: 8080
       
+      # Network Configuration (used for GovTools URL selection)
+      # Options: mainnet, preview, preprod
+      - key: CARDANO_NETWORK
+        value: preview
+      
       # Cache Configuration
       - key: CACHE_ENABLED
         value: "true"
       - key: CACHE_MAX_ENTRIES
         value: "10000"
       
-      # GovTools Configuration (optional)
+      # GovTools Configuration (optional enrichment service)
+      # Enable to get enhanced DRep metadata from GovTools API
       - key: GOVTOOLS_ENABLED
         value: "false"
       - key: GOVTOOLS_BASE_URL
         value: https://be.preview.gov.tools
       
-      # CORS Configuration
-      - key: CORS_ORIGINS
-        value: "*"
-      
-      # Legacy Blockfrost/Koios (optional, not used with Yaci Store)
-      - key: BLOCKFROST_NETWORK
-        value: preview
-      - key: BLOCKFROST_API_KEY
-        sync: false
-      - key: KOIOS_BASE_URL
-        sync: false
+      # Metadata Validation (optional)
+      # Enable Cardano Verifier API for metadata validation
+      - key: CARDANO_VERIFIER_ENABLED
+        value: "false"
 
   # Yaci Store Indexer (Background Worker)
+  # Java service that syncs Cardano blockchain data to PostgreSQL
+  # Runs continuously, indexing blocks, transactions, governance actions, DReps, etc.
   - type: worker
     name: govtwool-indexer
     env: docker
     region: oregon
-    rootDir: indexer
+    rootDir: backend/indexer
     dockerfilePath: ./Dockerfile
     dockerContext: .
     envVars:
@@ -95,8 +107,10 @@ services:
           property: password
       
       # Cardano Network Configuration
+      # Protocol Magic: 1=Preview, 2=Preprod, 764824073=Mainnet
       - key: STORE_CARDANO_PROTOCOL_MAGIC
-        value: "2"
+        value: "1"
+      # N2N (Node-to-Node) relay node for chain sync
       - key: STORE_CARDANO_HOST
         value: preview-node.play.dev.cardano.org
       - key: STORE_CARDANO_PORT

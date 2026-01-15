@@ -1,3 +1,8 @@
+//! Database layer
+//!
+//! Provides database connection pooling and query execution.
+//! All SQL queries are defined in the `queries` submodule.
+
 pub mod queries;
 
 use sqlx::{PgPool, postgres::PgPoolOptions};

@@ -9,13 +9,15 @@ This project can be deployed to Render with minimal configuration. Choose your d
 1. **Push your code to GitHub**
 2. **Go to Render Dashboard** → New → Blueprint
 3. **Connect your repository**
-4. **Paste the contents of `render.yaml`**
+4. **Paste the contents of the root `render.yaml` file**
 5. **Render will automatically create**:
    - PostgreSQL database
    - Backend API service
    - Yaci Store indexer worker
 
 That's it! Render handles everything automatically.
+
+> **Note:** The root `render.yaml` is the primary deployment configuration. The `backend/render.yaml` and `indexer/render.yaml` files are deprecated and kept only for reference.
 
 ## Manual Deployment
 
@@ -43,7 +45,7 @@ See [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md) for detailed step-by-step ins
 
 - GitHub repository with your code
 - Render account (free tier works)
-- Yaci Store JAR file in `indexer/` directory
+- Yaci Store JAR file in `backend/indexer/` directory
 
 ## Environment Setup
 

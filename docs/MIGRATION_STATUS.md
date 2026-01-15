@@ -3,9 +3,9 @@
 ## Completed
 
 ### Phase 1: Yaci Store Setup
-- ✅ Created `indexer/` directory structure
-- ✅ Created `indexer/application.properties` with Preview network configuration
-- ✅ Created `indexer/README.md` with setup instructions
+- ✅ Created `backend/indexer/` directory structure
+- ✅ Created `backend/indexer/application.properties` with Preview network configuration
+- ✅ Created `backend/indexer/README.md` with setup instructions
 
 ### Phase 2: Database Integration
 - ✅ Added `sqlx` dependency to `Cargo.toml` with PostgreSQL support
@@ -86,7 +86,7 @@ Implement additional methods in `YaciStoreProvider`:
 ## Next Steps
 
 1. **Set up local development environment** (see `LOCAL_DEVELOPMENT_SETUP.md`)
-2. **Set up Yaci Store indexer** (see `indexer/README.md` and `LOCAL_DEVELOPMENT_SETUP.md`)
+2. **Set up Yaci Store indexer** (see `backend/indexer/README.md` and `LOCAL_DEVELOPMENT_SETUP.md`)
 3. **Connect to database and verify schema**
 4. **Implement SQL queries** based on actual schema
 5. **Test endpoints** and verify API compatibility

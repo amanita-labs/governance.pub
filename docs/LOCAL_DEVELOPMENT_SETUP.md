@@ -73,12 +73,12 @@ Before starting, ensure you have:
    git clone https://github.com/bloxbean/yaci-store.git
    cd yaci-store
    ./gradlew clean build
-   cp applications/all/build/libs/yaci-store-all-<version>.jar ../indexer/
+   cp applications/all/build/libs/yaci-store-all-<version>.jar ../backend/indexer/
    ```
 
 2. **Configure Yaci Store**:
    
-   Edit `indexer/application.properties`:
+   Edit `backend/indexer/application.properties`:
    ```properties
    # Update these values for your setup:
    store.cardano.host=<your-cardano-node-host>  # e.g., localhost or IP
@@ -273,7 +273,7 @@ This is expected until SQL queries are implemented. The placeholder queries retu
    ```bash
    # Terminal 1: PostgreSQL (if not running as service)
    # Terminal 2: Yaci Store indexer
-   java -jar indexer/yaci-store-all-<version>.jar
+   java -jar backend/indexer/yaci-store-all-<version>.jar
    
    # Terminal 3: Backend
    cd backend && cargo run

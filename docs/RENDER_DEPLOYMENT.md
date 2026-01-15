@@ -15,9 +15,11 @@ The deployment consists of three services:
 ### Option 1: Deploy via Render Dashboard (Recommended)
 
 1. **Connect your GitHub repository** to Render
-2. **Create a new Blueprint** and paste the contents of `render.yaml`
-3. Render will automatically create all three services
+2. **Create a new Blueprint** and paste the contents of the root `render.yaml` file
+3. Render will automatically create all three services with proper linking
 4. **Set environment variables** as needed (see below)
+
+> **Note:** Use the root `render.yaml` for full stack deployment. The `backend/render.yaml` and `indexer/render.yaml` files are deprecated and kept only for reference.
 
 ### Option 2: Deploy Services Individually
 
@@ -46,10 +48,10 @@ The deployment consists of three services:
    ```bash
    DATABASE_URL=<from PostgreSQL service>
    PORT=8080
+   CARDANO_NETWORK=preview
    CACHE_ENABLED=true
    CACHE_MAX_ENTRIES=10000
    GOVTOOLS_ENABLED=false
-   CORS_ORIGINS=*
    ```
 
 #### 3. Deploy Yaci Store Indexer
@@ -59,7 +61,7 @@ The deployment consists of three services:
 3. Configure:
    - **Name**: `govtwool-indexer`
    - **Environment**: `Docker`
-   - **Root Directory**: `indexer`
+   - **Root Directory**: `backend/indexer`
    - **Dockerfile Path**: `./Dockerfile`
    - **Docker Context**: `.`
 
@@ -83,11 +85,12 @@ The deployment consists of three services:
 |----------|----------|---------|-------------|
 | `DATABASE_URL` | Yes | - | PostgreSQL connection string (auto-linked) |
 | `PORT` | No | `8080` | Server port |
+| `CARDANO_NETWORK` | No | `mainnet` | Network identifier (mainnet, preview, preprod) |
 | `CACHE_ENABLED` | No | `true` | Enable in-memory caching |
 | `CACHE_MAX_ENTRIES` | No | `10000` | Maximum cache entries |
 | `GOVTOOLS_ENABLED` | No | `false` | Enable GovTools enrichment |
-| `GOVTOOLS_BASE_URL` | No | `https://be.preview.gov.tools` | GovTools API URL |
-| `CORS_ORIGINS` | No | `*` | CORS allowed origins (comma-separated) |
+| `GOVTOOLS_BASE_URL` | No | Auto-selected | GovTools API URL (auto-selected based on network) |
+| `CARDANO_VERIFIER_ENABLED` | No | `false` | Enable metadata validation via Cardano Verifier API |
 
 ### Yaci Store Indexer
 
@@ -96,7 +99,7 @@ The deployment consists of three services:
 | `SPRING_DATASOURCE_URL` | Yes | - | PostgreSQL connection string (auto-linked) |
 | `SPRING_DATASOURCE_USERNAME` | Yes | - | Database username (auto-linked) |
 | `SPRING_DATASOURCE_PASSWORD` | Yes | - | Database password (auto-linked) |
-| `STORE_CARDANO_PROTOCOL_MAGIC` | No | `2` | Network protocol magic (2=Preprod, 1=Preview) |
+| `STORE_CARDANO_PROTOCOL_MAGIC` | No | `1` | Network protocol magic (1=Preview, 2=Preprod, 764824073=Mainnet) |
 | `STORE_CARDANO_HOST` | No | `preview-node.play.dev.cardano.org` | N2N relay node hostname |
 | `STORE_CARDANO_PORT` | No | `3001` | N2N relay node port |
 | `STORE_PARALLEL_PROCESSING` | No | `true` | Enable parallel processing |
@@ -182,7 +185,7 @@ SELECT COUNT(*) as drep_registrations FROM drep_registration;
 - Review build logs for dependency errors
 
 **Yaci Store (Docker)**:
-- Verify `yaci-store-all-*.jar` exists in `indexer/` directory
+- Verify `yaci-store-all-*.jar` exists in `backend/indexer/` directory
 - Check Dockerfile syntax
 - Review Docker build logs
 

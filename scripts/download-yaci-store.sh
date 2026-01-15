@@ -11,7 +11,7 @@ NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-INDEXER_DIR="$PROJECT_ROOT/indexer"
+INDEXER_DIR="$PROJECT_ROOT/backend/indexer"
 
 print_message() {
     local color=$1
