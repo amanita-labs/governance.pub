@@ -542,8 +542,10 @@ pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
     };
 
     // Get blocks synced in last hour
+    // block_time is stored as bigint (Unix timestamp in milliseconds)
+    // Convert to timestamp: to_timestamp(block_time / 1000) converts milliseconds to seconds
     let blocks_last_hour: Option<i64> = sqlx::query_as::<_, (i64,)>(
-        "SELECT COUNT(*)::bigint FROM block WHERE block_time > NOW() - INTERVAL '1 hour'"
+        "SELECT COUNT(*)::bigint FROM block WHERE to_timestamp(block_time / 1000) > NOW() - INTERVAL '1 hour'"
     )
     .fetch_optional(pool)
     .await
@@ -553,7 +555,7 @@ pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
 
     // Get blocks synced in last day
     let blocks_last_day: Option<i64> = sqlx::query_as::<_, (i64,)>(
-        "SELECT COUNT(*)::bigint FROM block WHERE block_time > NOW() - INTERVAL '1 day'"
+        "SELECT COUNT(*)::bigint FROM block WHERE to_timestamp(block_time / 1000) > NOW() - INTERVAL '1 day'"
     )
     .fetch_optional(pool)
     .await

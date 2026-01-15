@@ -107,9 +107,9 @@ services:
           property: password
       
       # Cardano Network Configuration
-      # Protocol Magic: 1=Preview, 2=Preprod, 764824073=Mainnet
+      # Protocol Magic: 2=Preview, 1=Preprod, 764824073=Mainnet
       - key: STORE_CARDANO_PROTOCOL_MAGIC
-        value: "1"
+        value: "2"
       # N2N (Node-to-Node) relay node for chain sync
       - key: STORE_CARDANO_HOST
         value: preview-node.play.dev.cardano.org
