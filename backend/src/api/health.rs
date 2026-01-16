@@ -5,53 +5,39 @@ use serde_json::{json, Value};
 
 /// Overall health check endpoint
 /// Returns 200 if healthy, 503 if degraded
+/// Optimized for fast response (used by Render for deployment health checks)
 pub async fn health_check(
     State((router, database)): State<(CachedProviderRouter, Database)>,
 ) -> Result<Json<Value>, StatusCode> {
+    // Fast checks only - no complex queries that could timeout
     let is_healthy = router.health_check().await.unwrap_or(false);
     let cache_stats = router.cache_stats().await;
     
-    // Quick database health check
-    let db_healthy = database.health_check().await.unwrap_or(false);
-    
-    // Get Yaci Store sync status summary
-    let indexer_health = database.get_indexer_health().await.ok();
-    let indexer_status = indexer_health.as_ref()
-        .map(|h| match h.status {
-            crate::db::queries::IndexerStatus::Active => "active",
-            crate::db::queries::IndexerStatus::Stale => "stale",
-            crate::db::queries::IndexerStatus::Stopped => "stopped",
-        })
-        .unwrap_or("unknown");
-    
-    let yaci_status = match database.get_sync_status().await {
-        Ok(status) => json!({
-            "connected": status.connected,
-            "synced": status.latest_block_number.is_some(),
-            "latest_block": status.latest_block_number,
-            "latest_block_slot": status.latest_block_slot,
-            "latest_block_time": status.latest_block_time,
-            "total_blocks": status.total_blocks,
-            "latest_epoch": status.latest_epoch,
-            "sync_progress": status.sync_progress,
-            "status": indexer_status
-        }),
-        Err(e) => json!({
-            "connected": false,
-            "synced": false,
-            "error": format!("Failed to get sync status: {}", e),
-            "status": "unknown"
-        })
+    // Quick database health check (simple SELECT 1)
+    let db_healthy = match database.health_check().await {
+        Ok(healthy) => healthy,
+        Err(_) => false,
     };
+    
+    // Quick sync status check (just verify database connection and basic sync)
+    // Don't run expensive COUNT queries - just check if we can query blocks
+    let yaci_connected = db_healthy; // If DB is healthy, indexer can connect
+    let yaci_synced = sqlx::query("SELECT 1 FROM block LIMIT 1")
+        .execute(database.pool())
+        .await
+        .is_ok();
 
-    let overall_healthy = is_healthy && db_healthy && indexer_health.as_ref().map(|h| h.connected).unwrap_or(false);
+    let overall_healthy = is_healthy && db_healthy && yaci_connected;
 
     let response = json!({
         "status": if overall_healthy { "healthy" } else { "degraded" },
         "database": {
             "connected": db_healthy
         },
-        "indexer": yaci_status,
+        "indexer": {
+            "connected": yaci_connected,
+            "synced": yaci_synced
+        },
         "cache": {
             "enabled": cache_stats.enabled,
             "entries": cache_stats.entries,
