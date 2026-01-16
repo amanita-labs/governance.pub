@@ -34,6 +34,21 @@ elif [ -n "$SPRING_DATASOURCE_USERNAME" ] && [ -n "$SPRING_DATASOURCE_PASSWORD" 
     echo "Constructed JDBC URL from components"
 fi
 
+# Set default values for environment variables before substitution
+# envsubst doesn't handle ${VAR:-default} syntax, so we set defaults here
+export STORE_CARDANO_PROTOCOL_MAGIC=${STORE_CARDANO_PROTOCOL_MAGIC:-2}
+export STORE_CARDANO_HOST=${STORE_CARDANO_HOST:-preview-node.play.dev.cardano.org}
+export STORE_CARDANO_PORT=${STORE_CARDANO_PORT:-3001}
+export STORE_PARALLEL_PROCESSING=${STORE_PARALLEL_PROCESSING:-true}
+export STORE_VIRTUAL_THREADS_ENABLED=${STORE_VIRTUAL_THREADS_ENABLED:-true}
+export STORE_BATCH_SIZE=${STORE_BATCH_SIZE:-1000}
+export STORE_PARALLEL_WORKERS=${STORE_PARALLEL_WORKERS:-2}
+export SPRING_DATASOURCE_HIKARI_MAX_POOL_SIZE=${SPRING_DATASOURCE_HIKARI_MAX_POOL_SIZE:-5}
+export SPRING_DATASOURCE_HIKARI_MIN_IDLE=${SPRING_DATASOURCE_HIKARI_MIN_IDLE:-2}
+export SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT=${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT:-30000}
+export SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT=${SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT:-600000}
+export SPRING_JPA_BATCH_SIZE=${SPRING_JPA_BATCH_SIZE:-1000}
+
 # Generate application.properties from environment variables
 cat > /app/application.properties << 'PROPERTIES_EOF'
 # Generated from environment variables at runtime
@@ -42,11 +57,11 @@ spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
 spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
 spring.datasource.driver-class-name=org.postgresql.Driver
 
-store.cardano.protocol-magic=${STORE_CARDANO_PROTOCOL_MAGIC:-2}
-store.cardano.host=${STORE_CARDANO_HOST:-preview-node.play.dev.cardano.org}
-store.cardano.port=${STORE_CARDANO_PORT:-3001}
-store.cardano.n2n-host=${STORE_CARDANO_HOST:-preview-node.play.dev.cardano.org}
-store.cardano.n2n-port=${STORE_CARDANO_PORT:-3001}
+store.cardano.protocol-magic=${STORE_CARDANO_PROTOCOL_MAGIC}
+store.cardano.host=${STORE_CARDANO_HOST}
+store.cardano.port=${STORE_CARDANO_PORT}
+store.cardano.n2n-host=${STORE_CARDANO_HOST}
+store.cardano.n2n-port=${STORE_CARDANO_PORT}
 
 store.governance.enabled=true
 store.staking.enabled=true
@@ -57,23 +72,23 @@ store.utxo.enabled=true
 store.assets.enabled=false
 store.epoch.enabled=true
 
-store.parallel-processing=${STORE_PARALLEL_PROCESSING:-true}
-store.virtual-threads-enabled=${STORE_VIRTUAL_THREADS_ENABLED:-true}
+store.parallel-processing=${STORE_PARALLEL_PROCESSING}
+store.virtual-threads-enabled=${STORE_VIRTUAL_THREADS_ENABLED}
 
 # Performance tuning for faster sync
 # Batch size for bulk inserts (reduced to prevent OOM - increase gradually if memory allows)
-store.batch-size=${STORE_BATCH_SIZE:-1000}
+store.batch-size=${STORE_BATCH_SIZE}
 # Number of parallel workers for processing (reduced to prevent memory pressure)
-store.parallel-workers=${STORE_PARALLEL_WORKERS:-2}
+store.parallel-workers=${STORE_PARALLEL_WORKERS}
 
 # Database connection pool settings (reduced to save memory)
-spring.datasource.hikari.maximum-pool-size=${SPRING_DATASOURCE_HIKARI_MAX_POOL_SIZE:-5}
-spring.datasource.hikari.minimum-idle=${SPRING_DATASOURCE_HIKARI_MIN_IDLE:-2}
-spring.datasource.hikari.connection-timeout=${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT:-30000}
-spring.datasource.hikari.idle-timeout=${SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT:-600000}
+spring.datasource.hikari.maximum-pool-size=${SPRING_DATASOURCE_HIKARI_MAX_POOL_SIZE}
+spring.datasource.hikari.minimum-idle=${SPRING_DATASOURCE_HIKARI_MIN_IDLE}
+spring.datasource.hikari.connection-timeout=${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT}
+spring.datasource.hikari.idle-timeout=${SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT}
 
 # JPA/Hibernate batch settings for bulk inserts (reduced to match batch-size)
-spring.jpa.properties.hibernate.jdbc.batch_size=${SPRING_JPA_BATCH_SIZE:-1000}
+spring.jpa.properties.hibernate.jdbc.batch_size=${SPRING_JPA_BATCH_SIZE}
 # Disable second-level cache to save memory
 spring.jpa.properties.hibernate.cache.use_second_level_cache=false
 spring.jpa.properties.hibernate.cache.use_query_cache=false
