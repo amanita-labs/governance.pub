@@ -121,4 +121,29 @@ services:
         value: "true"
       - key: STORE_VIRTUAL_THREADS_ENABLED
         value: "true"
+      
+      # Sync Speed Optimization
+      # Batch size for bulk inserts (reduced to prevent OOM errors)
+      # Start with 1000, increase gradually if memory allows
+      - key: STORE_BATCH_SIZE
+        value: "1000"
+      # Number of parallel workers (reduced to prevent memory pressure)
+      - key: STORE_PARALLEL_WORKERS
+        value: "2"
+      
+      # Database Connection Pool (reduced to save memory)
+      - key: SPRING_DATASOURCE_HIKARI_MAX_POOL_SIZE
+        value: "5"
+      - key: SPRING_DATASOURCE_HIKARI_MIN_IDLE
+        value: "2"
+      
+      # JPA Batch Settings (reduced to match STORE_BATCH_SIZE)
+      - key: SPRING_JPA_BATCH_SIZE
+        value: "1000"
+      
+      # JVM Memory Settings (optimized for memory-constrained environments)
+      # Increased max heap and added aggressive GC settings to prevent OOM
+      # If you have more memory available, increase -Xmx to 3g or 4g
+      - key: JVM_OPTS
+        value: "-Xms512m -Xmx3g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+ExitOnOutOfMemoryError"
 

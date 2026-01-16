@@ -60,6 +60,32 @@ store.epoch.enabled=true
 store.parallel-processing=${STORE_PARALLEL_PROCESSING:-true}
 store.virtual-threads-enabled=${STORE_VIRTUAL_THREADS_ENABLED:-true}
 
+# Performance tuning for faster sync
+# Batch size for bulk inserts (reduced to prevent OOM - increase gradually if memory allows)
+store.batch-size=${STORE_BATCH_SIZE:-1000}
+# Number of parallel workers for processing (reduced to prevent memory pressure)
+store.parallel-workers=${STORE_PARALLEL_WORKERS:-2}
+
+# Database connection pool settings (reduced to save memory)
+spring.datasource.hikari.maximum-pool-size=${SPRING_DATASOURCE_HIKARI_MAX_POOL_SIZE:-5}
+spring.datasource.hikari.minimum-idle=${SPRING_DATASOURCE_HIKARI_MIN_IDLE:-2}
+spring.datasource.hikari.connection-timeout=${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT:-30000}
+spring.datasource.hikari.idle-timeout=${SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT:-600000}
+
+# JPA/Hibernate batch settings for bulk inserts (reduced to match batch-size)
+spring.jpa.properties.hibernate.jdbc.batch_size=${SPRING_JPA_BATCH_SIZE:-1000}
+# Disable second-level cache to save memory
+spring.jpa.properties.hibernate.cache.use_second_level_cache=false
+spring.jpa.properties.hibernate.cache.use_query_cache=false
+spring.jpa.properties.hibernate.order_inserts=true
+spring.jpa.properties.hibernate.order_updates=true
+spring.jpa.properties.hibernate.jdbc.batch_versioned_data=true
+
+# Disable unnecessary features during initial sync for speed
+# Re-enable after sync completes if needed
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=false
+
 logging.level.com.bloxbean.cardano.yaci=INFO
 logging.level.com.bloxbean.cardano.yaci.store=INFO
 PROPERTIES_EOF
@@ -71,5 +97,18 @@ mv /app/application.properties.tmp /app/application.properties
 echo "Starting Yaci Store with configuration:"
 cat /app/application.properties | grep -v password | grep -v "spring.datasource.password"
 
-exec java -jar /app/yaci-store.jar
+# JVM memory settings for better performance
+# Adjust based on available memory in Render worker instance
+# -Xms: Initial heap size
+# -Xmx: Maximum heap size (increased to prevent OOM)
+# -XX:+UseG1GC: Use G1 garbage collector (better for large heaps)
+# -XX:MaxGCPauseMillis: Target max GC pause time
+# -XX:+HeapDumpOnOutOfMemoryError: Create heap dump on OOM for debugging
+# -XX:+ExitOnOutOfMemoryError: Exit immediately on OOM (prevents hanging)
+JVM_OPTS="${JVM_OPTS:--Xms512m -Xmx3g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+ExitOnOutOfMemoryError}"
+
+echo "JVM Options: $JVM_OPTS"
+echo "Available memory: $(free -h 2>/dev/null | grep Mem | awk '{print $7}' || echo 'unknown')"
+
+exec java $JVM_OPTS -jar /app/yaci-store.jar
 
