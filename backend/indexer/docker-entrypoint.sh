@@ -21,21 +21,30 @@ export STORE_CARDANO_PORT=${STORE_CARDANO_PORT:-3001}
 export JVM_OPTS=${JVM_OPTS:--Xms512m -Xmx3g -XX:+UseG1GC}
 
 # Sync start configuration (REQUIRED - prevents starting from genesis)
+# Debug: Check if variables are set (will show in logs)
+echo "Checking sync start configuration..."
+echo "STORE_CARDANO_SYNC_START_SLOT=${STORE_CARDANO_SYNC_START_SLOT:-NOT_SET}"
+echo "STORE_CARDANO_SYNC_START_BLOCKHASH=${STORE_CARDANO_SYNC_START_BLOCKHASH:-NOT_SET}"
+
 export STORE_CARDANO_SYNC_START_SLOT=${STORE_CARDANO_SYNC_START_SLOT:-}
 export STORE_CARDANO_SYNC_START_BLOCKHASH=${STORE_CARDANO_SYNC_START_BLOCKHASH:-}
 
 # Validate that sync start configuration is provided
 if [ -z "$STORE_CARDANO_SYNC_START_SLOT" ]; then
     echo "ERROR: STORE_CARDANO_SYNC_START_SLOT is required to prevent starting from genesis."
-    echo "Please set STORE_CARDANO_SYNC_START_SLOT and STORE_CARDANO_SYNC_START_BLOCKHASH environment variables."
+    echo "Please set STORE_CARDANO_SYNC_START_SLOT and STORE_CARDANO_SYNC_START_BLOCKHASH environment variables in render.yaml."
+    echo "Current value: ${STORE_CARDANO_SYNC_START_SLOT:-empty}"
     exit 1
 fi
 
 if [ -z "$STORE_CARDANO_SYNC_START_BLOCKHASH" ]; then
     echo "ERROR: STORE_CARDANO_SYNC_START_BLOCKHASH is required to prevent starting from genesis."
-    echo "Please set STORE_CARDANO_SYNC_START_BLOCKHASH environment variable."
+    echo "Please set STORE_CARDANO_SYNC_START_BLOCKHASH environment variable in render.yaml."
+    echo "Current value: ${STORE_CARDANO_SYNC_START_BLOCKHASH:-empty}"
     exit 1
 fi
+
+echo "Sync start configuration validated successfully."
 
 # Generate application.properties
 cat > /app/application.properties << EOF
