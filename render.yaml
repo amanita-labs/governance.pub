@@ -118,4 +118,12 @@ services:
       # JVM Memory Settings
       - key: JVM_OPTS
         value: "-Xms512m -Xmx3g -XX:+UseG1GC"
+      
+      # Sync Start Configuration
+      # Start indexing from a specific slot and blockhash
+      # This allows resuming from a known point or skipping earlier blocks
+      - key: STORE_CARDANO_SYNC_START_SLOT
+        value: "55652285"
+      - key: STORE_CARDANO_SYNC_START_BLOCKHASH
+        value: "c53928968dd32e95324268c79ab445c82419fca86fcd001150ab64992b3844da"
 

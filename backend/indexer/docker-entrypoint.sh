@@ -20,6 +20,23 @@ export STORE_CARDANO_HOST=${STORE_CARDANO_HOST:-preview-node.play.dev.cardano.or
 export STORE_CARDANO_PORT=${STORE_CARDANO_PORT:-3001}
 export JVM_OPTS=${JVM_OPTS:--Xms512m -Xmx3g -XX:+UseG1GC}
 
+# Sync start configuration (REQUIRED - prevents starting from genesis)
+export STORE_CARDANO_SYNC_START_SLOT=${STORE_CARDANO_SYNC_START_SLOT:-}
+export STORE_CARDANO_SYNC_START_BLOCKHASH=${STORE_CARDANO_SYNC_START_BLOCKHASH:-}
+
+# Validate that sync start configuration is provided
+if [ -z "$STORE_CARDANO_SYNC_START_SLOT" ]; then
+    echo "ERROR: STORE_CARDANO_SYNC_START_SLOT is required to prevent starting from genesis."
+    echo "Please set STORE_CARDANO_SYNC_START_SLOT and STORE_CARDANO_SYNC_START_BLOCKHASH environment variables."
+    exit 1
+fi
+
+if [ -z "$STORE_CARDANO_SYNC_START_BLOCKHASH" ]; then
+    echo "ERROR: STORE_CARDANO_SYNC_START_BLOCKHASH is required to prevent starting from genesis."
+    echo "Please set STORE_CARDANO_SYNC_START_BLOCKHASH environment variable."
+    exit 1
+fi
+
 # Generate application.properties
 cat > /app/application.properties << EOF
 # Database
@@ -34,6 +51,18 @@ store.cardano.host=\${STORE_CARDANO_HOST}
 store.cardano.port=\${STORE_CARDANO_PORT}
 store.cardano.n2n-host=\${STORE_CARDANO_HOST}
 store.cardano.n2n-port=\${STORE_CARDANO_PORT}
+EOF
+
+# Add sync start configuration (required - prevents genesis sync)
+echo "" >> /app/application.properties
+echo "# Sync Start Configuration (REQUIRED)" >> /app/application.properties
+echo "# Start indexing from a specific slot and blockhash" >> /app/application.properties
+echo "# This prevents starting from genesis" >> /app/application.properties
+echo "store.cardano.sync-start-slot=\${STORE_CARDANO_SYNC_START_SLOT}" >> /app/application.properties
+echo "store.cardano.sync-start-blockhash=\${STORE_CARDANO_SYNC_START_BLOCKHASH}" >> /app/application.properties
+
+# Continue with rest of configuration
+cat >> /app/application.properties << EOF
 
 # Enabled Stores
 store.governance.enabled=true
@@ -48,6 +77,10 @@ store.epoch.enabled=true
 # Performance (sensible defaults)
 store.parallel-processing=true
 store.virtual-threads-enabled=true
+
+# Sync Control - Disable auto-start to prevent accidental genesis sync
+# Sync will only start from the configured sync-start-slot and sync-start-blockhash
+store.sync-auto-start=false
 
 # Logging
 logging.level.com.bloxbean.cardano.yaci=INFO
