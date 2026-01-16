@@ -89,7 +89,7 @@ store.virtual-threads-enabled=true
 
 # Sync Control - Disable auto-start to prevent accidental genesis sync
 # Sync will only start from the configured sync-start-slot and sync-start-blockhash
-store.sync-auto-start=false
+store.sync-auto-start=true
 
 # Logging
 logging.level.com.bloxbean.cardano.yaci=INFO
