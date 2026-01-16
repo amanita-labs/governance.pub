@@ -1,5 +1,8 @@
 # govtWool 🐏
 
+> [!Note]
+> We are currently rebranding this project from GovtWool to governance.pub
+
 The cosiest Cardano governance interface.
 
 Built by [@Ryun1](https://github.com/Ryun1) & [@elenabardho](https://github.com/elenabardho) originally for the 2025 Cardano Summit LayerUp hackathon.
