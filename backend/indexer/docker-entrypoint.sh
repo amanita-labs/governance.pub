@@ -20,32 +20,6 @@ export STORE_CARDANO_HOST=${STORE_CARDANO_HOST:-preview-node.play.dev.cardano.or
 export STORE_CARDANO_PORT=${STORE_CARDANO_PORT:-3001}
 export JVM_OPTS=${JVM_OPTS:--Xms512m -Xmx3g -XX:+UseG1GC}
 
-# Sync start configuration (REQUIRED - prevents starting from genesis)
-# Debug: Check if variables are set (will show in logs)
-echo "Checking sync start configuration..."
-echo "STORE_CARDANO_SYNC_START_SLOT=${STORE_CARDANO_SYNC_START_SLOT:-NOT_SET}"
-echo "STORE_CARDANO_SYNC_START_BLOCKHASH=${STORE_CARDANO_SYNC_START_BLOCKHASH:-NOT_SET}"
-
-export STORE_CARDANO_SYNC_START_SLOT=${STORE_CARDANO_SYNC_START_SLOT:-}
-export STORE_CARDANO_SYNC_START_BLOCKHASH=${STORE_CARDANO_SYNC_START_BLOCKHASH:-}
-
-# Validate that sync start configuration is provided
-if [ -z "$STORE_CARDANO_SYNC_START_SLOT" ]; then
-    echo "ERROR: STORE_CARDANO_SYNC_START_SLOT is required to prevent starting from genesis."
-    echo "Please set STORE_CARDANO_SYNC_START_SLOT and STORE_CARDANO_SYNC_START_BLOCKHASH environment variables in render.yaml."
-    echo "Current value: ${STORE_CARDANO_SYNC_START_SLOT:-empty}"
-    exit 1
-fi
-
-if [ -z "$STORE_CARDANO_SYNC_START_BLOCKHASH" ]; then
-    echo "ERROR: STORE_CARDANO_SYNC_START_BLOCKHASH is required to prevent starting from genesis."
-    echo "Please set STORE_CARDANO_SYNC_START_BLOCKHASH environment variable in render.yaml."
-    echo "Current value: ${STORE_CARDANO_SYNC_START_BLOCKHASH:-empty}"
-    exit 1
-fi
-
-echo "Sync start configuration validated successfully."
-
 # Generate application.properties
 cat > /app/application.properties << EOF
 # Database
@@ -58,43 +32,53 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 store.cardano.protocol-magic=\${STORE_CARDANO_PROTOCOL_MAGIC}
 store.cardano.host=\${STORE_CARDANO_HOST}
 store.cardano.port=\${STORE_CARDANO_PORT}
-store.cardano.n2n-host=\${STORE_CARDANO_HOST}
-store.cardano.n2n-port=\${STORE_CARDANO_PORT}
-EOF
 
-# Add sync start configuration (required - prevents genesis sync)
-echo "" >> /app/application.properties
-echo "# Sync Start Configuration (REQUIRED)" >> /app/application.properties
-echo "# Start indexing from a specific slot and blockhash" >> /app/application.properties
-echo "# This prevents starting from genesis" >> /app/application.properties
-echo "store.cardano.sync-start-slot=\${STORE_CARDANO_SYNC_START_SLOT}" >> /app/application.properties
-echo "store.cardano.sync-start-blockhash=\${STORE_CARDANO_SYNC_START_BLOCKHASH}" >> /app/application.properties
-
-# Continue with rest of configuration
-cat >> /app/application.properties << EOF
-
-# Enabled Stores
-store.governance.enabled=true
-store.staking.enabled=true
-store.transactions.enabled=true
+# Core store flags (all enabled by default per Yaci Store docs)
+store.assets.enabled=true
 store.blocks.enabled=true
-store.metadata.enabled=true
-store.utxo.enabled=true
-store.assets.enabled=false
 store.epoch.enabled=true
+store.metadata.enabled=true
+store.mir.enabled=true
+store.script.enabled=true
+store.staking.enabled=true
+store.transaction.enabled=true
+store.utxo.enabled=true
+store.governance.enabled=true
 
-# Performance (sensible defaults)
-store.parallel-processing=true
-store.virtual-threads-enabled=true
-
-# Sync Control - Disable auto-start to prevent accidental genesis sync
-# Sync will only start from the configured sync-start-slot and sync-start-blockhash
-store.sync-auto-start=true
+# Performance Configuration (per Yaci Store docs)
+store.executor.enable-parallel-processing=true
+store.executor.use-virtual-thread-for-batch-processing=true
+store.executor.use-virtual-thread-for-event-processing=true
 
 # Logging
 logging.level.com.bloxbean.cardano.yaci=INFO
 logging.level.com.bloxbean.cardano.yaci.store=INFO
+
+# Enable UTxO pruning
+store.utxo.pruning-enabled=true
+store.utxo.pruning.interval=600
+store.utxo.pruning-safe-blocks=2160
+store.utxo.pruning-batch-size=3000
+
+# Enable transaction pruning
+store.transaction.pruning-enabled=true
+store.transaction.pruning.interval=86400
+store.transaction.pruning-safe-slot=43200
+
+# JOOQ batch settings (per Yaci Store docs)
+store.db.batch-size=1000
+store.db.parallel-insert=true
 EOF
+
+# Add sync start configuration if provided (optional)
+if [ -n "$STORE_CARDANO_SYNC_START_SLOT" ]; then
+    echo "" >> /app/application.properties
+    echo "# Sync Start Configuration" >> /app/application.properties
+    echo "store.cardano.sync-start-slot=\${STORE_CARDANO_SYNC_START_SLOT}" >> /app/application.properties
+    if [ -n "$STORE_CARDANO_SYNC_START_BLOCKHASH" ]; then
+        echo "store.cardano.sync-start-blockhash=\${STORE_CARDANO_SYNC_START_BLOCKHASH}" >> /app/application.properties
+    fi
+fi
 
 # Substitute environment variables
 envsubst < /app/application.properties > /app/application.properties.tmp
