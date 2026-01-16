@@ -61,82 +61,82 @@ jobs:
             echo "- **Preview URL**: ${{ steps.vercel-deploy.outputs.preview-url }}" >> $GITHUB_STEP_SUMMARY
           fi
 
-  deploy-backend:
-    name: Deploy Backend to Render
-    runs-on: ubuntu-latest
-    environment: production
+  # deploy-backend:
+  #   name: Deploy Backend to Render
+  #   runs-on: ubuntu-latest
+  #   environment: production
     
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: 📥 Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: 🦀 Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
+  #     - name: 🦀 Setup Rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         toolchain: stable
 
-      - name: 💾 Cache Rust dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            backend/target/
-          key: ${{ runner.os }}-rust-${{ hashFiles('backend/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-rust-
+  #     - name: 💾 Cache Rust dependencies
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin/
+  #           ~/.cargo/registry/index/
+  #           ~/.cargo/registry/cache/
+  #           ~/.cargo/git/db/
+  #           backend/target/
+  #         key: ${{ runner.os }}-rust-${{ hashFiles('backend/Cargo.lock') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-rust-
 
-      - name: 🔍 Verify backend builds
-        working-directory: backend
-        env:
-          BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
-          BLOCKFROST_NETWORK: ${{ secrets.BLOCKFROST_NETWORK || 'mainnet' }}
-          KOIOS_BASE_URL: ${{ secrets.KOIOS_BASE_URL || 'https://preview.koios.rest/api/v1' }}
-        run: cargo check --all-targets
+  #     - name: 🔍 Verify backend builds
+  #       working-directory: backend
+  #       env:
+  #         BLOCKFROST_API_KEY: ${{ secrets.BLOCKFROST_API_KEY }}
+  #         BLOCKFROST_NETWORK: ${{ secrets.BLOCKFROST_NETWORK || 'mainnet' }}
+  #         KOIOS_BASE_URL: ${{ secrets.KOIOS_BASE_URL || 'https://preview.koios.rest/api/v1' }}
+  #       run: cargo check --all-targets
 
-      - name: 🚀 Trigger Render Deployment
-        uses: johnbeynon/render-deploy-action@v0.0.8
-        with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
+  #     - name: 🚀 Trigger Render Deployment
+  #       uses: johnbeynon/render-deploy-action@v0.0.8
+  #       with:
+  #         service-id: ${{ secrets.RENDER_SERVICE_ID }}
+  #         api-key: ${{ secrets.RENDER_API_KEY }}
 
-      - name: ✅ Backend Deployment Summary
-        run: |
-          echo "## 🦀 Backend Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platform**: Render" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ✅ Deployment triggered successfully" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Note**: Render deployments may take a few minutes to complete. Check the Render dashboard for deployment status." >> $GITHUB_STEP_SUMMARY
+  #     - name: ✅ Backend Deployment Summary
+  #       run: |
+  #         echo "## 🦀 Backend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Platform**: Render" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Branch**: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Status**: ✅ Deployment triggered successfully" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "**Note**: Render deployments may take a few minutes to complete. Check the Render dashboard for deployment status." >> $GITHUB_STEP_SUMMARY
 
-  deployment-complete:
-    name: Deployment Complete
-    runs-on: ubuntu-latest
-    needs: [deploy-frontend, deploy-backend]
-    if: always()
+  # deployment-complete:
+  #   name: Deployment Complete
+  #   runs-on: ubuntu-latest
+  #   needs: [deploy-frontend, deploy-backend]
+  #   if: always()
     
-    steps:
-      - name: 📊 Deployment Status
-        run: |
-          echo "## 🎉 Deployment Pipeline Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Frontend (Vercel)" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.deploy-frontend.result }}" == "success" ]; then
-            echo "✅ **Status**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Status**: Deployment failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Backend (Render)" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.deploy-backend.result }}" == "success" ]; then
-            echo "✅ **Status**: Deployment triggered successfully" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Status**: Deployment failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch**: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
+  #   steps:
+  #     - name: 📊 Deployment Status
+  #       run: |
+  #         echo "## 🎉 Deployment Pipeline Complete" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### Frontend (Vercel)" >> $GITHUB_STEP_SUMMARY
+  #         if [ "${{ needs.deploy-frontend.result }}" == "success" ]; then
+  #           echo "✅ **Status**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
+  #         else
+  #           echo "❌ **Status**: Deployment failed" >> $GITHUB_STEP_SUMMARY
+  #         fi
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### Backend (Render)" >> $GITHUB_STEP_SUMMARY
+  #         if [ "${{ needs.deploy-backend.result }}" == "success" ]; then
+  #           echo "✅ **Status**: Deployment triggered successfully" >> $GITHUB_STEP_SUMMARY
+  #         else
+  #           echo "❌ **Status**: Deployment failed" >> $GITHUB_STEP_SUMMARY
+  #         fi
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "**Branch**: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
