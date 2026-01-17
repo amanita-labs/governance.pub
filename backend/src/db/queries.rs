@@ -290,14 +290,73 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
         .await
         .is_ok();
     
-    // Get latest block information
-    let latest_block = sqlx::query_as::<_, (Option<i64>, Option<i64>, Option<i64>)>(
-        "SELECT number, slot, block_time FROM block ORDER BY number DESC LIMIT 1"
+    if !connected {
+        return Ok(SyncStatus {
+            connected: false,
+            latest_block_number: None,
+            latest_block_slot: None,
+            latest_block_time: None,
+            total_blocks: None,
+            latest_epoch: None,
+            sync_progress: Some("Database not connected".to_string()),
+        });
+    }
+    
+    // Check if block table exists
+    let block_table_exists: bool = sqlx::query_as::<_, (bool,)>(
+        "SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'block'
+        )"
     )
     .fetch_optional(pool)
     .await
     .ok()
-    .flatten();
+    .flatten()
+    .map(|(exists,)| exists)
+    .unwrap_or(false);
+    
+    if !block_table_exists {
+        return Ok(SyncStatus {
+            connected: true,
+            latest_block_number: None,
+            latest_block_slot: None,
+            latest_block_time: None,
+            total_blocks: None,
+            latest_epoch: None,
+            sync_progress: Some("Tables not initialized yet".to_string()),
+        });
+    }
+    
+    // Get latest block information - handle different possible column names
+    // Yaci Store may use: number, slot, block_time, or block_no, slot_no, time
+    let latest_block = match sqlx::query_as::<_, (Option<i64>, Option<i64>, Option<i64>)>(
+        r#"
+        SELECT 
+            COALESCE(block_no, number)::bigint as block_number,
+            COALESCE(slot_no, slot)::bigint as slot,
+            COALESCE(time, block_time)::bigint as block_time
+        FROM block 
+        ORDER BY COALESCE(block_no, number) DESC 
+        LIMIT 1
+        "#
+    )
+    .fetch_optional(pool)
+    .await
+    {
+        Ok(Some(result)) => Some(result),
+        _ => {
+            // Fallback: try with standard column names
+            sqlx::query_as::<_, (Option<i64>, Option<i64>, Option<i64>)>(
+                "SELECT number, slot, block_time FROM block ORDER BY number DESC LIMIT 1"
+            )
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten()
+        }
+    };
     
     let (latest_block_number, latest_block_slot, latest_block_time) = latest_block.unwrap_or((None, None, None));
     
@@ -311,22 +370,46 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
     .flatten()
     .map(|(count,)| count);
     
-    // Get latest epoch (try epoch table first, fallback to block.epoch)
-    let latest_epoch_from_table: Option<i32> = sqlx::query_as::<_, (Option<i32>,)>(
-        "SELECT MAX(number) FROM epoch"
+    // Get latest epoch - check if epoch table exists
+    let epoch_table_exists: bool = sqlx::query_as::<_, (bool,)>(
+        "SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'epoch'
+        )"
     )
     .fetch_optional(pool)
     .await
     .ok()
     .flatten()
-    .and_then(|(epoch,)| epoch);
+    .map(|(exists,)| exists)
+    .unwrap_or(false);
     
-    // If epoch table is empty, get from block table
-    let latest_epoch = if latest_epoch_from_table.is_some() {
-        latest_epoch_from_table
-    } else {
+    let latest_epoch = if epoch_table_exists {
+        // Try epoch table first
         sqlx::query_as::<_, (Option<i32>,)>(
-            "SELECT MAX(epoch) FROM block"
+            "SELECT MAX(COALESCE(no, number)) FROM epoch"
+        )
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten()
+        .and_then(|(epoch,)| epoch)
+        .or_else(|| {
+            // Fallback to block.epoch if available
+            sqlx::query_as::<_, (Option<i32>,)>(
+                "SELECT MAX(epoch) FROM block WHERE epoch IS NOT NULL"
+            )
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten()
+            .and_then(|(epoch,)| epoch)
+        })
+    } else {
+        // No epoch table, try to get from block table
+        sqlx::query_as::<_, (Option<i32>,)>(
+            "SELECT MAX(epoch) FROM block WHERE epoch IS NOT NULL"
         )
         .fetch_optional(pool)
         .await
@@ -338,7 +421,7 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
     // Determine sync status
     let sync_progress = if let (Some(block_num), Some(total)) = (latest_block_number, total_blocks) {
         if total > 0 {
-            Some(format!("Block {} of {} synced", block_num, total))
+            Some(format!("Block {} synced", block_num))
         } else {
             Some("Initializing...".to_string())
         }
@@ -347,7 +430,7 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
     };
     
     Ok(SyncStatus {
-        connected,
+        connected: true,
         latest_block_number,
         latest_block_slot,
         latest_block_time,
@@ -497,14 +580,64 @@ pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
         });
     }
 
-    // Get latest block information
-    let latest_block = sqlx::query_as::<_, (Option<i64>, Option<i64>)>(
-        "SELECT number, block_time FROM block ORDER BY number DESC LIMIT 1"
+    // Check if block table exists
+    let block_table_exists: bool = sqlx::query_as::<_, (bool,)>(
+        "SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'block'
+        )"
     )
     .fetch_optional(pool)
     .await
     .ok()
-    .flatten();
+    .flatten()
+    .map(|(exists,)| exists)
+    .unwrap_or(false);
+
+    if !block_table_exists {
+        return Ok(IndexerHealth {
+            connected: true,
+            is_syncing: false,
+            latest_block_number: None,
+            latest_block_time: None,
+            total_blocks: None,
+            latest_epoch: None,
+            blocks_last_hour: None,
+            blocks_last_day: None,
+            sync_rate_per_minute: None,
+            last_sync_ago_seconds: None,
+            status: IndexerStatus::Stopped,
+        });
+    }
+
+    // Get latest block information - handle different column name possibilities
+    // Try with COALESCE first (handles both block_no/number and time/block_time)
+    let latest_block = match sqlx::query_as::<_, (Option<i64>, Option<i64>)>(
+        r#"
+        SELECT 
+            COALESCE(block_no, number)::bigint as block_number,
+            COALESCE(time, block_time)::bigint as block_time
+        FROM block 
+        ORDER BY COALESCE(block_no, number) DESC 
+        LIMIT 1
+        "#
+    )
+    .fetch_optional(pool)
+    .await
+    {
+        Ok(Some(result)) => Some(result),
+        _ => {
+            // Fallback: try with standard column names
+            sqlx::query_as::<_, (Option<i64>, Option<i64>)>(
+                "SELECT number, block_time FROM block ORDER BY number DESC LIMIT 1"
+            )
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten()
+        }
+    };
 
     let (latest_block_number, latest_block_time) = latest_block.unwrap_or((None, None));
 
@@ -518,21 +651,43 @@ pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
     .flatten()
     .map(|(count,)| count);
 
-    // Get latest epoch
-    let latest_epoch_from_table: Option<i32> = sqlx::query_as::<_, (Option<i32>,)>(
-        "SELECT MAX(number) FROM epoch"
+    // Get latest epoch - check if epoch table exists
+    let epoch_table_exists: bool = sqlx::query_as::<_, (bool,)>(
+        "SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'epoch'
+        )"
     )
     .fetch_optional(pool)
     .await
     .ok()
     .flatten()
-    .and_then(|(epoch,)| epoch);
+    .map(|(exists,)| exists)
+    .unwrap_or(false);
 
-    let latest_epoch = if latest_epoch_from_table.is_some() {
-        latest_epoch_from_table
+    let latest_epoch = if epoch_table_exists {
+        sqlx::query_as::<_, (Option<i32>,)>(
+            "SELECT MAX(COALESCE(no, number)) FROM epoch"
+        )
+        .fetch_optional(pool)
+        .await
+        .ok()
+        .flatten()
+        .and_then(|(epoch,)| epoch)
+        .or_else(|| {
+            sqlx::query_as::<_, (Option<i32>,)>(
+                "SELECT MAX(epoch) FROM block WHERE epoch IS NOT NULL"
+            )
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten()
+            .and_then(|(epoch,)| epoch)
+        })
     } else {
         sqlx::query_as::<_, (Option<i32>,)>(
-            "SELECT MAX(epoch) FROM block"
+            "SELECT MAX(epoch) FROM block WHERE epoch IS NOT NULL"
         )
         .fetch_optional(pool)
         .await
@@ -541,27 +696,66 @@ pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
         .and_then(|(epoch,)| epoch)
     };
 
-    // Get blocks synced in last hour
-    // block_time is stored as bigint (Unix timestamp in milliseconds)
-    // Convert to timestamp: to_timestamp(block_time / 1000) converts milliseconds to seconds
-    let blocks_last_hour: Option<i64> = sqlx::query_as::<_, (i64,)>(
-        "SELECT COUNT(*)::bigint FROM block WHERE to_timestamp(block_time / 1000) > NOW() - INTERVAL '1 hour'"
+    // Get blocks synced in last hour - handle different time column names
+    let blocks_last_hour: Option<i64> = match sqlx::query_as::<_, (i64,)>(
+        r#"
+        SELECT COUNT(*)::bigint 
+        FROM block 
+        WHERE (
+            CASE 
+                WHEN time IS NOT NULL THEN to_timestamp(time / 1000) > NOW() - INTERVAL '1 hour'
+                WHEN block_time IS NOT NULL THEN to_timestamp(block_time / 1000) > NOW() - INTERVAL '1 hour'
+                ELSE false
+            END
+        )
+        "#
     )
     .fetch_optional(pool)
     .await
-    .ok()
-    .flatten()
-    .map(|(count,)| count);
+    {
+        Ok(Some((count,))) => Some(count),
+        _ => {
+            // Fallback: try simpler query with block_time
+            sqlx::query_as::<_, (i64,)>(
+                "SELECT COUNT(*)::bigint FROM block WHERE to_timestamp(block_time / 1000) > NOW() - INTERVAL '1 hour'"
+            )
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten()
+            .map(|(count,)| count)
+        }
+    };
 
     // Get blocks synced in last day
-    let blocks_last_day: Option<i64> = sqlx::query_as::<_, (i64,)>(
-        "SELECT COUNT(*)::bigint FROM block WHERE to_timestamp(block_time / 1000) > NOW() - INTERVAL '1 day'"
+    let blocks_last_day: Option<i64> = match sqlx::query_as::<_, (i64,)>(
+        r#"
+        SELECT COUNT(*)::bigint 
+        FROM block 
+        WHERE (
+            CASE 
+                WHEN time IS NOT NULL THEN to_timestamp(time / 1000) > NOW() - INTERVAL '1 day'
+                WHEN block_time IS NOT NULL THEN to_timestamp(block_time / 1000) > NOW() - INTERVAL '1 day'
+                ELSE false
+            END
+        )
+        "#
     )
     .fetch_optional(pool)
     .await
-    .ok()
-    .flatten()
-    .map(|(count,)| count);
+    {
+        Ok(Some((count,))) => Some(count),
+        _ => {
+            sqlx::query_as::<_, (i64,)>(
+                "SELECT COUNT(*)::bigint FROM block WHERE to_timestamp(block_time / 1000) > NOW() - INTERVAL '1 day'"
+            )
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten()
+            .map(|(count,)| count)
+        }
+    };
 
     // Calculate sync rate (blocks per minute)
     let sync_rate_per_minute = blocks_last_hour.map(|blocks| blocks as f64 / 60.0);
@@ -596,7 +790,7 @@ pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
     let is_syncing = matches!(status, IndexerStatus::Active) && blocks_last_hour.unwrap_or(0) > 0;
 
     Ok(IndexerHealth {
-        connected,
+        connected: true,
         is_syncing,
         latest_block_number,
         latest_block_time,
