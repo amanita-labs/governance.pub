@@ -1,11 +1,8 @@
-# govtWool 🐏
+# governance.pub
 
-> [!Note]
-> We are currently rebranding this project from GovtWool to governance.pub
+A modern Cardano governance interface.
 
-The cosiest Cardano governance interface.
-
-Built by [@Ryun1](https://github.com/Ryun1) & [@elenabardho](https://github.com/elenabardho) originally for the 2025 Cardano Summit LayerUp hackathon.
+Built originally as GovtWool by [@Ryun1](https://github.com/Ryun1) & [@elenabardho](https://github.com/elenabardho) for the 2025 Cardano Summit LayerUp hackathon.
 
 ## Motivation
 
@@ -34,7 +31,6 @@ Build a governance interface tool which;
 
 #### Key Features
 
-- Wooly theme
 - meme generator
 - CIP-169
 - CIP-149
