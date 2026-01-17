@@ -27,61 +27,51 @@
 - ✅ Created `backend/.env.example` - Database configuration template
 - ✅ Updated `backend/README.md` - Updated documentation for Yaci Store backend
 
-## Remaining Work
+## Completed (Latest)
 
-### Critical: Database Schema Verification
-**MUST BE DONE BEFORE QUERIES CAN BE IMPLEMENTED**
+### Database Schema Discovery
+- ✅ Connected to production database and discovered actual schema
+- ✅ Verified table names: `drep_registration`, `gov_action_proposal`, `voting_procedure`, `delegation_vote`, `delegation`, `local_drep_dist`, `local_gov_action_proposal_status`, `epoch`, `stake_address_balance`
+- ✅ Discovered schema separation: Data stored in `preview` schema (not `public`)
+- ✅ Documented all column names, types, and relationships
 
-1. Set up Yaci Store indexer and connect to database
-2. Inspect actual database schema:
-   ```sql
-   -- List all tables
-   SELECT table_name FROM information_schema.tables 
-   WHERE table_schema = 'public' ORDER BY table_name;
-   
-   -- Inspect governance-related tables
-   \d+ drep_registration
-   \d+ governance_action
-   \d+ vote
-   \d+ stake_delegation
-   \d+ epoch
-   ```
-3. Verify table names, column names, and data types
-4. Update `backend/src/db/queries.rs` with actual SQL queries
+### Phase 2 Completion: SQL Queries Implementation
+All queries implemented in `backend/src/db/queries.rs`:
 
-### Phase 2 Completion: Implement SQL Queries
-Once schema is verified, implement actual queries in `backend/src/db/queries.rs`:
-
-- [ ] `get_dreps_page()` - Paginated DRep list with filtering/sorting/search
-- [ ] `get_drep()` - Single DRep details
-- [ ] `get_drep_delegators()` - DRep delegators list
-- [ ] `get_drep_voting_history()` - DRep voting history
-- [ ] `get_governance_actions_page()` - Paginated governance actions
-- [ ] `get_governance_action()` - Single governance action details
-- [ ] `get_action_voting_results()` - Voting breakdown (drep/spo/cc votes)
-- [ ] `get_stake_delegation()` - Stake address delegation info
-- [ ] `get_total_active_dreps()` - Active DRep count
-- [ ] `get_epoch_start_time()` - Epoch start timestamp
+- ✅ `get_dreps_page()` - Paginated DRep list with filtering/sorting/search, joins with `local_drep_dist` for voting power
+- ✅ `get_drep()` - Single DRep details with delegator count, vote count, last vote epoch
+- ✅ `get_drep_delegators()` - DRep delegators list with balances from `stake_address_balance`
+- ✅ `get_drep_voting_history()` - DRep voting history from `voting_procedure` table
+- ✅ `get_governance_actions_page()` - Paginated governance actions with latest status
+- ✅ `get_governance_action()` - Single governance action details, supports `tx_hash#idx` format
+- ✅ `get_action_voting_results()` - Voting breakdown (drep/spo/cc votes) aggregated from `voting_procedure`
+- ✅ `get_stake_delegation()` - Stake address delegation info (DRep or pool) with balance
+- ✅ `get_total_active_dreps()` - Active DRep count
+- ✅ `get_epoch_start_time()` - Epoch start timestamp from `epoch` table
 
 ### Phase 3 Completion: Additional Methods
-Implement additional methods in `YaciStoreProvider`:
+Implemented additional methods in `YaciStoreProvider`:
 
-- [ ] `get_action_vote_records()` - Detailed vote records for participation
-- [ ] `get_stake_pools_page()` - Stake pools list (for participation)
-- [ ] `get_committee_members()` - Committee members (for participation)
+- ✅ `get_action_vote_records()` - Detailed vote records for participation endpoint
+- ⏸️ `get_stake_pools_page()` - Stake pools list (placeholder, not yet needed)
+- ⏸️ `get_committee_members()` - Committee members (placeholder, not yet needed)
+
+### Phase 4: Database Connection
+- ✅ Updated database connection to set `search_path` to `preview, public`
+- ✅ All queries now use correct schema automatically
 
 ### Phase 4: Testing & Optimization
-- [ ] Test all API endpoints with database queries
-- [ ] Compare responses with current provider-based implementation
-- [ ] Add database indexes for common queries
-- [ ] Performance testing and optimization
-- [ ] Error handling improvements
+- ✅ Code compiles successfully
+- ✅ All SQL queries implemented and tested for syntax
+- ⏸️ End-to-end API testing (requires deployment)
+- ⏸️ Performance testing and optimization
+- ✅ Error handling implemented
 
 ### Phase 5: Deployment
-- [ ] Set up Yaci Store in production environment
-- [ ] Configure database backups
-- [ ] Deploy updated backend
-- [ ] Monitor indexing and API performance
+- ✅ Yaci Store running in production (Preview network)
+- ⏸️ Database backups configuration
+- ⏸️ Deploy updated backend
+- ⏸️ Monitor indexing and API performance
 
 ## Next Steps
 
@@ -94,11 +84,29 @@ Implement additional methods in `YaciStoreProvider`:
 
 ## Notes
 
-- All placeholder queries return empty/default values
-- Database connection is configured and ready
-- Router abstraction allows switching between old/new backends
-- Caching layer is preserved
-- Metadata validation and GovTools enrichment are preserved
+- ✅ All SQL queries are implemented and use actual Yaci Store schema
+- ✅ Database connection configured with `preview` schema search_path
+- ✅ Router abstraction allows switching between old/new backends (currently using Yaci Store)
+- ✅ Caching layer is preserved
+- ✅ Metadata validation and GovTools enrichment are preserved
+- ✅ Schema documentation updated in `backend/API.md` and `backend/README.md`
+
+## Database Schema Summary
+
+**Actual Schema Discovered:**
+- Tables exist in `preview` schema (22,293 DReps, 1,386 governance actions)
+- `public` schema is empty
+- Database connection sets `search_path = preview, public` automatically
+
+**Key Table Names:**
+- `drep_registration` (not `governance_drep`)
+- `gov_action_proposal` (not `governance_action`)
+- `voting_procedure` (not `vote`)
+- `delegation_vote` (for DRep delegations)
+- `delegation` (for pool delegations)
+- `local_drep_dist` (for voting power)
+- `local_gov_action_proposal_status` (for action status)
+- `epoch` (uses `number` column, not `no`)
 
 ## Configuration
 

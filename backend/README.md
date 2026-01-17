@@ -104,11 +104,15 @@ For detailed API documentation, see [API.md](./API.md).
 
 The backend queries Yaci Store's PostgreSQL database directly for all governance data:
 
-- **DRep Data**: Queries `drep_registration` table
-- **Governance Actions**: Queries `governance_action` table
-- **Votes**: Queries `vote` table with joins to governance actions
-- **Stake Delegations**: Queries `stake_delegation` and `stake_address` tables
-- **Epoch Data**: Queries `epoch` table for epoch start times
+- **DRep Data**: Queries `drep_registration` table, joins with `local_drep_dist` for voting power
+- **Governance Actions**: Queries `gov_action_proposal` table, joins with `local_gov_action_proposal_status` for status
+- **Votes**: Queries `voting_procedure` table with joins to governance actions
+- **DRep Delegations**: Queries `delegation_vote` table for DRep delegations
+- **Pool Delegations**: Queries `delegation` table for stake pool delegations
+- **Stake Balances**: Queries `stake_address_balance` table for current balances
+- **Epoch Data**: Queries `epoch` table for epoch start times and information
+
+**Important**: The database uses schema separation by network. For Preview network, all tables are in the `preview` schema. The backend automatically sets `search_path` to `preview, public` when connecting.
 
 All queries are optimized with proper indexing and connection pooling.
 

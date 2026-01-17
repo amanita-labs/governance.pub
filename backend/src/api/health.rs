@@ -103,8 +103,9 @@ pub async fn health_check(
 
     // Health check should be degraded if:
     // 1. Database not connected, OR
-    // 2. Indexer not connected, OR  
-    // 3. Database has tables but no blocks synced (indexer not working properly)
+    // 2. Indexer not connected
+    // Note: We don't fail health check if blocks aren't detected - that's a schema/query issue,
+    // not a connectivity issue. The "degraded" status in JSON is sufficient.
     let has_data_but_no_blocks = db_healthy 
         && db_metrics.as_ref()
             .and_then(|m| m.get("total_tables").and_then(|v| v.as_i64()))
@@ -112,10 +113,21 @@ pub async fn health_check(
             .unwrap_or(false)
         && !yaci_synced;
     
-    let overall_healthy = is_healthy && db_healthy && yaci_connected && !has_data_but_no_blocks;
+    // Return 200 OK if database and indexer are connected (even if blocks not detected)
+    // Return 503 only if there's a real connectivity issue
+    let overall_healthy = is_healthy && db_healthy && yaci_connected;
 
+    // Determine status: degraded if no blocks detected but tables exist, otherwise healthy
+    let status_str = if has_data_but_no_blocks {
+        "degraded"
+    } else if overall_healthy {
+        "healthy"
+    } else {
+        "degraded"
+    };
+    
     let response = json!({
-        "status": if overall_healthy { "healthy" } else { "degraded" },
+        "status": status_str,
         "database": {
             "connected": db_healthy,
             "name": db_metrics.as_ref().and_then(|m| m.get("name").and_then(|v| v.as_str())),

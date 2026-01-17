@@ -19,6 +19,16 @@ impl Database {
         let pool = PgPoolOptions::new()
             .max_connections(10)
             .acquire_timeout(Duration::from_secs(30))
+            .after_connect(|conn, _meta| {
+                Box::pin(async move {
+                    // Set search_path to preview schema where the actual data is stored
+                    sqlx::query("SET search_path TO preview, public")
+                        .execute(conn)
+                        .await
+                        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                    Ok(())
+                })
+            })
             .connect(database_url)
             .await?;
 

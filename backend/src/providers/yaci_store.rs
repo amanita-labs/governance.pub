@@ -1,9 +1,10 @@
 use crate::db::{Database, queries};
 use crate::models::*;
+use crate::models::participation::ActionVoteRecord;
 use crate::providers::Provider;
 use crate::utils::drep_id::normalize_to_cip129;
 use async_trait::async_trait;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use std::sync::Arc;
 
 pub struct YaciStoreProvider {
@@ -113,15 +114,63 @@ impl YaciStoreProvider {
         &self,
         action: &GovernanceAction,
     ) -> Result<Vec<ActionVoteRecord>, anyhow::Error> {
-        // Placeholder - will implement with actual query
-        // This needs to query votes table and join with DRep/pool/committee info
-        Ok(Vec::new())
+        use crate::models::participation::VoteChoice;
+        
+        // Parse action_id to get tx_hash and idx
+        let (tx_hash, idx) = if let Some(proposal_tx_hash) = &action.proposal_tx_hash {
+            (proposal_tx_hash.clone(), action.proposal_index.unwrap_or(0) as i32)
+        } else if action.action_id.contains('#') {
+            let parts: Vec<&str> = action.action_id.split('#').collect();
+            if parts.len() == 2 {
+                (parts[0].to_string(), parts[1].parse::<i32>().unwrap_or(0))
+            } else {
+                (action.tx_hash.clone(), 0)
+            }
+        } else {
+            (action.tx_hash.clone(), 0)
+        };
+        
+        // Query all votes for this action
+        let rows = sqlx::query(
+            r#"
+            SELECT 
+                vp.voter_hash as voter_identifier,
+                vp.voter_type,
+                vp.vote,
+                NULL as voting_power,
+                vp.tx_hash,
+                vp.idx as cert_index,
+                vp.block_time
+            FROM voting_procedure vp
+            WHERE vp.gov_action_tx_hash = $1 AND vp.gov_action_index = $2
+            ORDER BY vp.block_time DESC
+            "#
+        )
+        .bind(&tx_hash)
+        .bind(idx)
+        .fetch_all(self.pool())
+        .await?;
+        
+        Ok(rows.into_iter().map(|row| {
+            let vote_str: Option<String> = row.get(2);
+            let vote = vote_str.as_deref().and_then(|v| VoteChoice::from_str(v));
+            
+            ActionVoteRecord {
+                voter_identifier: row.get(0),
+                voter_type: row.get(1),
+                vote,
+                voting_power: row.get(3),
+                tx_hash: row.get(4),
+                cert_index: row.get::<Option<i32>, _>(5).map(|i| i as u32),
+                block_time: row.get::<Option<i64>, _>(6).map(|t| t as u64),
+            }
+        }).collect())
     }
 
     pub async fn get_stake_pools_page(
         &self,
-        page: u32,
-        count: u32,
+        _page: u32,
+        _count: u32,
     ) -> Result<StakePoolPage, anyhow::Error> {
         // Placeholder - will implement with actual query
         Ok(StakePoolPage {

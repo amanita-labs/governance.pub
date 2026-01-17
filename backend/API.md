@@ -9,16 +9,17 @@ Local: http://localhost:8080
 
 ## Overview
 
-The GovTwool Backend API provides a unified interface for accessing Cardano governance data from multiple providers (Blockfrost and Koios). The backend handles provider selection, caching, and data normalization automatically.
+The GovTwool Backend API provides a unified REST interface for accessing Cardano governance data directly from a Yaci Store PostgreSQL database. The backend queries the indexer database for all governance data, providing high performance and reliability without dependency on external APIs.
 
 ## Features
 
-- **Smart Routing**: Automatically selects the best data provider for each operation
-- **Automatic Fallback**: Gracefully falls back to alternative providers on failure
+- **Self-Hosted Indexer**: Uses Yaci Store for blockchain indexing (no dependency on external APIs)
+- **PostgreSQL Database**: Direct database queries for high performance
 - **Caching**: High-performance in-memory caching with configurable TTLs
 - **CORS Enabled**: All origins allowed by default
 - **Type Safety**: Strong typing with Rust's type system
 - **GovTools Enrichment**: Optional enrichment layer for richer DRep metadata
+- **Metadata Validation**: Optional Cardano Verifier API integration
 
 ## Authentication
 
@@ -26,7 +27,7 @@ Currently, no authentication is required. The API is publicly accessible.
 
 ## Rate Limiting
 
-Rate limiting is handled by the underlying data providers (Blockfrost and Koios). The backend includes caching to reduce provider API calls.
+No rate limiting is enforced by the backend. All data is served from the local PostgreSQL database populated by Yaci Store indexer.
 
 ## Response Format
 
@@ -50,7 +51,7 @@ All responses are JSON. Error responses follow this format:
 
 ### Health Check
 
-Check the health status of the backend and its data providers.
+Check the health status of the backend, database connection, and indexer sync status.
 
 **Endpoint:** `GET /health`
 
@@ -59,9 +60,33 @@ Check the health status of the backend and its data providers.
 ```json
 {
   "status": "healthy",
-  "providers": {
-    "blockfrost": "ok",
-    "koios": "ok"
+  "database": {
+    "connected": true,
+    "name": "yaci_store_8zdw",
+    "size_bytes": 1234567890,
+    "size_mb": 1177.37,
+    "total_tables": 54,
+    "connection_pool": {
+      "size": 10,
+      "active": 2,
+      "idle": 8
+    }
+  },
+  "indexer": {
+    "connected": true,
+    "synced": true,
+    "status": "active",
+    "latest_block": 12345678,
+    "latest_block_slot": 987654321,
+    "latest_block_time": 1704067200,
+    "latest_epoch": 500,
+    "total_blocks": 12345678,
+    "sync_progress": "Block 12345678 synced",
+    "is_syncing": false,
+    "blocks_last_hour": 360,
+    "blocks_last_day": 8640,
+    "sync_rate_per_minute": "6.00",
+    "last_sync_ago_seconds": 10
   },
   "cache": {
     "enabled": true,
@@ -78,9 +103,33 @@ Check the health status of the backend and its data providers.
 ```json
 {
   "status": "degraded",
-  "providers": {
-    "blockfrost": "unknown",
-    "koios": "unknown"
+  "database": {
+    "connected": true,
+    "name": "yaci_store_8zdw",
+    "size_bytes": 1234567890,
+    "size_mb": 1177.37,
+    "total_tables": 54,
+    "connection_pool": {
+      "size": 10,
+      "active": 2,
+      "idle": 8
+    }
+  },
+  "indexer": {
+    "connected": false,
+    "synced": false,
+    "status": "stopped",
+    "latest_block": null,
+    "latest_block_slot": null,
+    "latest_block_time": null,
+    "latest_epoch": null,
+    "total_blocks": null,
+    "sync_progress": "Database not connected",
+    "is_syncing": false,
+    "blocks_last_hour": null,
+    "blocks_last_day": null,
+    "sync_rate_per_minute": null,
+    "last_sync_ago_seconds": null
   },
   "cache": {
     "enabled": true,
@@ -289,8 +338,8 @@ GET /api/dreps/drep1ygqq33rjavhwwynp2pzj478fea67dxeelq2ylfwum0txhhqy8p3fn/votes
   {
     "tx_hash": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5",
     "cert_index": 0,
-    "proposal_id": "gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzsqswdgln",
-    "action_id": "gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzsqswdgln",
+    "proposal_id": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0",
+    "action_id": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0",
     "proposal_tx_hash": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5",
     "proposal_cert_index": 0,
     "vote": "yes",
@@ -391,8 +440,8 @@ GET /api/actions?page=1&count=20
   "actions": [
     {
       "tx_hash": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5",
-      "action_id": "gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzsqswdgln",
-      "proposal_id": "gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzsqswdgln",
+      "action_id": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0",
+      "proposal_id": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0",
       "proposal_tx_hash": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5",
       "proposal_index": 0,
       "cert_index": 0,
@@ -431,11 +480,15 @@ Get detailed information about a specific governance action.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `id` | string | Governance action ID (e.g., `gov_action1...`) |
+| `id` | string | Governance action ID in format `tx_hash#idx` or CIP-129 format |
 
 **Example Request:**
 
 ```bash
+# Using tx_hash#idx format (recommended)
+GET /api/actions/bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0
+
+# Or using CIP-129 format
 GET /api/actions/gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzsqswdgln
 ```
 
@@ -444,8 +497,8 @@ GET /api/actions/gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzs
 ```json
 {
   "tx_hash": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5",
-  "action_id": "gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzsqswdgln",
-  "proposal_id": "gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzsqswdgln",
+  "action_id": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0",
+  "proposal_id": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0",
   "proposal_tx_hash": "bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5",
   "proposal_index": 0,
   "cert_index": 0,
@@ -478,11 +531,15 @@ Get voting breakdown for a specific governance action.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `id` | string | Governance action ID (e.g., `gov_action1...`) |
+| `id` | string | Governance action ID in format `tx_hash#idx` or CIP-129 format |
 
 **Example Request:**
 
 ```bash
+# Using tx_hash#idx format
+GET /api/actions/bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0/votes
+
+# Or using CIP-129 format
 GET /api/actions/gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzsqswdgln/votes
 ```
 
@@ -564,7 +621,7 @@ GET /api/stake/stake1uxz6ljatyc7w52z44hskd5pu5cvw7qemwz6re3ux4pmdqumcn2qyrx/dele
 
 **Response:** `404 NOT FOUND` - Stake address not found
 
-**Response:** `500 INTERNAL SERVER ERROR` - Provider error
+**Response:** `500 INTERNAL SERVER ERROR` - Database or server error
 
 ---
 
@@ -767,11 +824,28 @@ Returned when a requested resource (DRep or Action) is not found.
 
 **500 INTERNAL SERVER ERROR**
 
-Returned when there's a server error or data provider failure.
+Returned when there's a server error or database connection failure.
 
 ```json
 {
   "error": "Failed to fetch DRep"
+}
+```
+
+**503 SERVICE UNAVAILABLE**
+
+Returned when the database is not connected or the indexer is not synced.
+
+```json
+{
+  "status": "degraded",
+  "database": {
+    "connected": false
+  },
+  "indexer": {
+    "connected": false,
+    "synced": false
+  }
 }
 ```
 
@@ -808,6 +882,14 @@ curl "https://govtwool-backend.onrender.com/api/actions?page=1&count=10"
 
 **Get Single Action:**
 ```bash
+# Using tx_hash#idx format (recommended)
+curl "https://govtwool-backend.onrender.com/api/actions/bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0"
+
+# Or using CIP-129 format (if supported)
+# Using tx_hash#idx format (recommended)
+curl "https://govtwool-backend.onrender.com/api/actions/bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0"
+
+# Or using CIP-129 format
 curl "https://govtwool-backend.onrender.com/api/actions/gov_action1huh370jy9gu9z75wcvhetq6t8dcumhldjruwxc9a4rwz9jvz7lzsqswdgln"
 ```
 
@@ -837,17 +919,86 @@ The API accepts DRep IDs in both CIP-105 (legacy) and CIP-129 (new) formats:
 - **CIP-105**: `drep1...` (56 hex characters) or `drep_script1...` (56 hex characters)
 - **CIP-129**: `drep1...` (58 hex characters, includes 2-byte header)
 
-The backend automatically handles conversion between formats as needed by the underlying data providers.
+The backend automatically normalizes DRep IDs to CIP-129 format internally for database queries.
+
+### Governance Action ID Format
+
+The API accepts governance action IDs in multiple formats:
+
+- **Blockfrost format**: `{tx_hash}#{idx}` (e.g., `bf2f1f3e442a38517a8ec32f95834b3b71cddfed90f8e360bda8dc22c982f7c5#0`)
+  - `tx_hash`: 64-character hex string
+  - `idx`: Integer index (typically 0)
+- **CIP-129 format**: `gov_action1...` (bech32-encoded)
+- **Simple tx_hash**: Just the 64-character transaction hash (assumes idx=0)
+
+The backend parses these formats and queries the `gov_action_proposal` table using `tx_hash` and `idx` columns.
 
 ---
+
+## Database Schema
+
+The backend queries the Yaci Store PostgreSQL database using the `preview` schema (or network-specific schema). The following tables are used:
+
+### Core Tables
+
+- **`drep_registration`**: DRep registration and retirement records
+  - Primary key: `(tx_hash, cert_index)`
+  - Key columns: `drep_hash`, `drep_id`, `type`, `anchor_url`, `anchor_hash`, `epoch`, `tx_hash`, `block_time`
+  - Status determined by `type` column: `'drep_registration'` (active), `'drep_retirement'` (retired)
+
+- **`gov_action_proposal`**: Governance action proposals
+  - Primary key: `(tx_hash, idx)` - note: uses `idx` not `cert_index`
+  - Key columns: `tx_hash`, `idx`, `type`, `deposit`, `return_address`, `anchor_url`, `anchor_hash`, `details` (jsonb), `epoch`, `block_time`
+  - Action ID format: `{tx_hash}#{idx}`
+
+- **`voting_procedure`**: Votes cast on governance actions
+  - Primary key: `(tx_hash, voter_hash, gov_action_tx_hash, gov_action_index)`
+  - Key columns: `voter_type` (drep/spo/cc), `voter_hash`, `gov_action_tx_hash`, `gov_action_index`, `vote` (yes/no/abstain), `epoch`, `block_time`
+
+- **`delegation_vote`**: DRep delegations (stake addresses delegating to DReps)
+  - Primary key: `(tx_hash, cert_index)`
+  - Key columns: `address`, `drep_id`, `drep_hash`, `epoch`, `block_time`
+
+- **`delegation`**: Pool delegations
+  - Primary key: `(tx_hash, cert_index)`
+  - Key columns: `address`, `pool_id`, `credential`, `epoch`, `block_time`
+
+- **`local_drep_dist`**: DRep voting power distribution per epoch
+  - Primary key: `(drep_hash, epoch)`
+  - Key columns: `drep_hash`, `amount`, `epoch`
+  - Used to calculate current voting power for DReps
+
+- **`local_gov_action_proposal_status`**: Governance action status tracking
+  - Primary key: `(gov_action_tx_hash, gov_action_index, epoch)`
+  - Key columns: `gov_action_tx_hash`, `gov_action_index`, `status`, `epoch`
+  - Status changes over time - queries use latest status per action
+
+- **`epoch`**: Epoch information
+  - Primary key: `number` (bigint, not `no`)
+  - Key columns: `number`, `start_time`, `end_time`, `block_count`
+
+- **`stake_address_balance`**: Stake address balances over time
+  - Primary key: `(address, slot)`
+  - Key columns: `address`, `quantity`, `slot`, `epoch`, `block_time`
+  - Latest balance per address used for delegation queries
+
+- **`block`**: Block information
+  - Used for sync status and health checks
+  - Key columns: `block_no` (or `number`), `slot_no` (or `slot`), `time` (or `block_time`), `epoch`
+
+### Schema Configuration
+
+The backend automatically sets `search_path` to `preview, public` when connecting to the database, ensuring queries use the correct schema where data is stored. For Preview network, data is in the `preview` schema; for Mainnet, it would be in the `mainnet` schema (or `public` if not schema-separated).
 
 ## Notes
 
 - All amounts are returned as strings in lovelace (1 ADA = 1,000,000 lovelace)
-- Timestamps are Unix timestamps (seconds since epoch)
+- Timestamps are Unix timestamps (milliseconds since epoch for `block_time`, seconds for epoch `start_time`)
 - Optional fields may be omitted from responses if not available
-- The backend uses smart routing to select the best data provider for each operation
+- The backend queries Yaci Store database directly - no external API dependencies
 - Caching is enabled by default but can be disabled via environment variables
+- Action IDs can be in format `tx_hash#idx` (Blockfrost-style) or CIP-129 format (`gov_action1...`)
+- DRep IDs are normalized to CIP-129 format internally but accept both CIP-105 and CIP-129 formats
 
 ---
 
