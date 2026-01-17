@@ -1,0 +1,46 @@
+# Render ignore file - files/directories to exclude from deployment
+
+# Development files
+*.log
+*.log.*
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+target/
+node_modules/
+.next/
+dist/
+build/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in deployment)
+docs/
+*.md
+!README.md
+
+# Scripts (not needed in deployment)
+scripts/
+
+# Frontend (deploy separately if needed)
+frontend/
+
+# Local development files
+LOCAL_DEVELOPMENT_SETUP.md
+MIGRATION_STATUS.md
+

@@ -84,9 +84,10 @@ Build a governance interface tool which;
 
 ### Backend
 
-- Rust (Axum + Tokio) service with layered provider abstraction
-- Integrations with Blockfrost, Koios, and GovTools APIs
-- Moka-powered caching and provider failover strategy
+- Rust (Axum + Tokio) service that queries PostgreSQL database directly
+- Uses Yaci Store indexer for blockchain data (self-hosted, no external API dependencies)
+- Optional GovTools integration for enhanced DRep metadata
+- Moka-powered in-memory caching layer
 
 ## Setup
 
@@ -94,7 +95,8 @@ Build a governance interface tool which;
 
 - **Node.js 20.9.0+**
 - **Rust 1.75+** with `cargo` (install via [rustup.rs](https://rustup.rs))
-- A **Blockfrost API key** for Cardano network access
+- **PostgreSQL** database (for Yaci Store indexer)
+- **Yaci Store indexer** running and synced (see `backend/indexer/README.md`)
 
 ### Local Development
 
@@ -129,7 +131,25 @@ Fill in your `.env`, you can use the example.
 cargo run
 ```
 
-Environment variables such as `BLOCKFROST_API_KEY`, `GOVTOOLS_ENABLED`, and `CORS_ORIGINS` can be tuned as described in `backend/README.md`.
+## Deployment
+
+### Render (Recommended)
+
+Deploy to Render with one click using the Blueprint:
+
+1. Push code to GitHub
+2. Go to Render Dashboard → New → Blueprint
+3. Paste contents of `render.yaml`
+4. Render automatically creates all services (database, backend, indexer)
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for details.
+
+### Other Platforms
+
+- **Railway**: See `backend/railway.json` and `backend/Dockerfile`
+- **Docker**: Use `backend/Dockerfile` for containerized deployment
+
+Environment variables such as `DATABASE_URL`, `CARDANO_NETWORK`, `GOVTOOLS_ENABLED`, and `CARDANO_VERIFIER_ENABLED` can be tuned as described in `backend/README.md`.
 
 #### Access
 

@@ -1,3 +1,4 @@
+use crate::db::Database;
 use crate::models::*;
 use crate::providers::CachedProviderRouter;
 use axum::{
@@ -46,7 +47,7 @@ impl DRepsQueryParams {
 }
 
 pub async fn get_dreps(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Query(params): Query<DRepsQueryParams>,
 ) -> Result<Json<DRepsPage>, StatusCode> {
     let query = params.into_query();
@@ -61,7 +62,7 @@ pub async fn get_dreps(
 }
 
 pub async fn get_drep(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<DRep>>, StatusCode> {
     match router.get_drep(&id).await {
@@ -75,7 +76,7 @@ pub async fn get_drep(
 }
 
 pub async fn get_drep_delegators(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<DRepDelegator>>, StatusCode> {
     match router.get_drep_delegators(&id).await {
@@ -88,7 +89,7 @@ pub async fn get_drep_delegators(
 }
 
 pub async fn get_drep_votes(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<DRepVotingHistory>>, StatusCode> {
     match router.get_drep_voting_history(&id).await {
@@ -101,7 +102,7 @@ pub async fn get_drep_votes(
 }
 
 pub async fn get_drep_metadata(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<Value>>, StatusCode> {
     match router.get_drep_metadata(&id).await {
@@ -114,7 +115,7 @@ pub async fn get_drep_metadata(
 }
 
 pub async fn get_drep_stats(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
 ) -> Result<Json<DRepStats>, StatusCode> {
     match router.get_drep_stats().await {
         Ok(stats) => Ok(Json(stats)),

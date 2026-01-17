@@ -1,0 +1,35 @@
+# DEPRECATED: This file is kept for reference only
+# Use the root-level render.yaml for full stack deployment
+# This file only defines the indexer service in isolation and requires manual database setup
+
+services:
+  - type: worker
+    name: govtwool-indexer
+    env: docker
+    region: oregon
+    rootDir: backend/indexer
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      # Database Configuration (link to PostgreSQL service)
+      - key: SPRING_DATASOURCE_URL
+        sync: false  # Set manually or link to database service
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      
+      # Cardano Network Configuration
+      - key: STORE_CARDANO_PROTOCOL_MAGIC
+        value: "2"
+      - key: STORE_CARDANO_HOST
+        value: preview-node.play.dev.cardano.org
+      - key: STORE_CARDANO_PORT
+        value: "3001"
+      
+      # Performance Settings
+      - key: STORE_PARALLEL_PROCESSING
+        value: "true"
+      - key: STORE_VIRTUAL_THREADS_ENABLED
+        value: "true"
+

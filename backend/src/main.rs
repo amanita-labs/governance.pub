@@ -1,6 +1,12 @@
+//! GovTwool Backend API Server
+//!
+//! A Rust-based REST API server for Cardano governance data.
+//! Queries PostgreSQL database populated by Yaci Store indexer.
+
 mod api;
 mod cache;
 mod config;
+mod db;
 mod models;
 mod providers;
 mod services;
@@ -9,8 +15,9 @@ mod utils;
 use axum::{routing::get, Router};
 use cache::CacheManager;
 use config::Config;
+use db::Database;
 use providers::{
-    BlockfrostProvider, CachedProviderRouter, GovToolsProvider, KoiosProvider, ProviderRouter,
+    CachedProviderRouter, GovToolsProvider, YaciStoreProvider, YaciStoreRouter,
 };
 use services::metadata_validation::VerifierConfig;
 use std::net::SocketAddr;
@@ -31,22 +38,29 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let config = Config::from_env()?;
 
-    let blockfrost_base_url = config.blockfrost_base_url();
-    let blockfrost_provider =
-        BlockfrostProvider::new(blockfrost_base_url, config.blockfrost_api_key);
-    let koios_provider = KoiosProvider::new(config.koios_base_url.clone());
-    let provider_router = ProviderRouter::new(blockfrost_provider, koios_provider);
+    // Initialize database connection
+    tracing::info!("Connecting to database...");
+    let database = Database::new(&config.database_url).await?;
+    tracing::info!("Database connection established");
+
+    // Clone database for app state (health endpoint needs it)
+    let database_for_state = database.clone();
+
+    // Initialize Yaci Store provider
+    let yaci_store_provider = YaciStoreProvider::new(database);
+    let provider_router = YaciStoreRouter::new(yaci_store_provider);
+
     let govtools_provider = if config.govtools_enabled {
         tracing::info!(
             "GovTools enabled for network: {} (base URL: {})",
-            config.blockfrost_network,
+            config.network,
             config.govtools_base_url
         );
         Some(GovToolsProvider::new(config.govtools_base_url.clone()))
     } else {
         tracing::info!(
             "GovTools disabled for network: {}",
-            config.blockfrost_network
+            config.network
         );
         None
     };
@@ -75,6 +89,8 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let app = Router::new()
         .route("/health", get(api::health::health_check))
+        .route("/health/database", get(api::health::database_health))
+        .route("/health/indexer", get(api::health::indexer_health))
         .route("/api/dreps", get(api::dreps::get_dreps))
         .route("/api/dreps/stats", get(api::dreps::get_drep_stats))
         .route("/api/dreps/:id", get(api::dreps::get_drep))
@@ -106,7 +122,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 .layer(TraceLayer::new_for_http())
                 .layer(cors),
         )
-        .with_state(router);
+        .with_state((router, database_for_state));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
     tracing::info!("Starting server on http://{}", addr);

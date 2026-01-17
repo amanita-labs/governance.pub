@@ -1,13 +1,15 @@
+//! Configuration management
+//!
+//! Handles loading and parsing of environment variables into a structured Config.
+//! Supports both DATABASE_URL and individual DB component variables.
+
 use std::env;
 
 #[derive(Debug, Clone)]
 pub struct Config {
     pub server_port: u16,
-    pub blockfrost_api_key: String,
-    pub blockfrost_network: String,
-    pub koios_base_url: String,
-    #[allow(dead_code)]
-    pub cors_origins: Vec<String>,
+    pub database_url: String,
+    pub network: String,
     pub cache_enabled: bool,
     pub cache_max_entries: usize,
     pub govtools_base_url: String,
@@ -20,11 +22,13 @@ impl Config {
     pub fn from_env() -> Result<Self, anyhow::Error> {
         dotenv::dotenv().ok();
 
-        let blockfrost_network =
-            env::var("BLOCKFROST_NETWORK").unwrap_or_else(|_| "mainnet".to_string());
+        // Network configuration - defaults to mainnet, can be overridden via CARDANO_NETWORK
+        let network = env::var("CARDANO_NETWORK")
+            .or_else(|_| env::var("BLOCKFROST_NETWORK"))
+            .unwrap_or_else(|_| "mainnet".to_string());
 
         // Choose GovTools base URL by network (GovTools supports mainnet and preview)
-        let network_lc = blockfrost_network.to_lowercase();
+        let network_lc = network.to_lowercase();
         let default_govtools_base_url = match network_lc.as_str() {
             "mainnet" => "https://be.gov.tools",
             "preview" => "https://be.preview.gov.tools",
@@ -45,16 +49,19 @@ impl Config {
                 .unwrap_or_else(|_| "8080".to_string())
                 .parse()
                 .unwrap_or(8080),
-            blockfrost_api_key: env::var("BLOCKFROST_API_KEY")
-                .map_err(|_| anyhow::anyhow!("BLOCKFROST_API_KEY not set"))?,
-            blockfrost_network: blockfrost_network.clone(),
-            koios_base_url: env::var("KOIOS_BASE_URL")
-                .unwrap_or_else(|_| "https://preview.koios.rest/api/v1".to_string()),
-            cors_origins: env::var("CORS_ORIGINS")
-                .unwrap_or_else(|_| "http://localhost:3000".to_string())
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect(),
+            database_url: env::var("DATABASE_URL")
+                .or_else(|_| {
+                    // Fallback to constructing from individual components
+                    let host = env::var("DB_HOST").unwrap_or_else(|_| "localhost".to_string());
+                    let port = env::var("DB_PORT").unwrap_or_else(|_| "5432".to_string());
+                    let name = env::var("DB_NAME").unwrap_or_else(|_| "yaci_store".to_string());
+                    let user = env::var("DB_USER").unwrap_or_else(|_| "postgres".to_string());
+                    let password = env::var("DB_PASSWORD")
+                        .map_err(|_| anyhow::anyhow!("DATABASE_URL or DB_PASSWORD not set"))?;
+                    Ok(format!("postgresql://{}:{}@{}:{}/{}", user, password, host, port, name))
+                })
+                .map_err(|e: anyhow::Error| anyhow::anyhow!("Database configuration error: {}", e))?,
+            network: network.clone(),
             cache_enabled: env::var("CACHE_ENABLED")
                 .unwrap_or_else(|_| "true".to_string())
                 .parse()
@@ -74,13 +81,5 @@ impl Config {
                 "https://verifycardanomessage.cardanofoundation.org/api/verify-cip100".to_string()
             }),
         })
-    }
-
-    pub fn blockfrost_base_url(&self) -> String {
-        if self.blockfrost_network == "mainnet" {
-            "https://cardano-mainnet.blockfrost.io/api/v0".to_string()
-        } else {
-            "https://cardano-preview.blockfrost.io/api/v0".to_string()
-        }
     }
 }

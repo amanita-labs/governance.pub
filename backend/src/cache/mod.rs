@@ -1,3 +1,8 @@
+//! Caching layer
+//!
+//! In-memory caching using Moka cache for frequently accessed data.
+//! Provides cache management, statistics, and TTL-based expiration.
+
 pub mod keys;
 
 use crate::cache::keys::CacheKey;

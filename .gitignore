@@ -43,6 +43,22 @@ next-env.d.ts
 # rust
 target/
 **/target/
-# Note: Cargo.lock should be committed for binaries (like our backend)
-# backend/Cargo.lock
-**/*.rs.bk
+
+# logs
+*.log
+*.log.*
+backend/indexer/logs/
+backend/backend.log
+
+# Yaci Store (keep JAR but ignore logs)
+backend/indexer/yaci-store.log
+backend/indexer/logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db

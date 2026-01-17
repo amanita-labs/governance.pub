@@ -1,6 +1,6 @@
 use crate::cache::{keys::CacheKey, CacheManager};
 use crate::models::*;
-use crate::providers::{GovToolsEnrichment, GovToolsProvider, ProviderRouter};
+use crate::providers::{GovToolsEnrichment, GovToolsProvider, Router};
 use crate::services::metadata_validation::{MetadataValidator, VerifierConfig};
 use crate::utils::drep_id::decode_drep_id_to_hex;
 use futures::future::join_all;
@@ -10,9 +10,8 @@ use tracing::debug;
 
 const CARDANO_EPOCH_DURATION_SECONDS: u64 = 432_000;
 
-#[derive(Clone)]
 pub struct CachedProviderRouter {
-    router: Arc<ProviderRouter>,
+    router: Arc<dyn Router + Send + Sync>,
     cache: Arc<CacheManager>,
     govtools: Option<Arc<GovToolsProvider>>,
     metadata_validator: Arc<MetadataValidator>,
@@ -20,7 +19,7 @@ pub struct CachedProviderRouter {
 
 impl CachedProviderRouter {
     pub fn new(
-        router: ProviderRouter,
+        router: impl Router + Send + Sync + 'static,
         cache: CacheManager,
         govtools: Option<GovToolsProvider>,
         verifier: Option<VerifierConfig>,
@@ -34,7 +33,20 @@ impl CachedProviderRouter {
             metadata_validator,
         }
     }
+}
 
+impl Clone for CachedProviderRouter {
+    fn clone(&self) -> Self {
+        Self {
+            router: Arc::clone(&self.router),
+            cache: Arc::clone(&self.cache),
+            govtools: self.govtools.as_ref().map(|g| Arc::clone(g)),
+            metadata_validator: Arc::clone(&self.metadata_validator),
+        }
+    }
+}
+
+impl CachedProviderRouter {
     pub async fn get_dreps_page(&self, query: &DRepsQuery) -> Result<DRepsPage, anyhow::Error> {
         let mut normalized = query.clone().with_defaults();
         // Default behavior: include active and inactive, exclude retired (unless caller specifies statuses)

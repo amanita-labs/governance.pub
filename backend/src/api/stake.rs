@@ -1,3 +1,4 @@
+use crate::db::Database;
 use crate::providers::CachedProviderRouter;
 use axum::{
     extract::{Path, State},
@@ -17,7 +18,7 @@ pub struct StakeDelegationResponse {
 }
 
 pub async fn get_stake_delegation(
-    State(router): State<CachedProviderRouter>,
+    State((router, _)): State<(CachedProviderRouter, Database)>,
     Path(stake_address): Path<String>,
 ) -> Result<Json<StakeDelegationResponse>, StatusCode> {
     match router.get_stake_delegation(&stake_address).await {

@@ -1,0 +1,232 @@
+warning: unused import: `router::ProviderRouter`
+  --> src/providers/mod.rs:14:9
+   |
+14 | pub use router::ProviderRouter;
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused variable: `pool`
+  --> src/db/queries.rs:86:5
+   |
+86 |     pool: &PgPool,
+   |     ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `offset`
+  --> src/db/queries.rs:90:9
+   |
+90 |     let offset = (page - 1) * query.count;
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_offset`
+
+warning: unused variable: `sql`
+   --> src/db/queries.rs:140:9
+    |
+140 |     let sql = format!(
+    |         ^^^ help: if this is intentional, prefix it with an underscore: `_sql`
+
+warning: unused variable: `count_sql`
+   --> src/db/queries.rs:159:9
+    |
+159 |     let count_sql = format!(
+    |         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_count_sql`
+
+warning: unused variable: `pool`
+   --> src/db/queries.rs:172:23
+    |
+172 | pub async fn get_drep(pool: &PgPool, id: &str) -> Result<Option<DRep>> {
+    |                       ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+
+warning: unused variable: `id`
+   --> src/db/queries.rs:172:38
+    |
+172 | pub async fn get_drep(pool: &PgPool, id: &str) -> Result<Option<DRep>> {
+    |                                      ^^ help: if this is intentional, prefix it with an underscore: `_id`
+
+warning: unused variable: `pool`
+   --> src/db/queries.rs:177:34
+    |
+177 | pub async fn get_drep_delegators(pool: &PgPool, drep_id: &str) -> Result<Vec<DRepDelegator>> {
+    |                                  ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+
+warning: unused variable: `drep_id`
+   --> src/db/queries.rs:177:49
+    |
+177 | pub async fn get_drep_delegators(pool: &PgPool, drep_id: &str) -> Result<Vec<DRepDelegator>> {
+    |                                                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_drep_id`
+
+warning: unused variable: `pool`
+   --> src/db/queries.rs:182:38
+    |
+182 | pub async fn get_drep_voting_history(pool: &PgPool, drep_id: &str) -> Result<Vec<DRepVotingHistory>> {
+    |                                      ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+
+warning: unused variable: `drep_id`
+   --> src/db/queries.rs:182:53
+    |
+182 | pub async fn get_drep_voting_history(pool: &PgPool, drep_id: &str) -> Result<Vec<DRepVotingHistory>> {
+    |                                                     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_drep_id`
+
+warning: unused variable: `pool`
+   --> src/db/queries.rs:188:5
+    |
+188 |     pool: &PgPool,
+    |     ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+
+warning: unused variable: `page`
+   --> src/db/queries.rs:189:5
+    |
+189 |     page: u32,
+    |     ^^^^ help: if this is intentional, prefix it with an underscore: `_page`
+
+warning: unused variable: `count`
+   --> src/db/queries.rs:190:5
+    |
+190 |     count: u32,
+    |     ^^^^^ help: if this is intentional, prefix it with an underscore: `_count`
+
+warning: unused variable: `pool`
+   --> src/db/queries.rs:200:36
+    |
+200 | pub async fn get_governance_action(pool: &PgPool, action_id: &str) -> Result<Option<GovernanceAction>> {
+    |                                    ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+
+warning: unused variable: `action_id`
+   --> src/db/queries.rs:200:51
+    |
+200 | pub async fn get_governance_action(pool: &PgPool, action_id: &str) -> Result<Option<GovernanceAction>> {
+    |                                                   ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+
+warning: unused variable: `pool`
+   --> src/db/queries.rs:206:5
+    |
+206 |     pool: &PgPool,
+    |     ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+
+warning: unused variable: `action_id`
+   --> src/db/queries.rs:207:5
+    |
+207 |     action_id: &str,
+    |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_action_id`
+
+warning: unused variable: `pool`
+   --> src/db/queries.rs:214:5
+    |
+214 |     pool: &PgPool,
+    |     ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+
+warning: unused variable: `stake_address`
+   --> src/db/queries.rs:215:5
+    |
+215 |     stake_address: &str,
+    |     ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_stake_address`
+
+warning: unused variable: `pool`
+   --> src/db/queries.rs:221:37
+    |
+221 | pub async fn get_total_active_dreps(pool: &PgPool) -> Result<Option<u32>> {
+    |                                     ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+
+warning: unused variable: `pool`
+   --> src/db/queries.rs:226:35
+    |
+226 | pub async fn get_epoch_start_time(pool: &PgPool, epoch: u32) -> Result<Option<u64>> {
+    |                                   ^^^^ help: if this is intentional, prefix it with an underscore: `_pool`
+
+warning: unused variable: `epoch`
+   --> src/db/queries.rs:226:50
+    |
+226 | pub async fn get_epoch_start_time(pool: &PgPool, epoch: u32) -> Result<Option<u64>> {
+    |                                                  ^^^^^ help: if this is intentional, prefix it with an underscore: `_epoch`
+
+warning: unused variable: `action`
+   --> src/providers/yaci_store.rs:114:9
+    |
+114 |         action: &GovernanceAction,
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_action`
+
+warning: unused variable: `page`
+   --> src/providers/yaci_store.rs:123:9
+    |
+123 |         page: u32,
+    |         ^^^^ help: if this is intentional, prefix it with an underscore: `_page`
+
+warning: unused variable: `count`
+   --> src/providers/yaci_store.rs:124:9
+    |
+124 |         count: u32,
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_count`
+
+warning: method `blockfrost_base_url` is never used
+  --> src/config.rs:94:12
+   |
+24 | impl Config {
+   | ----------- method in this implementation
+...
+94 |     pub fn blockfrost_base_url(&self) -> String {
+   |            ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: struct `DRepRow` is never constructed
+  --> src/db/queries.rs:20:12
+   |
+20 | pub struct DRepRow {
+   |            ^^^^^^^
+
+warning: struct `GovernanceActionRow` is never constructed
+  --> src/db/queries.rs:40:12
+   |
+40 | pub struct GovernanceActionRow {
+   |            ^^^^^^^^^^^^^^^^^^^
+
+warning: struct `VoteRow` is never constructed
+  --> src/db/queries.rs:61:12
+   |
+61 | pub struct VoteRow {
+   |            ^^^^^^^
+
+warning: struct `StakeDelegationRow` is never constructed
+  --> src/db/queries.rs:73:12
+   |
+73 | pub struct StakeDelegationRow {
+   |            ^^^^^^^^^^^^^^^^^^
+
+warning: struct `EpochRow` is never constructed
+  --> src/db/queries.rs:80:12
+   |
+80 | pub struct EpochRow {
+   |            ^^^^^^^^
+
+warning: associated function `new` is never used
+  --> src/providers/blockfrost.rs:15:12
+   |
+14 | impl BlockfrostProvider {
+   | ----------------------- associated function in this implementation
+15 |     pub fn new(base_url: String, api_key: String) -> Self {
+   |            ^^^
+
+warning: associated function `new` is never used
+  --> src/providers/koios.rs:16:12
+   |
+15 | impl KoiosProvider {
+   | ------------------ associated function in this implementation
+16 |     pub fn new(base_url: String) -> Self {
+   |            ^^^
+
+warning: associated function `new` is never used
+  --> src/providers/router.rs:13:12
+   |
+12 | impl ProviderRouter {
+   | ------------------- associated function in this implementation
+13 |     pub fn new(blockfrost: BlockfrostProvider, koios: KoiosProvider) -> Self {
+   |            ^^^
+
+warning: `govtwool-backend` (bin "govtwool-backend") generated 35 warnings (run `cargo fix --bin "govtwool-backend"` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.16s
+     Running `target/debug/govtwool-backend`
+[2m2025-11-20T10:53:16.108341Z[0m [32m INFO[0m [2mgovtwool_backend[0m[2m:[0m Connecting to database...
+[2m2025-11-20T10:53:16.138307Z[0m [32m INFO[0m [2mgovtwool_backend[0m[2m:[0m Database connection established
+[2m2025-11-20T10:53:16.138373Z[0m [32m INFO[0m [2mgovtwool_backend[0m[2m:[0m GovTools enabled for network: preview (base URL: https://be.preview.gov.tools)
+[2m2025-11-20T10:53:16.142070Z[0m [32m INFO[0m [2mgovtwool_backend[0m[2m:[0m Starting server on http://0.0.0.0:8080

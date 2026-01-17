@@ -1,0 +1,129 @@
+# GovTwool Render Deployment Configuration
+# This file defines the complete stack deployment for Render:
+# - PostgreSQL database (stores blockchain data indexed by Yaci Store)
+# - Backend API service (Rust/Axum, queries the database)
+# - Yaci Store indexer (Java worker, syncs blockchain data to database)
+
+databases:
+  # PostgreSQL Database for Yaci Store
+  # Stores all blockchain data indexed by Yaci Store (governance actions, DReps, votes, etc.)
+  # Plan: basic-256mb (free tier may not be available, upgrade as needed)
+  - name: govtwool-database
+    databaseName: yaci_store
+    plan: basic-256mb
+    user: yaci_store_user
+
+services:
+  # Backend API Service
+  # Rust service that provides REST API endpoints for governance data
+  # Queries the PostgreSQL database populated by Yaci Store indexer
+  - type: web
+    name: govtwool-backend
+    env: rust
+    region: oregon
+    rootDir: backend
+    buildCommand: cargo build --release
+    startCommand: ./target/release/govtwool-backend
+    healthCheckPath: /health
+    envVars:
+      # Database Configuration (auto-linked to PostgreSQL database)
+      # DATABASE_URL is the primary connection string
+      - key: DATABASE_URL
+        fromDatabase:
+          name: govtwool-database
+          property: connectionString
+      # Individual DB components (for fallback connection string construction)
+      - key: DB_HOST
+        fromDatabase:
+          name: govtwool-database
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: govtwool-database
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: govtwool-database
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: govtwool-database
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: govtwool-database
+          property: password
+      
+      # Server Configuration
+      - key: PORT
+        value: 8080
+      
+      # Network Configuration (used for GovTools URL selection)
+      # Options: mainnet, preview, preprod
+      - key: CARDANO_NETWORK
+        value: preview
+      
+      # Cache Configuration
+      - key: CACHE_ENABLED
+        value: "true"
+      - key: CACHE_MAX_ENTRIES
+        value: "10000"
+      
+      # GovTools Configuration (optional enrichment service)
+      # Enable to get enhanced DRep metadata from GovTools API
+      - key: GOVTOOLS_ENABLED
+        value: "false"
+      - key: GOVTOOLS_BASE_URL
+        value: https://be.preview.gov.tools
+      
+      # Metadata Validation (optional)
+      # Enable Cardano Verifier API for metadata validation
+      - key: CARDANO_VERIFIER_ENABLED
+        value: "false"
+
+  # Yaci Store Indexer (Background Worker)
+  # Java service that syncs Cardano blockchain data to PostgreSQL
+  # Runs continuously, indexing blocks, transactions, governance actions, DReps, etc.
+  - type: worker
+    name: govtwool-indexer
+    env: docker
+    region: oregon
+    rootDir: backend/indexer
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      # Database Configuration (auto-linked to PostgreSQL database)
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: govtwool-database
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: govtwool-database
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: govtwool-database
+          property: password
+      
+      # Cardano Network Configuration
+      # Protocol Magic: 2=Preview, 1=Preprod, 764824073=Mainnet
+      - key: STORE_CARDANO_PROTOCOL_MAGIC
+        value: "2"
+      - key: STORE_CARDANO_HOST
+        value: preview-node.play.dev.cardano.org
+      - key: STORE_CARDANO_PORT
+        value: "3001"
+      
+      # JVM Memory Settings
+      - key: JVM_OPTS
+        value: "-Xms512m -Xmx3g -XX:+UseG1GC"
+      
+      # Sync Start Configuration
+      # Start indexing from a specific slot and blockhash
+      # This allows resuming from a known point or skipping earlier blocks
+      - key: STORE_CARDANO_SYNC_START_SLOT
+        value: "55652285"
+      - key: STORE_CARDANO_SYNC_START_BLOCKHASH
+        value: "c53928968dd32e95324268c79ab445c82419fca86fcd001150ab64992b3844da"
+
