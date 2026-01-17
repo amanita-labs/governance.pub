@@ -423,16 +423,19 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
     
     let latest_epoch = if epoch_table_exists {
         // Try epoch table first
-        sqlx::query_as::<_, (Option<i32>,)>(
+        let epoch_from_table = sqlx::query_as::<_, (Option<i32>,)>(
             "SELECT MAX(COALESCE(no, number)) FROM epoch"
         )
         .fetch_optional(pool)
         .await
         .ok()
         .flatten()
-        .and_then(|(epoch,)| epoch)
-        .or_else(|| {
-            // Fallback to block.epoch if available
+        .and_then(|(epoch,)| epoch);
+        
+        // Fallback to block.epoch if epoch table query returned None
+        if epoch_from_table.is_some() {
+            epoch_from_table
+        } else {
             sqlx::query_as::<_, (Option<i32>,)>(
                 "SELECT MAX(epoch) FROM block WHERE epoch IS NOT NULL"
             )
@@ -441,7 +444,7 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
             .ok()
             .flatten()
             .and_then(|(epoch,)| epoch)
-        })
+        }
     } else {
         // No epoch table, try to get from block table
         sqlx::query_as::<_, (Option<i32>,)>(
@@ -716,15 +719,19 @@ pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
     .unwrap_or(false);
 
     let latest_epoch = if epoch_table_exists {
-        sqlx::query_as::<_, (Option<i32>,)>(
+        let epoch_from_table = sqlx::query_as::<_, (Option<i32>,)>(
             "SELECT MAX(COALESCE(no, number)) FROM epoch"
         )
         .fetch_optional(pool)
         .await
         .ok()
         .flatten()
-        .and_then(|(epoch,)| epoch)
-        .or_else(|| {
+        .and_then(|(epoch,)| epoch);
+        
+        // Fallback to block.epoch if epoch table query returned None
+        if epoch_from_table.is_some() {
+            epoch_from_table
+        } else {
             sqlx::query_as::<_, (Option<i32>,)>(
                 "SELECT MAX(epoch) FROM block WHERE epoch IS NOT NULL"
             )
@@ -733,7 +740,7 @@ pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
             .ok()
             .flatten()
             .and_then(|(epoch,)| epoch)
-        })
+        }
     } else {
         sqlx::query_as::<_, (Option<i32>,)>(
             "SELECT MAX(epoch) FROM block WHERE epoch IS NOT NULL"
