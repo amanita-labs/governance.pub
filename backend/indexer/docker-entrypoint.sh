@@ -33,6 +33,8 @@ store.cardano.protocol-magic=\${STORE_CARDANO_PROTOCOL_MAGIC}
 store.cardano.host=\${STORE_CARDANO_HOST}
 store.cardano.port=\${STORE_CARDANO_PORT}
 
+store.sync-auto-start=true
+
 # Core store flags (all enabled by default per Yaci Store docs)
 store.assets.enabled=true
 store.blocks.enabled=true
