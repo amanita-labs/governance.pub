@@ -302,7 +302,7 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
         });
     }
     
-    // Check if block table exists
+    // Check if block table exists and get its column names for debugging
     let block_table_exists: bool = sqlx::query_as::<_, (bool,)>(
         "SELECT EXISTS (
             SELECT FROM information_schema.tables 
@@ -325,36 +325,72 @@ pub async fn get_yaci_sync_status(pool: &PgPool) -> Result<SyncStatus> {
             latest_block_time: None,
             total_blocks: None,
             latest_epoch: None,
-            sync_progress: Some("Tables not initialized yet".to_string()),
+            sync_progress: Some("Block table does not exist".to_string()),
         });
     }
     
-    // Get latest block information - handle different possible column names
-    // Yaci Store may use: number, slot, block_time, or block_no, slot_no, time
-    let latest_block = match sqlx::query_as::<_, (Option<i64>, Option<i64>, Option<i64>)>(
-        r#"
-        SELECT 
-            COALESCE(block_no, number)::bigint as block_number,
-            COALESCE(slot_no, slot)::bigint as slot,
-            COALESCE(time, block_time)::bigint as block_time
-        FROM block 
-        ORDER BY COALESCE(block_no, number) DESC 
-        LIMIT 1
-        "#
+    // Try to get a simple count first to verify table is accessible
+    let simple_count: Option<i64> = sqlx::query_as::<_, (i64,)>(
+        "SELECT COUNT(*)::bigint FROM block"
     )
     .fetch_optional(pool)
     .await
-    {
-        Ok(Some(result)) => Some(result),
-        _ => {
-            // Fallback: try with standard column names
-            sqlx::query_as::<_, (Option<i64>, Option<i64>, Option<i64>)>(
-                "SELECT number, slot, block_time FROM block ORDER BY number DESC LIMIT 1"
-            )
-            .fetch_optional(pool)
-            .await
-            .ok()
-            .flatten()
+    .ok()
+    .flatten()
+    .map(|(count,)| count);
+    
+    if simple_count == Some(0) {
+        return Ok(SyncStatus {
+            connected: true,
+            latest_block_number: None,
+            latest_block_slot: None,
+            latest_block_time: None,
+            total_blocks: Some(0),
+            latest_epoch: None,
+            sync_progress: Some("Block table exists but is empty".to_string()),
+        });
+    }
+    
+    // First, try to discover the actual column names in the block table
+    // Get latest block information - try multiple column name patterns
+    let latest_block = {
+        // Try pattern 1: block_no, slot_no, time (common Yaci Store pattern)
+        match sqlx::query_as::<_, (Option<i64>, Option<i64>, Option<i64>)>(
+            "SELECT block_no, slot_no, time FROM block ORDER BY block_no DESC LIMIT 1"
+        )
+        .fetch_optional(pool)
+        .await
+        {
+            Ok(Some(result)) => Some(result),
+            _ => {
+                // Try pattern 2: number, slot, block_time
+                match sqlx::query_as::<_, (Option<i64>, Option<i64>, Option<i64>)>(
+                    "SELECT number, slot, block_time FROM block ORDER BY number DESC LIMIT 1"
+                )
+                .fetch_optional(pool)
+                .await
+                {
+                    Ok(Some(result)) => Some(result),
+                    _ => {
+                        // Try pattern 3: COALESCE approach
+                        sqlx::query_as::<_, (Option<i64>, Option<i64>, Option<i64>)>(
+                            r#"
+                            SELECT 
+                                COALESCE(block_no, number)::bigint,
+                                COALESCE(slot_no, slot)::bigint,
+                                COALESCE(time, block_time)::bigint
+                            FROM block 
+                            ORDER BY COALESCE(block_no, number) DESC 
+                            LIMIT 1
+                            "#
+                        )
+                        .fetch_optional(pool)
+                        .await
+                        .ok()
+                        .flatten()
+                    }
+                }
+            }
         }
     };
     
@@ -611,31 +647,44 @@ pub async fn get_indexer_health(pool: &PgPool) -> Result<IndexerHealth> {
         });
     }
 
-    // Get latest block information - handle different column name possibilities
-    // Try with COALESCE first (handles both block_no/number and time/block_time)
-    let latest_block = match sqlx::query_as::<_, (Option<i64>, Option<i64>)>(
-        r#"
-        SELECT 
-            COALESCE(block_no, number)::bigint as block_number,
-            COALESCE(time, block_time)::bigint as block_time
-        FROM block 
-        ORDER BY COALESCE(block_no, number) DESC 
-        LIMIT 1
-        "#
-    )
-    .fetch_optional(pool)
-    .await
-    {
-        Ok(Some(result)) => Some(result),
-        _ => {
-            // Fallback: try with standard column names
-            sqlx::query_as::<_, (Option<i64>, Option<i64>)>(
-                "SELECT number, block_time FROM block ORDER BY number DESC LIMIT 1"
-            )
-            .fetch_optional(pool)
-            .await
-            .ok()
-            .flatten()
+    // Get latest block information - try multiple column name patterns
+    let latest_block = {
+        // Try pattern 1: block_no, time (common Yaci Store pattern)
+        match sqlx::query_as::<_, (Option<i64>, Option<i64>)>(
+            "SELECT block_no, time FROM block ORDER BY block_no DESC LIMIT 1"
+        )
+        .fetch_optional(pool)
+        .await
+        {
+            Ok(Some(result)) => Some(result),
+            _ => {
+                // Try pattern 2: number, block_time
+                match sqlx::query_as::<_, (Option<i64>, Option<i64>)>(
+                    "SELECT number, block_time FROM block ORDER BY number DESC LIMIT 1"
+                )
+                .fetch_optional(pool)
+                .await
+                {
+                    Ok(Some(result)) => Some(result),
+                    _ => {
+                        // Try pattern 3: COALESCE approach
+                        sqlx::query_as::<_, (Option<i64>, Option<i64>)>(
+                            r#"
+                            SELECT 
+                                COALESCE(block_no, number)::bigint,
+                                COALESCE(time, block_time)::bigint
+                            FROM block 
+                            ORDER BY COALESCE(block_no, number) DESC 
+                            LIMIT 1
+                            "#
+                        )
+                        .fetch_optional(pool)
+                        .await
+                        .ok()
+                        .flatten()
+                    }
+                }
+            }
         }
     };
 
